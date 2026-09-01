@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Cadastro;
+use App\Models\DesempenhoLote;
 use App\Models\Fazenda;
 use App\Models\Lote;
 use App\Models\Racao;
@@ -152,16 +153,33 @@ class RelatorioController extends Controller
         $maxPeso = (float) $lotesEscopados->max('peso_medio') ?: 1;
         $maxConsumo = (float) $consumoPorLoteId->max() ?: 1;
 
-        return $lotesEscopados->map(function ($lote) use ($consumoPorLoteId, $maxPeso, $maxConsumo) {
+        // Conversão Alimentar REAL (App\Models\DesempenhoLote — ver
+        // PlanoController::registrarPesagem): quando o lote já tem pesagem
+        // suficiente pra um FCR de verdade, ele substitui o heurístico
+        // "peso médio / consumo por animal" abaixo. Score relativo ao MELHOR
+        // (menor) FCR do conjunto em escopo, mesmo espírito de $ganhoPeso/
+        // $consumoScore acima (sempre relativo ao lote de referência, nunca
+        // um valor absoluto inventado).
+        $fcrRealPorLoteId = DesempenhoLote::whereIn('lote_id', $lotesEscopados->pluck('id'))
+            ->where('eficiencia_alimentar', '>', 0)
+            ->orderByDesc('data_registro')
+            ->get()
+            ->groupBy('lote_id')
+            ->map(fn ($grupo) => (float) $grupo->first()->eficiencia_alimentar);
+        $melhorFcrReal = $fcrRealPorLoteId->isNotEmpty() ? $fcrRealPorLoteId->min() : null;
+
+        return $lotesEscopados->map(function ($lote) use ($consumoPorLoteId, $maxPeso, $maxConsumo, $fcrRealPorLoteId, $melhorFcrReal) {
             $consumoLote = (float) ($consumoPorLoteId[$lote->id] ?? 0);
             $consumoPorAnimal = $lote->quantidade_animais > 0 ? $consumoLote / $lote->quantidade_animais : 0;
             $custoLote = round($consumoLote * self::PRECO_MEDIO_KG, 2);
 
             $ganhoPeso = (int) round(($lote->peso_medio / $maxPeso) * 100);
             $consumoScore = (int) round(($consumoLote / $maxConsumo) * 100);
-            $conversao = $consumoPorAnimal > 0
-                ? (int) round(min(100, ($lote->peso_medio / $consumoPorAnimal) * 20))
-                : 50;
+
+            $fcrRealLote = $fcrRealPorLoteId->get($lote->id);
+            $conversao = ($fcrRealLote !== null && $melhorFcrReal !== null)
+                ? (int) round(min(100, ($melhorFcrReal / $fcrRealLote) * 100))
+                : ($consumoPorAnimal > 0 ? (int) round(min(100, ($lote->peso_medio / $consumoPorAnimal) * 20)) : 50);
             $saude = $lote->cochos->isNotEmpty()
                 ? (int) round($lote->cochos->avg(fn ($c) => $c->capacidade > 0 ? min(100, ($c->nivel_atual / $c->capacidade) * 100) : 0))
                 : 50;
@@ -379,6 +397,10 @@ class RelatorioController extends Controller
         // RESUMO POR CATEGORIA — histórico completo, mesma base dos gráficos.
         $resumoPorCategoria = $this->montarResumoPorCategoria($lotesEscopados, $consumo);
 
+        // EVOLUÇÃO HISTÓRICA (6 meses) — sempre a mesma janela, independente
+        // do filtro de período ativo (ver montarEvolucaoHistorica).
+        $evolucaoHistorica = $this->montarEvolucaoHistorica($lotesEscopados);
+
         // CARDS DO TOPO: aqui sim os últimos 7 dias vs os 7 anteriores —
         // são os únicos elementos da tela pensados como "janela curta e
         // comparável", diferente dos gráficos/ranking/resumo acima.
@@ -468,6 +490,7 @@ class RelatorioController extends Controller
             'filtrosAplicados',
             'statCards',
             'resumoPorCategoria',
+            'evolucaoHistorica',
             'rankingLotesExibidos',
             'rankingLotesTotal',
             'rankingLotesCompleto',
@@ -510,6 +533,38 @@ class RelatorioController extends Controller
         }
 
         return $itens;
+    }
+
+    /**
+     * "Evolução Histórica (6 meses)": consumo total mensal a partir de
+     * lote_consumo_snapshots, sempre os últimos 6 meses — independente do
+     * filtro de período (data_inicio/data_fim) ativo na tela, pra dar uma
+     * visão de longo prazo mesmo quando o usuário filtrou um recorte curto.
+     * Respeita os filtros de Fazenda/Lote/Categoria (via $lotesEscopados).
+     */
+    private function montarEvolucaoHistorica(Collection $lotesEscopados): array
+    {
+        $inicio = now()->subMonths(5)->startOfMonth();
+
+        $snapshots = LoteConsumoSnapshot::whereIn('lote_id', $lotesEscopados->pluck('id'))
+            ->where('data', '>=', $inicio->toDateString())
+            ->get();
+
+        $mesesAbreviados = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+        $labels = [];
+        $valores = [];
+
+        for ($i = 5; $i >= 0; $i--) {
+            $mesReferencia = now()->subMonths($i);
+            $labels[] = $mesesAbreviados[$mesReferencia->month - 1] . '/' . $mesReferencia->format('y');
+            $valores[] = round((float) $snapshots->filter(fn ($s) => $s->data->isSameMonth($mesReferencia))->sum('consumo_kg'), 1);
+        }
+
+        return [
+            'labels' => $labels,
+            'valores' => $valores,
+            'temDados' => array_sum($valores) > 0,
+        ];
     }
 
     private function corComTransparencia(string $hex, float $alpha): string

@@ -1084,6 +1084,55 @@
             color: #ffff00 !important;
         }
 
+        /* Chips de atalho de período (Hoje/7/30/90 dias) — mesmo componente
+           usado na Conversão Alimentar do Plano Alimentar. */
+        .periodo-chips {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 18px;
+            flex-wrap: wrap;
+        }
+
+        .periodo-chip {
+            padding: 8px 16px;
+            border-radius: 20px;
+            border: 1px solid var(--card-border, #e2e8f0);
+            background: var(--card-bg);
+            color: var(--text-secundario);
+            font-size: 0.813rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+        }
+
+        .periodo-chip:hover { border-color: #10b981; color: #10b981; }
+
+        .periodo-chip.active {
+            background: #10b981;
+            border-color: #10b981;
+            color: #ffffff;
+        }
+
+        body.high-contrast .periodo-chip {
+            background: #000000 !important;
+            border: 2px solid #ffff00 !important;
+            color: #ffff00 !important;
+        }
+        body.high-contrast .periodo-chip.active {
+            background: #ffff00 !important;
+            color: #000000 !important;
+        }
+
+        /* Cards de destaque "Melhor Desempenho"/"Necessita Atenção",
+           extraídos do topo/base do Ranking de Lotes já calculado. */
+        .destaque-cards-row {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+            margin-bottom: 25px;
+        }
+
         .stat-cards-row {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
@@ -1598,6 +1647,33 @@
         </div>
 
         @php
+            $hojeChip = \Carbon\Carbon::today();
+            $periodosPreset = [
+                'hoje' => ['label' => 'Hoje', 'inicio' => $hojeChip->toDateString(), 'fim' => $hojeChip->toDateString()],
+                '7'    => ['label' => '7 dias', 'inicio' => $hojeChip->copy()->subDays(6)->toDateString(), 'fim' => $hojeChip->toDateString()],
+                '30'   => ['label' => '30 dias', 'inicio' => $hojeChip->copy()->subDays(29)->toDateString(), 'fim' => $hojeChip->toDateString()],
+                '90'   => ['label' => '90 dias', 'inicio' => $hojeChip->copy()->subDays(89)->toDateString(), 'fim' => $hojeChip->toDateString()],
+            ];
+            $dataInicioAtual = request('data_inicio');
+            $dataFimAtual = request('data_fim');
+            $semFiltroPeriodo = !$dataInicioAtual && !$dataFimAtual;
+            $bateComAlgumPreset = false;
+        @endphp
+        <div class="periodo-chips" role="group" aria-label="Atalho de período">
+            @foreach ($periodosPreset as $chave => $preset)
+                @php
+                    $ativo = ((string) $chave === '7' && $semFiltroPeriodo) || ($dataInicioAtual === $preset['inicio'] && $dataFimAtual === $preset['fim']);
+                    $bateComAlgumPreset = $bateComAlgumPreset || $ativo;
+                @endphp
+                <a href="{{ request()->fullUrlWithQuery(['data_inicio' => $preset['inicio'], 'data_fim' => $preset['fim']]) }}"
+                   class="periodo-chip {{ $ativo ? 'active' : '' }}">{{ $preset['label'] }}</a>
+            @endforeach
+            <button type="button" class="periodo-chip {{ (!$semFiltroPeriodo && !$bateComAlgumPreset) ? 'active' : '' }}" onclick="document.getElementById('openFiltrosBtn').click()">
+                <i class="fa-solid fa-sliders" aria-hidden="true"></i> Personalizado
+            </button>
+        </div>
+
+        @php
             $statCards = $statCards ?? [];
             $trendIcone = function ($valor) {
                 if (is_null($valor)) return 'fa-minus';
@@ -1703,6 +1779,40 @@
             </div>
         </div>
 
+        @if (($rankingLotesTotal ?? 0) >= 2)
+            @php
+                $loteDestaqueMelhor = $rankingLotesCompleto->first();
+                $loteDestaquePior = $rankingLotesCompleto->last();
+            @endphp
+            <div class="destaque-cards-row">
+                <div class="stat-card stat-card--verde">
+                    <div class="stat-card-top">
+                        <div class="stat-card-icon icone-verde"><i class="fa-solid fa-trophy" aria-hidden="true"></i></div>
+                    </div>
+                    <div>
+                        <div class="stat-card-label">Melhor Desempenho</div>
+                        <div class="stat-card-valor">{{ $loteDestaqueMelhor->nome_lote }}</div>
+                    </div>
+                    <div class="stat-card-trend trend-up">
+                        <i class="fa-solid fa-gauge-high" aria-hidden="true"></i> {{ $loteDestaqueMelhor->eficiencia }}% de eficiência · {{ number_format($loteDestaqueMelhor->consumo_medio_dia, 1, ',', '.') }} kg/dia
+                    </div>
+                </div>
+
+                <div class="stat-card stat-card--ambar">
+                    <div class="stat-card-top">
+                        <div class="stat-card-icon icone-ambar"><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i></div>
+                    </div>
+                    <div>
+                        <div class="stat-card-label">Necessita Atenção</div>
+                        <div class="stat-card-valor">{{ $loteDestaquePior->nome_lote }}</div>
+                    </div>
+                    <div class="stat-card-trend trend-down">
+                        <i class="fa-solid fa-gauge-high" aria-hidden="true"></i> {{ $loteDestaquePior->eficiencia }}% de eficiência · {{ number_format($loteDestaquePior->consumo_medio_dia, 1, ',', '.') }} kg/dia
+                    </div>
+                </div>
+            </div>
+        @endif
+
         <div class="relatorio-grid-2col">
 
             <div class="card-grafico">
@@ -1743,6 +1853,22 @@
                 @endif
             </div>
 
+        </div>
+
+        <div class="card-grafico" style="margin-bottom: 25px;">
+            <div class="card-grafico-header">
+                <h3><i class="fa-solid fa-chart-line" style="color: #10b981;"></i> Evolução Histórica (6 meses)</h3>
+                <p>Consumo total mensal, sempre os últimos 6 meses — independente do período filtrado acima</p>
+            </div>
+            <div class="chart-container">
+                <canvas id="chartEvolucaoHistorica"></canvas>
+                <div class="chart-empty-overlay" id="evolucaoHistoricaEmptyState">
+                    <div class="no-data-message">
+                        <i class="fa-solid fa-chart-simple"></i>
+                        Sem consumo registrado nos últimos 6 meses para os lotes selecionados.
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div class="relatorio-grid-3col">
@@ -1909,6 +2035,9 @@
 
     let datasetsRadar = @json($dadosRadarLotes ?? []);
 
+    let labelsEvolucaoHistorica = @json($evolucaoHistorica['labels'] ?? []);
+    let valoresEvolucaoHistorica = @json($evolucaoHistorica['valores'] ?? []);
+
     // Estado real de cada gráfico (sem dados fictícios de preenchimento —
     // se o banco não tem nada para os filtros escolhidos, o gráfico mostra
     // a mensagem de "sem dados" em vez de números inventados).
@@ -1916,11 +2045,13 @@
     const temConsumoLote = lotesLabels.length > 0 && kgLoteDados.some(v => Number(v) > 0);
     const temDistribuicao = labelsGastos.length > 0 && valoresGastos.some(v => Number(v) > 0);
     const temRadar = datasetsRadar.length > 0;
+    const temEvolucaoHistorica = valoresEvolucaoHistorica.some(v => Number(v) > 0);
 
     document.getElementById('consumoTempoEmptyState')?.classList.toggle('visible', !temConsumoTempo);
     document.getElementById('consumoLoteEmptyState')?.classList.toggle('visible', !temConsumoLote);
     document.getElementById('distribuicaoEmptyState')?.classList.toggle('visible', !temDistribuicao);
     document.getElementById('eficienciaEmptyState')?.classList.toggle('visible', !temRadar);
+    document.getElementById('evolucaoHistoricaEmptyState')?.classList.toggle('visible', !temEvolucaoHistorica);
 
     // ==========================================
     // MENU E MODAL
@@ -1967,6 +2098,7 @@
             if (chartConsumoLote) chartConsumoLote.resize();
             if (chartDistribuicao) chartDistribuicao.resize();
             if (chartRadar) chartRadar.resize();
+            if (chartEvolucaoHistorica) chartEvolucaoHistorica.resize();
         }, 320);
     }
 
@@ -2109,12 +2241,14 @@
     const canvasConsumoLote = document.getElementById('chartConsumoLote');
     const canvasDistribuicao = document.getElementById('chartDistribucaoGastos');
     const radarCanvas = document.getElementById('chartEficienciaLote');
+    const canvasEvolucaoHistorica = document.getElementById('chartEvolucaoHistorica');
     const legendaGastos = document.getElementById('donutLegendList');
 
     let chartConsumoTempo = null;
     let chartConsumoLote = null;
     let chartDistribuicao = null;
     let chartRadar = null;
+    let chartEvolucaoHistorica = null;
 
     function montarGraficos() {
         const textoSecundario = cssVar('--text-secundario', '#6b7280');
@@ -2129,6 +2263,7 @@
         if (chartConsumoLote) chartConsumoLote.destroy();
         if (chartDistribuicao) chartDistribuicao.destroy();
         if (chartRadar) chartRadar.destroy();
+        if (chartEvolucaoHistorica) chartEvolucaoHistorica.destroy();
 
         // GRÁFICO 1 - CONSUMO AO LONGO DO TEMPO
         if (canvasConsumoTempo) {
@@ -2324,6 +2459,52 @@
                 }
             });
         }
+
+        // GRÁFICO 6 - EVOLUÇÃO HISTÓRICA (6 MESES), sempre a mesma janela,
+        // independente do filtro de período ativo (ver
+        // RelatorioController::montarEvolucaoHistorica).
+        if (canvasEvolucaoHistorica) {
+            chartEvolucaoHistorica = new Chart(canvasEvolucaoHistorica, {
+                type: 'line',
+                data: {
+                    labels: labelsEvolucaoHistorica,
+                    datasets: [{
+                        label: 'Consumo Total (kg)',
+                        data: valoresEvolucaoHistorica,
+                        borderColor: corSecundaria,
+                        backgroundColor: hexParaRgba(corSecundaria, 0.12),
+                        fill: true,
+                        tension: 0.35,
+                        pointRadius: 4,
+                        pointBackgroundColor: corSecundaria,
+                        borderWidth: 3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: corSurface,
+                            titleColor: textoPrincipal,
+                            bodyColor: textoSecundario,
+                            borderColor: corGrid,
+                            borderWidth: 1,
+                            callbacks: { label: (item) => `${item.formattedValue} kg` }
+                        }
+                    },
+                    scales: {
+                        x: { grid: { display: false }, ticks: { color: textoSecundario } },
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: corGrid },
+                            ticks: { color: textoSecundario, callback: value => value + ' kg' }
+                        }
+                    }
+                }
+            });
+        }
     }
 
     montarGraficos();
@@ -2338,6 +2519,7 @@
             if (chartConsumoLote) chartConsumoLote.resize();
             if (chartDistribuicao) chartDistribuicao.resize();
             if (chartRadar) chartRadar.resize();
+            if (chartEvolucaoHistorica) chartEvolucaoHistorica.resize();
         }, 150);
     });
 
@@ -2353,6 +2535,7 @@
             if (chartConsumoLote) chartConsumoLote.resize();
             if (chartDistribuicao) chartDistribuicao.resize();
             if (chartRadar) chartRadar.resize();
+            if (chartEvolucaoHistorica) chartEvolucaoHistorica.resize();
         };
 
         let remedirAgendado = false;
