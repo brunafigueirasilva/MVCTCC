@@ -527,6 +527,15 @@
             box-shadow: 0 14px 28px -10px rgba(15, 23, 42, 0.12);
         }
 
+        /* Card-resumo "Ordenha e Leite": além de premium-card, é um link
+           inteiro pra tela própria — sem herdar o sublinhado/cor azul
+           padrão de link. */
+        a.premium-card-link {
+            text-decoration: none;
+            color: inherit;
+            cursor: pointer;
+        }
+
         /* Selo "3D": gradiente diagonal + brilho interno + glow colorido —
            no lugar do círculo plano (fundo pastel + ícone da mesma cor). */
         .premium-card-icon-zone {
@@ -1034,6 +1043,10 @@
                 <i class="fa-solid fa-layer-group"></i>
                 <span>Gestão de Lotes</span>
             </a>
+            <a href="{{ route('ordenha.listar') }}">
+                <i class="fa-solid fa-droplet"></i>
+                <span>Ordenha e Leite</span>
+            </a>
             <a href="{{ route('cocho.listar') }}">
                 <i class="fa-solid fa-cube"></i>
                 <span>Gestão de Cochos</span>
@@ -1267,68 +1280,24 @@
                 </div>
 
                 <!-- Módulo de Animal (Parto/Reprodução/Lactação/Ordenha) —
-                     fonte separada do módulo de Lote acima. -->
-                <div class="premium-card premium-verde">
-                    <div class="premium-card-icon-zone">
-                        <i class="fa-solid fa-droplet"></i>
-                    </div>
-                    <div class="premium-card-data-zone">
-                        <span class="premium-card-label">Animais em Lactação</span>
-                        <span class="premium-card-value">{{ $animaisEmLactacao ?? 0 }}</span>
-                        <span class="premium-card-subtext">
-                            @if ($semFazenda)
-                                Selecione uma fazenda
-                            @else
-                                Média: <strong>{{ number_format($producaoMediaDiaria ?? 0, 1, ',', '.') }} L/dia</strong> por animal
-                            @endif
-                        </span>
-                    </div>
-                </div>
-
-                <div class="premium-card premium-azul">
+                     resumo apenas; os cartões e gráficos completos vivem na
+                     tela própria "Ordenha e Leite". -->
+                <a href="{{ route('ordenha.listar') }}" class="premium-card premium-azul premium-card-link">
                     <div class="premium-card-icon-zone">
                         <i class="fa-solid fa-jug-detergent"></i>
                     </div>
                     <div class="premium-card-data-zone">
-                        <span class="premium-card-label">Produção de Leite Hoje</span>
+                        <span class="premium-card-label">Ordenha e Leite</span>
                         <span class="premium-card-value">{{ number_format($producaoLeiteHoje ?? 0, 1, ',', '.') }} L</span>
                         <span class="premium-card-subtext">
                             @if ($semFazenda)
                                 Selecione uma fazenda
                             @else
-                                Somando todos os animais em lactação
+                                {{ $animaisEmLactacao ?? 0 }} animais em lactação · <strong>Ver detalhes completos <i class="fa-solid fa-arrow-right"></i></strong>
                             @endif
                         </span>
                     </div>
-                </div>
-
-                <div class="premium-card premium-laranja">
-                    <div class="premium-card-icon-zone">
-                        <i class="fa-solid fa-heart-pulse"></i>
-                    </div>
-                    <div class="premium-card-data-zone">
-                        <span class="premium-card-label">Partos (30 dias)</span>
-                        <span class="premium-card-value">{{ $partosRealizados ?? 0 }}</span>
-                        <span class="premium-card-subtext">
-                            @if ($semFazenda)
-                                Selecione uma fazenda
-                            @else
-                                {{ $partosProximos ?? 0 }} próximo(s) · {{ $partosAtrasados ?? 0 }} atrasado(s)
-                            @endif
-                        </span>
-                    </div>
-                </div>
-
-                <div class="premium-card premium-roxo">
-                    <div class="premium-card-icon-zone">
-                        <i class="fa-solid fa-cow"></i>
-                    </div>
-                    <div class="premium-card-data-zone">
-                        <span class="premium-card-label">Bezerros Nascidos</span>
-                        <span class="premium-card-value">{{ $bezerrosNascidos ?? 0 }}</span>
-                        <span class="premium-card-subtext">Últimos 30 dias</span>
-                    </div>
-                </div>
+                </a>
             </div>
         </div>
 
@@ -1397,59 +1366,6 @@
                 </div>
             </div>
 
-            <!-- Módulo de Animal — gráficos de produção de leite e partos,
-                 sempre a partir de dados reais (Ordenha/Parto). -->
-            <div class="box">
-                <h3><i class="fa-solid fa-droplet" style="color: #0891b2;"></i> Produção de Leite por Dia (7 dias)</h3>
-                <div class="chart-container">
-                    <canvas id="producaoDiariaChart"></canvas>
-                    <div class="chart-empty-overlay" id="producaoDiariaEmptyState">
-                        <div class="no-data-message">
-                            <i class="fa-solid fa-chart-simple"></i>
-                            {{ $semFazenda ? 'Selecione uma fazenda para ver a produção.' : 'Nenhuma ordenha registrada nos últimos 7 dias.' }}
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="box">
-                <h3><i class="fa-solid fa-chart-line" style="color: #0891b2;"></i> Evolução da Produção (6 meses)</h3>
-                <div class="chart-container">
-                    <canvas id="evolucaoProducaoChart"></canvas>
-                    <div class="chart-empty-overlay" id="evolucaoProducaoEmptyState">
-                        <div class="no-data-message">
-                            <i class="fa-solid fa-chart-simple"></i>
-                            {{ $semFazenda ? 'Selecione uma fazenda para ver a evolução.' : 'Sem produção registrada nos últimos 6 meses.' }}
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="box">
-                <h3><i class="fa-solid fa-ranking-star" style="color: #0891b2;"></i> Produção por Animal (mês atual)</h3>
-                <div class="chart-container">
-                    <canvas id="producaoAnimalChart"></canvas>
-                    <div class="chart-empty-overlay" id="producaoAnimalEmptyState">
-                        <div class="no-data-message">
-                            <i class="fa-solid fa-cow"></i>
-                            {{ $semFazenda ? 'Selecione uma fazenda para ver a produção.' : 'Nenhuma ordenha registrada este mês.' }}
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="box">
-                <h3><i class="fa-solid fa-heart-pulse" style="color: #d97706;"></i> Partos por Período (6 meses)</h3>
-                <div class="chart-container">
-                    <canvas id="partosPeriodoChart"></canvas>
-                    <div class="chart-empty-overlay" id="partosPeriodoEmptyState">
-                        <div class="no-data-message">
-                            <i class="fa-solid fa-heart-pulse"></i>
-                            {{ $semFazenda ? 'Selecione uma fazenda para ver os partos.' : 'Nenhum parto realizado nos últimos 6 meses.' }}
-                        </div>
-                    </div>
-                </div>
-            </div>
         </div>
     </main>
 
@@ -1526,38 +1442,6 @@
             if (barEmptyState) barEmptyState.classList.toggle('visible', !temConsumo);
             if (donutEmptyState) donutEmptyState.classList.toggle('visible', !temAnimais);
 
-            /* --- Módulo de Animal: produção de leite e partos --- */
-            const dadosProducaoDiaria = {
-                labels: @json($labelsProducaoDiaria),
-                valores: @json($dadosProducaoDiaria)
-            };
-            const dadosEvolucaoProducao = {
-                labels: @json($labelsEvolucaoProducao),
-                valores: @json($dadosEvolucaoProducao)
-            };
-            const dadosProducaoPorAnimal = {
-                labels: @json($labelsProducaoPorAnimal),
-                valores: @json($dadosProducaoPorAnimal)
-            };
-            const dadosPartosPorPeriodo = {
-                labels: @json($labelsPartosPorPeriodo),
-                valores: @json($dadosPartosPorPeriodo)
-            };
-
-            const temProducaoDiaria = dadosProducaoDiaria.valores.some(v => Number(v) > 0);
-            const temEvolucaoProducao = dadosEvolucaoProducao.valores.some(v => Number(v) > 0);
-            const temProducaoPorAnimal = dadosProducaoPorAnimal.valores.some(v => Number(v) > 0);
-            const temPartosPorPeriodo = dadosPartosPorPeriodo.valores.some(v => Number(v) > 0);
-
-            const producaoDiariaEmptyState = document.getElementById('producaoDiariaEmptyState');
-            const evolucaoProducaoEmptyState = document.getElementById('evolucaoProducaoEmptyState');
-            const producaoAnimalEmptyState = document.getElementById('producaoAnimalEmptyState');
-            const partosPeriodoEmptyState = document.getElementById('partosPeriodoEmptyState');
-            if (producaoDiariaEmptyState) producaoDiariaEmptyState.classList.toggle('visible', !temProducaoDiaria);
-            if (evolucaoProducaoEmptyState) evolucaoProducaoEmptyState.classList.toggle('visible', !temEvolucaoProducao);
-            if (producaoAnimalEmptyState) producaoAnimalEmptyState.classList.toggle('visible', !temProducaoPorAnimal);
-            if (partosPeriodoEmptyState) partosPeriodoEmptyState.classList.toggle('visible', !temPartosPorPeriodo);
-
             function cssVar(name, fallback) {
                 const valor = getComputedStyle(document.body).getPropertyValue(name).trim();
                 return valor || fallback;
@@ -1578,10 +1462,6 @@
 
             let barChart = null;
             let donutChart = null;
-            let producaoDiariaChart = null;
-            let evolucaoProducaoChart = null;
-            let producaoAnimalChart = null;
-            let partosPeriodoChart = null;
 
             function montarGraficos() {
                 const textoSecundario = cssVar('--text-secundario', '#64748b');
@@ -1592,10 +1472,6 @@
 
                 if (barChart) barChart.destroy();
                 if (donutChart) donutChart.destroy();
-                if (producaoDiariaChart) producaoDiariaChart.destroy();
-                if (evolucaoProducaoChart) evolucaoProducaoChart.destroy();
-                if (producaoAnimalChart) producaoAnimalChart.destroy();
-                if (partosPeriodoChart) partosPeriodoChart.destroy();
 
                 const ctxBar = document.getElementById('barChart').getContext('2d');
                 barChart = new Chart(ctxBar, {
@@ -1701,166 +1577,6 @@
                     }
                 });
 
-                /* --- Módulo de Animal --- */
-                const corProducao = cssVar('--chart-2', '#0891b2');
-                const corPartos = cssVar('--chart-4', '#d97706');
-
-                const ctxProducaoDiaria = document.getElementById('producaoDiariaChart').getContext('2d');
-                producaoDiariaChart = new Chart(ctxProducaoDiaria, {
-                    type: 'bar',
-                    data: {
-                        labels: dadosProducaoDiaria.labels,
-                        datasets: [{
-                            label: 'Produção (L)',
-                            data: dadosProducaoDiaria.valores,
-                            backgroundColor: hexParaRgba(corProducao, 0.85),
-                            hoverBackgroundColor: corProducao,
-                            borderRadius: { topLeft: 8, topRight: 8, bottomLeft: 0, bottomRight: 0 },
-                            borderSkipped: false,
-                            maxBarThickness: 40,
-                            categoryPercentage: 0.62,
-                            barPercentage: 0.9
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        animation: { duration: 500 },
-                        plugins: {
-                            legend: { display: false },
-                            tooltip: {
-                                backgroundColor: corSurface, titleColor: textoPrincipal, bodyColor: textoSecundario,
-                                borderColor: corGrid, borderWidth: 1, padding: 12, cornerRadius: 10, displayColors: false,
-                                callbacks: { label: (item) => `${item.formattedValue} L` }
-                            }
-                        },
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                grid: { color: corGrid, drawTicks: false },
-                                border: { display: false },
-                                ticks: { color: textoSecundario, padding: 8, callback: (v) => v + ' L' }
-                            },
-                            x: { grid: { display: false }, border: { display: false }, ticks: { color: textoSecundario } }
-                        }
-                    }
-                });
-
-                const ctxEvolucaoProducao = document.getElementById('evolucaoProducaoChart').getContext('2d');
-                evolucaoProducaoChart = new Chart(ctxEvolucaoProducao, {
-                    type: 'line',
-                    data: {
-                        labels: dadosEvolucaoProducao.labels,
-                        datasets: [{
-                            label: 'Produção (L)',
-                            data: dadosEvolucaoProducao.valores,
-                            borderColor: corProducao,
-                            backgroundColor: hexParaRgba(corProducao, 0.15),
-                            fill: true,
-                            tension: 0.35,
-                            pointRadius: 4,
-                            pointBackgroundColor: corProducao
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        animation: { duration: 500 },
-                        plugins: {
-                            legend: { display: false },
-                            tooltip: {
-                                backgroundColor: corSurface, titleColor: textoPrincipal, bodyColor: textoSecundario,
-                                borderColor: corGrid, borderWidth: 1, padding: 12, cornerRadius: 10, displayColors: false,
-                                callbacks: { label: (item) => `${item.formattedValue} L` }
-                            }
-                        },
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                grid: { color: corGrid, drawTicks: false },
-                                border: { display: false },
-                                ticks: { color: textoSecundario, padding: 8, callback: (v) => v + ' L' }
-                            },
-                            x: { grid: { display: false }, border: { display: false }, ticks: { color: textoSecundario } }
-                        }
-                    }
-                });
-
-                const ctxProducaoAnimal = document.getElementById('producaoAnimalChart').getContext('2d');
-                producaoAnimalChart = new Chart(ctxProducaoAnimal, {
-                    type: 'bar',
-                    data: {
-                        labels: dadosProducaoPorAnimal.labels,
-                        datasets: [{
-                            label: 'Produção (L)',
-                            data: dadosProducaoPorAnimal.valores,
-                            backgroundColor: paletaCategorica(),
-                            borderRadius: 8,
-                            maxBarThickness: 32
-                        }]
-                    },
-                    options: {
-                        indexAxis: 'y',
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        animation: { duration: 500 },
-                        plugins: {
-                            legend: { display: false },
-                            tooltip: {
-                                backgroundColor: corSurface, titleColor: textoPrincipal, bodyColor: textoSecundario,
-                                borderColor: corGrid, borderWidth: 1, padding: 12, cornerRadius: 10, displayColors: false,
-                                callbacks: { label: (item) => `${item.formattedValue} L` }
-                            }
-                        },
-                        scales: {
-                            x: {
-                                beginAtZero: true,
-                                grid: { color: corGrid, drawTicks: false },
-                                border: { display: false },
-                                ticks: { color: textoSecundario }
-                            },
-                            y: { grid: { display: false }, border: { display: false }, ticks: { color: textoSecundario } }
-                        }
-                    }
-                });
-
-                const ctxPartosPeriodo = document.getElementById('partosPeriodoChart').getContext('2d');
-                partosPeriodoChart = new Chart(ctxPartosPeriodo, {
-                    type: 'bar',
-                    data: {
-                        labels: dadosPartosPorPeriodo.labels,
-                        datasets: [{
-                            label: 'Partos realizados',
-                            data: dadosPartosPorPeriodo.valores,
-                            backgroundColor: hexParaRgba(corPartos, 0.85),
-                            hoverBackgroundColor: corPartos,
-                            borderRadius: { topLeft: 8, topRight: 8, bottomLeft: 0, bottomRight: 0 },
-                            borderSkipped: false,
-                            maxBarThickness: 40
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        animation: { duration: 500 },
-                        plugins: {
-                            legend: { display: false },
-                            tooltip: {
-                                backgroundColor: corSurface, titleColor: textoPrincipal, bodyColor: textoSecundario,
-                                borderColor: corGrid, borderWidth: 1, padding: 12, cornerRadius: 10, displayColors: false
-                            }
-                        },
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                ticks: { color: textoSecundario, stepSize: 1, precision: 0 },
-                                grid: { color: corGrid, drawTicks: false },
-                                border: { display: false }
-                            },
-                            x: { grid: { display: false }, border: { display: false }, ticks: { color: textoSecundario } }
-                        }
-                    }
-                });
             }
 
             montarGraficos();
@@ -1874,10 +1590,6 @@
                 setTimeout(function() {
                     if (barChart) barChart.resize();
                     if (donutChart) donutChart.resize();
-                    if (producaoDiariaChart) producaoDiariaChart.resize();
-                    if (evolucaoProducaoChart) evolucaoProducaoChart.resize();
-                    if (producaoAnimalChart) producaoAnimalChart.resize();
-                    if (partosPeriodoChart) partosPeriodoChart.resize();
                 }, 150);
             });
 

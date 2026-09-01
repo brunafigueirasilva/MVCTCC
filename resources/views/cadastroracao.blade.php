@@ -1582,6 +1582,10 @@ body.high-contrast input:focus-visible {
                 <i class="fa-solid fa-layer-group"></i>
                 <span>Gestão de Lotes</span>
             </a>
+            <a href="{{ route('ordenha.listar') }}">
+                <i class="fa-solid fa-droplet"></i>
+                <span>Ordenha e Leite</span>
+            </a>
             <a href="{{ route('cocho.listar') }}">
                 <i class="fa-solid fa-cube"></i>
                 <span>Gestão de Cochos</span>

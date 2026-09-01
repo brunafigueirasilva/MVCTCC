@@ -249,6 +249,7 @@
             <a href="{{ route('cadastro.index') }}"><i class="fa-solid fa-chart-line"></i><span>Dashboard</span></a>
             <a href="{{ route('fazenda.listar') }}"><i class="fa-solid fa-location-dot"></i><span>Gestão de Fazendas</span></a>
             <a href="{{ route('lote.listar') }}" class="active"><i class="fa-solid fa-layer-group"></i><span>Gestão de Lotes</span></a>
+            <a href="{{ route('ordenha.listar') }}"><i class="fa-solid fa-droplet"></i><span>Ordenha e Leite</span></a>
             <a href="{{ route('cocho.listar') }}"><i class="fa-solid fa-cube"></i><span>Gestão de Cochos</span></a>
             <a href="{{ route('racao.listar') }}"><i class="fa-solid fa-wheat-awn"></i><span>Gestão de Rações</span></a>
             <a href="{{ route('estoque.listar') }}"><i class="fa-solid fa-box"></i><span>Nível de Estoque</span></a>

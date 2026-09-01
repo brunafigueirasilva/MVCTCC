@@ -14,6 +14,7 @@ use App\Http\Controllers\AssistenteIaController;
 use App\Http\Controllers\AcessibilidadeController;
 use App\Http\Controllers\ComentarioController;
 use App\Http\Controllers\AnimalController;
+use App\Http\Controllers\OrdenhaLeiteController;
 
 // Página inicial
 Route::get('/', [CadastroController::class, 'projetovideo'])
@@ -258,6 +259,20 @@ Route::post('/animal/{id}/ordenha', [AnimalController::class, 'registrarOrdenha'
 
 Route::put('/animal/{id}/lactacao/{lactacaoId}/encerrar', [AnimalController::class, 'encerrarLactacao'])
 ->name('animal.lactacao.encerrar');
+
+
+// ==========================================
+// ORDENHA E LEITE — página própria com os cartões/gráficos de produção de
+// leite e partos que antes ficavam misturados no Dashboard.
+// ==========================================
+Route::get('/ordenha-leite', [OrdenhaLeiteController::class, 'listar'])
+    ->name('ordenha.listar');
+
+// CONSULTAR MAIS ORDENHAS (restante do histórico "Últimas Ordenhas
+// Registradas" via AJAX) — mesmo padrão do "Consultar Lotes"/"Consultar
+// mais Conversões" do Plano Alimentar.
+Route::get('/ordenha-leite/historico', [OrdenhaLeiteController::class, 'historicoJson'])
+    ->name('ordenha.historicoJson');
 
 
 // LISTAR

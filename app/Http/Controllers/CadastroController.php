@@ -21,7 +21,6 @@ use App\Models\Animal;
 use App\Models\Parto;
 use App\Models\Lactacao;
 use App\Models\Ordenha;
-use App\Models\Bezerro;
 use App\Notifications\CodigoVerificacaoNotification;
 use App\Notifications\PerfilAtualizadoNotification;
 use Illuminate\Support\Facades\DB;
@@ -123,22 +122,12 @@ class CadastroController extends Controller
             'alertas' => collect(),
 
             // Módulo de Animal (Parto/Reprodução/Lactação/Ordenha) — fonte
-            // separada do módulo de Lote acima, nunca somada a ele.
+            // separada do módulo de Lote acima, nunca somada a ele. Os
+            // cartões/gráficos completos vivem em Ordenha e Leite
+            // (OrdenhaLeiteController); aqui só sobra o resumo do card
+            // "Ordenha e Leite" que linka pra lá.
             'animaisEmLactacao' => 0,
             'producaoLeiteHoje' => 0.0,
-            'producaoMediaDiaria' => 0.0,
-            'partosProximos' => 0,
-            'partosAtrasados' => 0,
-            'partosRealizados' => 0,
-            'bezerrosNascidos' => 0,
-            'labelsProducaoDiaria' => $this->labelsUltimos7Dias(),
-            'dadosProducaoDiaria' => array_fill(0, 7, 0.0),
-            'labelsEvolucaoProducao' => $this->labelsUltimos6Meses(),
-            'dadosEvolucaoProducao' => array_fill(0, 6, 0.0),
-            'labelsProducaoPorAnimal' => [],
-            'dadosProducaoPorAnimal' => [],
-            'labelsPartosPorPeriodo' => $this->labelsUltimos6Meses(),
-            'dadosPartosPorPeriodo' => array_fill(0, 6, 0),
         ];
     }
 
@@ -218,6 +207,10 @@ class CadastroController extends Controller
         // MÓDULO DE ANIMAL (Parto/Reprodução/Lactação/Ordenha) — fonte de
         // dados separada do módulo de Lote acima (nunca somada com
         // LoteOcorrencia), conforme decidido: os dois módulos coexistem.
+        // Os cartões/gráficos completos (produção diária, evolução mensal,
+        // produção por animal, partos por período) vivem na tela própria
+        // "Ordenha e Leite" (OrdenhaLeiteController) — aqui só sobra o
+        // mínimo pro card-resumo do Dashboard e pros alertas abaixo.
         // ==========================================
         $animais = Animal::whereIn('lote_id', $loteIds)->get();
         $animalIds = $animais->pluck('id');
@@ -229,69 +222,17 @@ class CadastroController extends Controller
             ->sum('quantidade_litros');
 
         $lactacoesAtivas = Lactacao::whereIn('animal_id', $animalIds)->where('status', 'Ativa')->with('animal')->get();
-        $producaoMediaDiaria = $lactacoesAtivas->isNotEmpty()
-            ? round((float) $lactacoesAtivas->avg('media_diaria'), 2)
-            : 0.0;
 
         // O accessor Parto::status calcula Previsto/Próximo/Atrasado a
         // partir das datas — não é uma coluna filtrável via query, então o
         // agrupamento é feito em memória sobre a coleção já carregada.
         $partos = Parto::whereIn('animal_id', $animalIds)->with('animal')->get();
-        $partosProximos = $partos->filter(fn ($p) => $p->status === 'Próximo')->count();
-        $partosAtrasados = $partos->filter(fn ($p) => $p->status === 'Atrasado')->count();
-        $partosRealizados = $partos->filter(
-            fn ($p) => $p->status === 'Realizado' && $p->data_parto && $p->data_parto->greaterThanOrEqualTo(Carbon::today()->subDays(30))
-        )->count();
 
-        $bezerrosNascidos = Bezerro::whereIn('parto_id', $partos->pluck('id'))
-            ->where('data_nascimento', '>=', Carbon::today()->subDays(30))
-            ->count();
-
-        // Produção de leite dos últimos 7 dias (mesmo loop de $dadosConsumo).
+        // Ordenhas dos últimos 7 dias — só para o alerta de "lactação sem
+        // ordenha hoje" abaixo (o histórico completo vive em Ordenha e Leite).
         $ordenhas7Dias = Ordenha::whereIn('animal_id', $animalIds)
             ->whereDate('data', '>=', Carbon::today()->subDays(6))
             ->get();
-        $labelsProducaoDiaria = $this->labelsUltimos7Dias();
-        $dadosProducaoDiaria = [];
-        for ($i = 6; $i >= 0; $i--) {
-            $dia = Carbon::today()->subDays($i);
-            $dadosProducaoDiaria[] = (float) $ordenhas7Dias->filter(fn ($o) => $o->data->isSameDay($dia))->sum('quantidade_litros');
-        }
-
-        // Evolução da produção — total de litros por mês, últimos 6 meses.
-        $ordenhas6Meses = Ordenha::whereIn('animal_id', $animalIds)
-            ->whereDate('data', '>=', Carbon::today()->subMonths(5)->startOfMonth())
-            ->get();
-        $labelsEvolucaoProducao = $this->labelsUltimos6Meses();
-        $dadosEvolucaoProducao = [];
-        for ($i = 5; $i >= 0; $i--) {
-            $mesReferencia = Carbon::today()->subMonths($i);
-            $dadosEvolucaoProducao[] = (float) $ordenhas6Meses
-                ->filter(fn ($o) => $o->data->isSameMonth($mesReferencia))
-                ->sum('quantidade_litros');
-        }
-
-        // Produção por animal — top 8 do mês atual.
-        $producaoPorAnimalMes = Ordenha::whereIn('animal_id', $animalIds)
-            ->whereMonth('data', $hoje->month)
-            ->whereYear('data', $hoje->year)
-            ->select('animal_id', DB::raw('SUM(quantidade_litros) as total'))
-            ->groupBy('animal_id')
-            ->orderByDesc('total')
-            ->limit(8)
-            ->get();
-        $nomesPorAnimalId = $animais->pluck('nome', 'id');
-        $labelsProducaoPorAnimal = $producaoPorAnimalMes->map(fn ($p) => $nomesPorAnimalId[$p->animal_id] ?? '—')->values()->all();
-        $dadosProducaoPorAnimal = $producaoPorAnimalMes->pluck('total')->map(fn ($v) => (float) $v)->values()->all();
-
-        // Partos por período — quantidade de partos REALIZADOS por mês, 6 meses.
-        $partosRealizadosTodos = $partos->filter(fn ($p) => $p->status === 'Realizado' && $p->data_parto);
-        $labelsPartosPorPeriodo = $this->labelsUltimos6Meses();
-        $dadosPartosPorPeriodo = [];
-        for ($i = 5; $i >= 0; $i--) {
-            $mesReferencia = Carbon::today()->subMonths($i);
-            $dadosPartosPorPeriodo[] = $partosRealizadosTodos->filter(fn ($p) => $p->data_parto->isSameMonth($mesReferencia))->count();
-        }
 
         // Todo alerta possível vem de uma condição real dos dados (nunca
         // inventado): estoque de ração, nível dos cochos, lotes sem cocho
@@ -329,21 +270,10 @@ class CadastroController extends Controller
             'dadosAnimais' => $dadosAnimais,
             'alertas' => $alertas,
 
+            // Só o necessário pro card-resumo "Ordenha e Leite" — o resto
+            // (gráficos, comparativos, histórico) mora em Ordenha e Leite.
             'animaisEmLactacao' => $animaisEmLactacao,
             'producaoLeiteHoje' => $producaoLeiteHoje,
-            'producaoMediaDiaria' => $producaoMediaDiaria,
-            'partosProximos' => $partosProximos,
-            'partosAtrasados' => $partosAtrasados,
-            'partosRealizados' => $partosRealizados,
-            'bezerrosNascidos' => $bezerrosNascidos,
-            'labelsProducaoDiaria' => $labelsProducaoDiaria,
-            'dadosProducaoDiaria' => $dadosProducaoDiaria,
-            'labelsEvolucaoProducao' => $labelsEvolucaoProducao,
-            'dadosEvolucaoProducao' => $dadosEvolucaoProducao,
-            'labelsProducaoPorAnimal' => $labelsProducaoPorAnimal,
-            'dadosProducaoPorAnimal' => $dadosProducaoPorAnimal,
-            'labelsPartosPorPeriodo' => $labelsPartosPorPeriodo,
-            'dadosPartosPorPeriodo' => $dadosPartosPorPeriodo,
         ];
     }
 
