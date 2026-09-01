@@ -195,6 +195,12 @@ Route::get('/plano/conversoes-alimentares', [PlanoController::class, 'conversoes
 Route::post('/plano/lotes/{loteId}/vincular-racao', [PlanoController::class, 'vincularRacao'])
     ->name('plano.vincularRacao');
 
+// REGISTRAR PESAGEM: checkpoint de peso do lote usado para calcular a
+// Conversão Alimentar real (kg de ração / kg de peso ganho) — ver
+// PlanoController::registrarPesagem / App\Models\DesempenhoLote.
+Route::post('/plano/lotes/{loteId}/pesagem', [PlanoController::class, 'registrarPesagem'])
+    ->name('plano.registrarPesagem');
+
 
 
 Route::get('/lotes', [LoteController::class, 'listar'])

@@ -87,6 +87,9 @@
             --warning-text: #b45309;
             --danger-bg: #fee2e2;
             --danger-text: #b91c1c;
+            --info-bg: #e0f2fe;
+            --info-text: #0369a1;
+            --surface-2: #f1f5f9;
             --border-color: #e2e8f0;
             --card-bg: #ffffff;
             --sidebar-width: 260px;
@@ -316,6 +319,155 @@ body.high-contrast .trend-neutral {
     color: #ffff00 !important;
 }
 
+/* ==========================================================================
+   FAIXA DE INDICADORES (topo da página + destaques de Conversão Alimentar)
+   — mesmo componente .stat-card do Relatório Avançado, pra manter a
+   identidade visual entre as duas telas.
+   ========================================================================== */
+.stat-cards-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 25px;
+}
+
+.stat-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color, #e2e8f0);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    border-radius: 16px;
+    padding: 18px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-width: 0;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.stat-card:hover { transform: translateY(-2px); box-shadow: 0 10px 22px -8px rgba(15, 23, 42, 0.16); }
+
+.stat-card--verde { background: linear-gradient(160deg, rgba(16, 185, 129, 0.12), transparent 60%), var(--card-bg); }
+.stat-card--ambar { background: linear-gradient(160deg, rgba(249, 115, 22, 0.12), transparent 60%), var(--card-bg); }
+.stat-card--azul  { background: linear-gradient(160deg, rgba(37, 99, 235, 0.12), transparent 60%), var(--card-bg); }
+.stat-card--ciano { background: linear-gradient(160deg, rgba(8, 145, 178, 0.12), transparent 60%), var(--card-bg); }
+.stat-card--roxo  { background: linear-gradient(160deg, rgba(124, 58, 237, 0.12), transparent 60%), var(--card-bg); }
+
+.stat-card-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.stat-card-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    flex-shrink: 0;
+    color: #ffffff;
+}
+
+.stat-card-label {
+    font-size: 0.75rem;
+    color: var(--text-muted, #64748b);
+    font-weight: 600;
+}
+
+.stat-card-valor {
+    font-size: 1.375rem;
+    font-weight: 800;
+    color: var(--text-main, #1e293b);
+    overflow-wrap: anywhere;
+}
+
+.stat-card-trend {
+    font-size: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.icone-verde {
+    background: linear-gradient(145deg, #4ade80, #059669);
+    box-shadow: 0 6px 14px -4px rgba(5, 150, 105, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.4), inset 0 -2px 3px rgba(0, 0, 0, 0.16);
+}
+.icone-ambar {
+    background: linear-gradient(145deg, #fbbf24, #f97316);
+    box-shadow: 0 6px 14px -4px rgba(217, 119, 6, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.4), inset 0 -2px 3px rgba(0, 0, 0, 0.16);
+}
+.icone-azul {
+    background: linear-gradient(145deg, #60a5fa, #2563eb);
+    box-shadow: 0 6px 14px -4px rgba(37, 99, 235, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.4), inset 0 -2px 3px rgba(0, 0, 0, 0.16);
+}
+.icone-roxo {
+    background: linear-gradient(145deg, #c084fc, #7c3aed);
+    box-shadow: 0 6px 14px -4px rgba(124, 58, 237, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.4), inset 0 -2px 3px rgba(0, 0, 0, 0.16);
+}
+.icone-ciano {
+    background: linear-gradient(145deg, #22d3ee, #0891b2);
+    box-shadow: 0 6px 14px -4px rgba(8, 145, 178, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.4), inset 0 -2px 3px rgba(0, 0, 0, 0.16);
+}
+
+body.high-contrast .stat-card,
+body.high-contrast .stat-card-icon {
+    background: #000000 !important;
+    border: 2px solid #ffff00 !important;
+    color: #ffff00 !important;
+    box-shadow: none !important;
+}
+
+/* Chips de período (7/30/90 dias) da seção de Conversão Alimentar. */
+.periodo-chips {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 18px;
+    flex-wrap: wrap;
+}
+
+.periodo-chip {
+    padding: 8px 16px;
+    border-radius: 20px;
+    border: 1px solid var(--border-color, #e2e8f0);
+    background: var(--card-bg);
+    color: var(--text-muted, #64748b);
+    font-size: 0.813rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+}
+
+.periodo-chip:hover { border-color: #16a34a; color: #16a34a; }
+
+.periodo-chip.active {
+    background: #16a34a;
+    border-color: #16a34a;
+    color: #ffffff;
+}
+
+body.high-contrast .periodo-chip {
+    background: #000000 !important;
+    border: 2px solid #ffff00 !important;
+    color: #ffff00 !important;
+}
+body.high-contrast .periodo-chip.active {
+    background: #ffff00 !important;
+    color: #000000 !important;
+}
+
+@media (max-width: 992px) {
+    .stat-cards-row { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 576px) {
+    .stat-cards-row { grid-template-columns: 1fr; }
+}
+
 /* Paleta de Cores dos Ícones baseada na imagem */
 .bg-green-light {
     background: linear-gradient(145deg, #4ade80, #059669);
@@ -423,6 +575,54 @@ body.high-contrast .trend-neutral {
     align-items: center;
     gap: 6px;
     overflow-wrap: break-word;
+}
+
+/* Conversão Alimentar REAL (kg ração / kg ganho) — mesmo layout do
+   .ca-hero (proxy por kg vivo), em tom azul/ciano pra diferenciar visualmente
+   das duas métricas, já que uma é proxy e a outra é medida de verdade. */
+.ca-hero-real {
+    background: var(--info-bg, #e0f2fe);
+}
+.ca-hero-real .ca-hero-icon { color: var(--info-text, #0369a1); }
+.ca-hero-real .ca-hero-label { color: var(--info-text, #0369a1); }
+.ca-hero-real .ca-hero-value { color: var(--info-text, #0369a1); }
+
+.ca-hero-sub {
+    font-size: 0.688rem;
+    font-weight: 500;
+    color: var(--info-text, #0369a1);
+    opacity: 0.85;
+    margin-top: 2px;
+}
+
+/* Sem pesagem suficiente ainda: mesmo cartão, em tom neutro — não é um
+   erro, só falta o usuário registrar a segunda pesagem do lote. */
+.ca-hero-vazio { background: var(--surface-2, #f1f5f9); }
+.ca-hero-vazio .ca-hero-icon,
+.ca-hero-vazio .ca-hero-label,
+.ca-hero-vazio .ca-hero-value,
+.ca-hero-vazio .ca-hero-sub { color: var(--text-muted, #64748b); }
+
+.ca-btn-pesagem {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border-radius: 10px;
+    border: 1px solid var(--border-color, #e2e8f0);
+    background: transparent;
+    color: var(--text-main, #1e293b);
+    font-size: 0.813rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+}
+
+.ca-btn-pesagem:hover {
+    background: var(--info-bg, #e0f2fe);
+    border-color: var(--info-text, #0369a1);
+    color: var(--info-text, #0369a1);
 }
 
 .tooltip-icon {
@@ -1049,6 +1249,9 @@ body.high-contrast .tooltip-popover {
 
         body.high-contrast .ca-hero,
         body.high-contrast .ca-hero-icon,
+        body.high-contrast .ca-hero-real,
+        body.high-contrast .ca-hero-vazio,
+        body.high-contrast .ca-btn-pesagem,
         body.high-contrast .ca-ver-todas-card {
             background: var(--card-bg) !important;
             border: 2px solid var(--border-color) !important;
@@ -1060,7 +1263,8 @@ body.high-contrast .tooltip-popover {
             color: var(--text-main) !important;
         }
         body.high-contrast .ca-hero-label,
-        body.high-contrast .ca-hero-value {
+        body.high-contrast .ca-hero-value,
+        body.high-contrast .ca-hero-sub {
             color: var(--text-main) !important;
         }
 
@@ -2254,6 +2458,79 @@ body.high-contrast .tooltip-popover {
             @endif
         </div>
 
+        @php
+            $trendIcone = fn ($v) => is_null($v) ? 'fa-minus' : ($v > 0 ? 'fa-arrow-up' : ($v < 0 ? 'fa-arrow-down' : 'fa-minus'));
+            $trendClasse = fn ($v) => (is_null($v) || $v == 0) ? 'trend-neutral' : ($v > 0 ? 'trend-up' : 'trend-down');
+        @endphp
+        <div class="stat-cards-row">
+            <div class="stat-card stat-card--verde">
+                <div class="stat-card-top">
+                    <div class="stat-card-icon icone-verde"><i class="fa-solid fa-sack-dollar" aria-hidden="true"></i></div>
+                </div>
+                <div>
+                    <div class="stat-card-label">Consumo Total Hoje</div>
+                    <div class="stat-card-valor">{{ number_format($statCardsTopo['consumoHoje']['valor'] ?? 0, 0, ',', '.') }} kg</div>
+                </div>
+                <div class="stat-card-trend {{ $trendClasse($statCardsTopo['consumoHoje']['variacao'] ?? null) }}">
+                    @if (!is_null($statCardsTopo['consumoHoje']['variacao'] ?? null))
+                        <i class="fa-solid {{ $trendIcone($statCardsTopo['consumoHoje']['variacao']) }}" aria-hidden="true"></i>
+                        {{ number_format(abs($statCardsTopo['consumoHoje']['variacao']), 1, ',', '.') }}% vs. ontem
+                    @else
+                        <i class="fa-solid fa-minus" aria-hidden="true"></i> Sem registro de ontem
+                    @endif
+                </div>
+            </div>
+
+            <div class="stat-card stat-card--ambar">
+                <div class="stat-card-top">
+                    <div class="stat-card-icon icone-ambar"><i class="fa-solid fa-coins" aria-hidden="true"></i></div>
+                </div>
+                <div>
+                    <div class="stat-card-label">Custo Estimado Hoje</div>
+                    <div class="stat-card-valor">R$ {{ number_format($statCardsTopo['custoHoje']['valor'] ?? 0, 2, ',', '.') }}</div>
+                </div>
+                <div class="stat-card-trend {{ $trendClasse($statCardsTopo['custoHoje']['variacao'] ?? null) }}">
+                    @if (!is_null($statCardsTopo['custoHoje']['variacao'] ?? null))
+                        <i class="fa-solid {{ $trendIcone($statCardsTopo['custoHoje']['variacao']) }}" aria-hidden="true"></i>
+                        {{ number_format(abs($statCardsTopo['custoHoje']['variacao']), 1, ',', '.') }}% vs. ontem
+                    @else
+                        <i class="fa-solid fa-minus" aria-hidden="true"></i> Sem registro de ontem
+                    @endif
+                </div>
+            </div>
+
+            <div class="stat-card stat-card--azul">
+                <div class="stat-card-top">
+                    <div class="stat-card-icon icone-azul"><i class="fa-solid fa-layer-group" aria-hidden="true"></i></div>
+                </div>
+                <div>
+                    <div class="stat-card-label">Lotes em Acompanhamento</div>
+                    <div class="stat-card-valor">{{ $statCardsTopo['lotesAtivos']['valor'] ?? 0 }}</div>
+                </div>
+                <div class="stat-card-trend trend-neutral">
+                    {{ $statCardsTopo['lotesAtivos']['comRacao'] ?? 0 }} com ração vinculada
+                </div>
+            </div>
+
+            <div class="stat-card stat-card--roxo">
+                <div class="stat-card-top">
+                    <div class="stat-card-icon icone-roxo"><i class="fa-solid fa-gauge-high" aria-hidden="true"></i></div>
+                </div>
+                <div>
+                    <div class="stat-card-label">Eficiência Média Hoje</div>
+                    <div class="stat-card-valor">{{ $statCardsTopo['eficienciaMedia']['valor'] ?? 0 }}%</div>
+                </div>
+                <div class="stat-card-trend {{ $trendClasse($statCardsTopo['eficienciaMedia']['variacao'] ?? null) }}">
+                    @if (!is_null($statCardsTopo['eficienciaMedia']['variacao'] ?? null))
+                        <i class="fa-solid {{ $trendIcone($statCardsTopo['eficienciaMedia']['variacao']) }}" aria-hidden="true"></i>
+                        {{ number_format(abs($statCardsTopo['eficienciaMedia']['variacao']), 1, ',', '.') }}% vs. ontem
+                    @else
+                        <i class="fa-solid fa-minus" aria-hidden="true"></i> Sem registro de ontem
+                    @endif
+                </div>
+            </div>
+        </div>
+
         <div id="modalFiltros" class="modal">
             <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="tituloModalFiltros">
                 <button class="close" id="closeFiltrosBtn" aria-label="Fechar"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
@@ -2551,6 +2828,60 @@ body.high-contrast .tooltip-popover {
 <!-- Card Amplo: Conversão Alimentar -->
 <h2 class="ca-section-title">Conversão Alimentar por Lote</h2>
 <p class="ca-section-subtitle">Peso médio, consumo e conversão alimentar calculados automaticamente a partir da ração vinculada a cada lote.</p>
+
+<!-- Período usado pelo comparativo "Consumo por Animal"/"Consumo por kg
+     Vivo" (variação vs período anterior) dos cards abaixo. -->
+<div class="periodo-chips" role="group" aria-label="Período da Conversão Alimentar">
+    @foreach ([7 => '7 dias', 30 => '30 dias', 90 => '90 dias'] as $dias => $label)
+        <a href="{{ request()->fullUrlWithQuery(['periodo_conversao' => $dias]) }}#tabelaConsumoLotes" class="periodo-chip {{ ($periodoConversao ?? 7) == $dias ? 'active' : '' }}">{{ $label }}</a>
+    @endforeach
+</div>
+
+@if ($comparativoConversao['temDados'] ?? false)
+<div class="stat-cards-row" style="grid-template-columns: repeat(3, 1fr);">
+    <div class="stat-card stat-card--verde">
+        <div class="stat-card-top"><div class="stat-card-icon icone-verde"><i class="fa-solid fa-trophy" aria-hidden="true"></i></div></div>
+        <div>
+            <div class="stat-card-label">Melhor Conversão Real</div>
+            <div class="stat-card-valor" title="{{ $comparativoConversao['melhor']->nome_lote }}">{{ $comparativoConversao['melhor']->nome_lote }}</div>
+        </div>
+        <div class="stat-card-trend trend-up"><i class="fa-solid fa-scale-balanced" aria-hidden="true"></i> {{ number_format($comparativoConversao['melhor']->conversao_real, 2, ',', '.') }} kg/kg</div>
+    </div>
+
+    <div class="stat-card stat-card--ambar">
+        <div class="stat-card-top"><div class="stat-card-icon icone-ambar"><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i></div></div>
+        <div>
+            <div class="stat-card-label">Pior Conversão Real</div>
+            <div class="stat-card-valor" title="{{ $comparativoConversao['pior']->nome_lote }}">{{ $comparativoConversao['pior']->nome_lote }}</div>
+        </div>
+        <div class="stat-card-trend trend-down"><i class="fa-solid fa-scale-balanced" aria-hidden="true"></i> {{ number_format($comparativoConversao['pior']->conversao_real, 2, ',', '.') }} kg/kg</div>
+    </div>
+
+    <div class="stat-card stat-card--azul">
+        <div class="stat-card-top"><div class="stat-card-icon icone-azul"><i class="fa-solid fa-chart-simple" aria-hidden="true"></i></div></div>
+        <div>
+            <div class="stat-card-label">Média Geral (FCR)</div>
+            <div class="stat-card-valor">{{ number_format($comparativoConversao['media'], 2, ',', '.') }} kg/kg</div>
+        </div>
+        <div class="stat-card-trend trend-neutral">Entre lotes com pesagem registrada</div>
+    </div>
+</div>
+
+<div class="dashboard-card" style="margin-bottom: 25px;">
+    <div class="card-header-flex">
+        <span class="card-title">Evolução da Conversão Alimentar</span>
+    </div>
+    <div style="flex-grow: 1; height: 260px; position: relative;">
+        <canvas id="chartEvolucaoConversao" role="img" aria-label="Gráfico de linha: evolução da conversão alimentar real, em kg de ração por kg de peso ganho, por lote, ao longo das pesagens registradas."></canvas>
+    </div>
+</div>
+@else
+<div class="no-data-message" style="margin-bottom: 25px;">
+    <i class="fa-solid fa-scale-balanced" aria-hidden="true"></i>
+    Nenhum lote com pesagem registrada ainda. Clique em "Registrar Pesagem" em um dos cards abaixo para começar a medir a conversão alimentar real.
+</div>
+@endif
+
 @php $totalConversoes = $conversoesAlimentaresTotal ?? $conversoesAlimentaresExibidas->count(); @endphp
 @if ($totalConversoes > 0)
 <div class="ca-cards-grid">
@@ -2647,6 +2978,46 @@ body.high-contrast .tooltip-popover {
         </div>
     </div>
 
+    <!-- Modal "Registrar Pesagem" — checkpoint de peso médio do lote usado
+         pra calcular a Conversão Alimentar real (ver PlanoController::
+         registrarPesagem / partials/conversao-alimentar-cards.blade.php). -->
+    <div class="modal" id="modalPesagem">
+        <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="tituloModalPesagem">
+            <button class="close" onclick="fecharModalPesagem()" aria-label="Fechar"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
+            <div class="modal-top">
+                <img src="{{ asset('Logo.png') }}" alt="Logo">
+                <h2 id="tituloModalPesagem">Registrar Pesagem</h2>
+                <p id="pesagemSubtitulo"></p>
+            </div>
+
+            @if ($errors->has('peso_medio_kg') || $errors->has('data'))
+                <div class="detalhes-lote-aviso detalhes-lote-aviso-warning" style="margin-bottom: 16px;">
+                    <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+                    {{ $errors->first('peso_medio_kg') ?: $errors->first('data') }}
+                </div>
+            @endif
+
+            <form id="formPesagem" method="POST">
+                @csrf
+                <input type="hidden" name="lote_id" id="pesagemLoteId" value="{{ old('lote_id') }}">
+
+                <label for="pesagemData">Data da pesagem</label>
+                <div class="input-box">
+                    <i class="fa-solid fa-calendar-day" aria-hidden="true"></i>
+                    <input type="date" name="data" id="pesagemData" value="{{ old('data') }}" max="{{ now()->toDateString() }}" required>
+                </div>
+
+                <label for="pesagemPeso">Peso médio atual do lote (kg)</label>
+                <div class="input-box">
+                    <i class="fa-solid fa-weight-hanging" aria-hidden="true"></i>
+                    <input type="number" name="peso_medio_kg" id="pesagemPeso" value="{{ old('peso_medio_kg') }}" step="0.01" min="0.01" max="99999" required>
+                </div>
+
+                <button type="submit" class="submit-btn">Salvar pesagem</button>
+            </form>
+        </div>
+    </div>
+
     @include('partials.acessibilidade')
     @include('partials.assistente-ia')
 
@@ -2725,6 +3096,7 @@ body.high-contrast .tooltip-popover {
             const labelsMensalDoBanco = @json(json_decode($labelsMensal ?? '[]'));
             const valoresMensalDoBanco = @json(json_decode($valoresMensal ?? '[]'));
             const distribuicaoRacoesDoBanco = @json($distribuicaoRacoes ?? []);
+            const evolucaoConversaoDoBanco = @json($evolucaoConversao ?? ['labels' => [], 'series' => [], 'temDados' => false]);
 
             function cssVarPlano(nome, fallback) {
                 const valor = getComputedStyle(document.body).getPropertyValue(nome).trim();
@@ -2747,6 +3119,7 @@ body.high-contrast .tooltip-popover {
             let chart7 = null;
             let chartMensal = null;
             let chartDistribuicaoRacoes = null;
+            let chartEvolucaoConversao = null;
 
             // Antes os gráficos eram criados uma única vez, com cores fixas
             // (#0f172a, #bfdbfe...) — ilegíveis no modo escuro/alto contraste
@@ -2798,6 +3171,7 @@ body.high-contrast .tooltip-popover {
                 if (chart7) chart7.destroy();
                 if (chartMensal) chartMensal.destroy();
                 if (chartDistribuicaoRacoes) chartDistribuicaoRacoes.destroy();
+                if (chartEvolucaoConversao) chartEvolucaoConversao.destroy();
 
                 // Cada barra recebe uma cor viva e distinta (ordem fixa da
                 // paleta categórica); a última (hoje) usa a cor de destaque
@@ -2990,6 +3364,60 @@ body.high-contrast .tooltip-popover {
                     });
                 }
 
+                // GRÁFICO 6 — EVOLUÇÃO DA CONVERSÃO ALIMENTAR: uma linha por
+                // lote (até 6), plotada por ORDEM de pesagem — ver
+                // PlanoController::montarEvolucaoConversao. Só existe quando
+                // pelo menos um lote já tem 2+ pesagens registradas.
+                const canvasEvolucaoConversao = document.getElementById('chartEvolucaoConversao');
+                if (canvasEvolucaoConversao && evolucaoConversaoDoBanco.temDados) {
+                    const paletaConversao = altoContraste
+                        ? ['#ffff00', 'rgba(255,255,255,0.7)', 'rgba(255,255,255,0.45)', 'rgba(255,255,255,0.3)']
+                        : ['#2a78d6', '#eb6834', '#1baf7a', '#eda100', '#e87ba4', '#4a3aa7'];
+
+                    chartEvolucaoConversao = new Chart(canvasEvolucaoConversao, {
+                        type: 'line',
+                        data: {
+                            labels: evolucaoConversaoDoBanco.labels,
+                            datasets: evolucaoConversaoDoBanco.series.map((serie, i) => ({
+                                label: serie.label,
+                                data: serie.data,
+                                borderColor: paletaConversao[i % paletaConversao.length],
+                                backgroundColor: hexToRgba(paletaConversao[i % paletaConversao.length], 0.12),
+                                tension: 0.3,
+                                pointRadius: 4,
+                                pointBackgroundColor: paletaConversao[i % paletaConversao.length],
+                                spanGaps: false,
+                            })),
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    position: 'bottom',
+                                    labels: { color: corTick, usePointStyle: true, pointStyle: 'circle', padding: 14, font: { size: 11, weight: '600' } }
+                                },
+                                tooltip: {
+                                    backgroundColor: corSurface,
+                                    titleColor: corTextoPrincipal,
+                                    bodyColor: corTick,
+                                    borderColor: corGrid,
+                                    borderWidth: 1,
+                                    callbacks: { label: (item) => `${item.dataset.label}: ${item.formattedValue} kg/kg` }
+                                }
+                            },
+                            scales: {
+                                x: { grid: { display: false }, ticks: { color: corTick } },
+                                y: {
+                                    beginAtZero: true,
+                                    grid: { color: corGrid },
+                                    ticks: { color: corTick, callback: (v) => v + ' kg/kg' }
+                                }
+                            }
+                        }
+                    });
+                }
+
             }
 
             montarGraficosPlano();
@@ -3004,6 +3432,7 @@ body.high-contrast .tooltip-popover {
                     if (chart7) chart7.resize();
                     if (chartMensal) chartMensal.resize();
                     if (chartDistribuicaoRacoes) chartDistribuicaoRacoes.resize();
+                    if (chartEvolucaoConversao) chartEvolucaoConversao.resize();
                 }, 150);
             });
 
@@ -3170,9 +3599,44 @@ body.high-contrast .tooltip-popover {
             if (elementoComFocoAntesDoModalDetalhes) elementoComFocoAntesDoModalDetalhes.focus();
         }
 
+        // ==========================================
+        // MODAL "REGISTRAR PESAGEM" — checkpoint de peso do lote usado pra
+        // calcular a Conversão Alimentar real (ver PlanoController::
+        // registrarPesagem). Aberto a partir do botão de cada card em
+        // partials/conversao-alimentar-cards.blade.php.
+        // ==========================================
+        let elementoComFocoAntesDoModalPesagem = null;
+
+        function abrirModalPesagem(loteId, nomeLote, pesoAtual) {
+            document.getElementById('pesagemSubtitulo').textContent = nomeLote;
+            document.getElementById('pesagemPeso').value = pesoAtual > 0 ? pesoAtual : '';
+            document.getElementById('pesagemData').value = new Date().toISOString().slice(0, 10);
+            document.getElementById('pesagemLoteId').value = loteId;
+            document.getElementById('formPesagem').action = `{{ url('/plano/lotes') }}/${loteId}/pesagem`;
+
+            elementoComFocoAntesDoModalPesagem = document.activeElement;
+            const modal = document.getElementById('modalPesagem');
+            modal.classList.add('active');
+            const primeiroCampo = modal.querySelector('input');
+            if (primeiroCampo) primeiroCampo.focus();
+        }
+
+        function fecharModalPesagem() {
+            document.getElementById('modalPesagem').classList.remove('active');
+            if (elementoComFocoAntesDoModalPesagem) elementoComFocoAntesDoModalPesagem.focus();
+        }
+
+        @if ($errors->has('peso_medio_kg') || $errors->has('data'))
+            // Erro de validação na pesagem (ex.: data anterior à última já
+            // registrada) — reabre o modal com o que o usuário digitou
+            // (old()), em vez de voltar pra tela "limpa" perdendo o contexto.
+            document.getElementById('modalPesagem').classList.add('active');
+        @endif
+
         window.onclick = function(event) {
             if (event.target == modalFiltros) modalFiltros.classList.remove('active');
             if (event.target == document.getElementById('modalDetalhesLote')) fecharModalDetalhesLote();
+            if (event.target == document.getElementById('modalPesagem')) fecharModalPesagem();
         }
 
         // Fecha o modal aberto ao pressionar Esc — sem isso, quem navega só
@@ -3183,6 +3647,8 @@ body.high-contrast .tooltip-popover {
             if (modalFiltros && modalFiltros.classList.contains('active')) modalFiltros.classList.remove('active');
             const modalDetalhes = document.getElementById('modalDetalhesLote');
             if (modalDetalhes && modalDetalhes.classList.contains('active')) fecharModalDetalhesLote();
+            const modalPesagem = document.getElementById('modalPesagem');
+            if (modalPesagem && modalPesagem.classList.contains('active')) fecharModalPesagem();
         });
 
         // Card "Consumo por Lote - Plano Diário": busca no backend os lotes que

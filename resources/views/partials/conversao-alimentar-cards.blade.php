@@ -79,5 +79,39 @@
             </span>
         </div>
     </div>
+
+    <!-- Conversão Alimentar REAL (kg de ração / kg de peso ganho), a partir
+         das pesagens registradas — só existe a partir da 2ª pesagem. -->
+    <div class="ca-hero ca-hero-real {{ $conversao->conversao_real !== null ? '' : 'ca-hero-vazio' }}">
+        <div class="ca-hero-icon">
+            <i class="fa-solid fa-scale-balanced" aria-hidden="true"></i>
+        </div>
+        <div class="ca-hero-info">
+            <span class="ca-hero-label">
+                Conversão Real (FCR)
+                <button type="button" class="tooltip-icon" aria-label="O que é conversão alimentar real?" aria-expanded="false" data-tooltip-text="Kg de ração consumidos dividido pelo kg de peso ganho entre as duas últimas pesagens registradas do lote. Quanto menor, mais eficiente. Só aparece a partir da segunda pesagem.">
+                    <i class="fa-regular fa-circle-question" aria-hidden="true"></i>
+                </button>
+            </span>
+            <span class="ca-hero-value">
+                {{ $conversao->conversao_real !== null ? number_format($conversao->conversao_real, 2, ',', '.') . ' kg/kg' : '—' }}
+            </span>
+            @if ($conversao->tem_pesagem)
+                <span class="ca-hero-sub">
+                    Ganho de {{ number_format($conversao->ganho_peso_kg, 1, ',', '.') }} kg desde {{ $conversao->data_ultima_pesagem->format('d/m/Y') }}
+                </span>
+            @else
+                <span class="ca-hero-sub">Registre a primeira pesagem para começar a medir</span>
+            @endif
+        </div>
+    </div>
+
+    <button
+        type="button"
+        class="ca-btn-pesagem"
+        onclick="abrirModalPesagem({{ $conversao->id }}, @js($conversao->nome_lote), {{ $conversao->peso_medio }})"
+    >
+        <i class="fa-solid fa-weight-scale" aria-hidden="true"></i> Registrar Pesagem
+    </button>
 </div>
 @endforeach

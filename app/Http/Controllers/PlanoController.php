@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Cadastro;
+use App\Models\DesempenhoLote;
 use App\Models\Fazenda;
 use App\Models\Lote;
 use App\Models\LoteConsumoSnapshot;
@@ -299,20 +300,35 @@ class PlanoController extends Controller
      * Card "Conversão Alimentar por Lote": peso médio atual, quantidade de
      * animais, e o consumo diário (kg/dia) cadastrado na ração vinculada ao
      * lote — mais a variação de "Consumo por Animal"/"Consumo por kg Vivo"
-     * nos últimos 7 dias vs os 7 anteriores, a partir do histórico real
-     * gravado em lote_consumo_snapshots (mesma janela usada nos cards do
-     * topo). Sem base de comparação ainda (poucos dias de histórico ou
-     * nada mudou), a variação vem null — nunca um valor inventado.
+     * no período escolhido vs o período anterior de mesma duração, a partir
+     * do histórico real gravado em lote_consumo_snapshots. Sem base de
+     * comparação ainda (poucos dias de histórico ou nada mudou), a variação
+     * vem null — nunca um valor inventado. $diasPeriodo é o mesmo filtro de
+     * 7/30/90 dias usado pelo Comparativo/Evolução da seção.
+     *
+     * Também traz a Conversão Alimentar REAL (kg de ração / kg de peso
+     * ganho) da última pesagem registrada em DesempenhoLote — null quando o
+     * lote ainda não tem pesagem suficiente pra calcular um ganho.
      */
-    private function montarConversaoAlimentarAutomatica($lotesDados, $racoes, $racaoId = null)
+    private function montarConversaoAlimentarAutomatica($lotesDados, $racoes, $racaoId = null, int $diasPeriodo = 7)
     {
         $racoesFiltradas = $racaoId
             ? $racoes->where('id', (int) $racaoId)->values()
             : $racoes;
 
         $loteIds = $lotesDados->pluck('id');
-        $snapshotsAtual = $this->snapshotsFiltrados($loteIds, $racaoId, today()->subDays(6), today())->groupBy('lote_id');
-        $snapshotsAnterior = $this->snapshotsFiltrados($loteIds, $racaoId, today()->subDays(13), today()->subDays(7))->groupBy('lote_id');
+        $snapshotsAtual = $this->snapshotsFiltrados($loteIds, $racaoId, today()->subDays($diasPeriodo - 1), today())->groupBy('lote_id');
+        $snapshotsAnterior = $this->snapshotsFiltrados($loteIds, $racaoId, today()->subDays(($diasPeriodo * 2) - 1), today()->subDays($diasPeriodo))->groupBy('lote_id');
+
+        // Última pesagem registrada por lote (App\Models\DesempenhoLote) —
+        // só entra na conta quando ganho_peso_kg > 0 (ver
+        // PlanoController::registrarPesagem: sem duas pesagens em sequência
+        // positiva não existe FCR real pra mostrar).
+        $ultimaPesagemPorLote = DesempenhoLote::whereIn('lote_id', $loteIds)
+            ->orderByDesc('data_registro')
+            ->get()
+            ->groupBy('lote_id')
+            ->map(fn ($grupo) => $grupo->first());
 
         // Média diária do período, já convertida pra "por animal"/"por kg
         // vivo" — usa a quantidade de animais/peso vivo de CADA dia
@@ -340,7 +356,7 @@ class PlanoController extends Controller
             return round(((float) $snapshotsDoLote->avg('consumo_kg')) / $pesoVivo, 3);
         };
 
-        return $lotesDados->map(function ($lote) use ($racoesFiltradas, $snapshotsAtual, $snapshotsAnterior, $mediaPorAnimalPeriodo, $mediaPorKgVivoPeriodo) {
+        return $lotesDados->map(function ($lote) use ($racoesFiltradas, $snapshotsAtual, $snapshotsAnterior, $mediaPorAnimalPeriodo, $mediaPorKgVivoPeriodo, $ultimaPesagemPorLote) {
             $racao = $this->racaoVinculadaAoLote($lote, $racoesFiltradas);
             $consumoDiario = $racao ? (int) $racao->consumo : 0;
             $quantidadeAnimais = (int) ($lote->quantidade_animais ?? 0);
@@ -353,6 +369,9 @@ class PlanoController extends Controller
             $porKgVivoAnterior = $mediaPorKgVivoPeriodo($snapshotsAnterior->get($lote->id), $lote->id);
 
             [$statusClass, $statusTexto] = $this->statusRacaoParaLote($racao);
+
+            $ultimaPesagem = $ultimaPesagemPorLote->get($lote->id);
+            $temConversaoReal = $ultimaPesagem && $ultimaPesagem->eficiencia_alimentar > 0;
 
             return (object) [
                 'id'                  => $lote->id,
@@ -367,8 +386,70 @@ class PlanoController extends Controller
                 'variacao_por_kg_vivo' => $this->variacaoPercentual($porKgVivoAtual, $porKgVivoAnterior),
                 'status_class'        => $statusClass,
                 'status_texto'        => $statusTexto,
+
+                // Conversão Alimentar REAL (App\Models\DesempenhoLote).
+                'tem_pesagem'          => (bool) $ultimaPesagem,
+                'data_ultima_pesagem'  => $ultimaPesagem?->data_registro,
+                'ganho_peso_kg'        => $ultimaPesagem?->ganho_peso_kg,
+                'conversao_real'       => $temConversaoReal ? $ultimaPesagem->eficiencia_alimentar : null,
             ];
         });
+    }
+
+    /**
+     * "Comparativo entre Lotes": melhor/pior Conversão Alimentar REAL do
+     * momento (menor/maior kg de ração por kg ganho — quanto menor, melhor)
+     * e a média entre os lotes que já têm pesagem suficiente. Sem nenhum
+     * lote com conversão real ainda, volta tudo null — a tela pede pra
+     * registrar a primeira pesagem em vez de inventar um número.
+     */
+    private function montarComparativoConversao(Collection $conversoes): array
+    {
+        $comConversaoReal = $conversoes->filter(fn ($c) => $c->conversao_real !== null);
+
+        if ($comConversaoReal->isEmpty()) {
+            return ['temDados' => false, 'melhor' => null, 'pior' => null, 'media' => null];
+        }
+
+        return [
+            'temDados' => true,
+            'melhor' => $comConversaoReal->sortBy('conversao_real')->first(),
+            'pior' => $comConversaoReal->sortByDesc('conversao_real')->first(),
+            'media' => round($comConversaoReal->avg('conversao_real'), 2),
+        ];
+    }
+
+    /**
+     * "Evolução da Conversão Alimentar": uma linha por lote (até 6, os com
+     * mais pesagens registradas — mesmo limite/paleta do radar de
+     * Relatórios), plotada por ORDEM de pesagem (1ª, 2ª, 3ª...) em vez de
+     * data — lotes pesados em dias diferentes não têm um eixo de tempo em
+     * comum, então comparar "a pesagem mais recente de cada um" é o que
+     * realmente é comparável entre lotes.
+     */
+    private function montarEvolucaoConversao(Collection $lotesDados): array
+    {
+        $historico = DesempenhoLote::whereIn('lote_id', $lotesDados->pluck('id'))
+            ->where('eficiencia_alimentar', '>', 0)
+            ->orderBy('data_registro')
+            ->get()
+            ->groupBy('lote_id');
+
+        if ($historico->isEmpty()) {
+            return ['labels' => [], 'series' => [], 'temDados' => false];
+        }
+
+        $nomesPorLoteId = $lotesDados->pluck('nome_lote', 'id');
+        $lotesComHistorico = $historico->sortByDesc(fn ($grupo) => $grupo->count())->take(6);
+        $maxPontos = $lotesComHistorico->max(fn ($grupo) => $grupo->count());
+
+        $labels = collect(range(1, $maxPontos))->map(fn ($n) => "Pesagem {$n}")->all();
+        $series = $lotesComHistorico->map(fn ($grupo, $loteId) => [
+            'label' => $nomesPorLoteId[$loteId] ?? "Lote #{$loteId}",
+            'data' => $grupo->pluck('eficiencia_alimentar')->map(fn ($v) => round((float) $v, 2))->values()->all(),
+        ])->values()->all();
+
+        return ['labels' => $labels, 'series' => $series, 'temDados' => true];
     }
 
     /**
@@ -543,6 +624,7 @@ class PlanoController extends Controller
 
         return [
             'lotesDashboard'  => $lotesDashboard,
+            'ultimos7Dias'    => $ultimos7Dias,
             'labels7Dias'     => json_encode($labels7Dias),
             'valores7Dias'    => json_encode($valores7Dias),
             'totalSemana'     => $totalSemana,
@@ -650,9 +732,19 @@ class PlanoController extends Controller
         });
         $mesSelecionado = $dash['mesReferencia'] ?? now()->format('Y-m');
 
-        $conversoesAlimentares = $this->montarConversaoAlimentarAutomatica($lotes, $racaos, $racaoIdFiltro);
+        // Período da seção de Conversão Alimentar (7/30/90 dias) — só essa
+        // seção usa esse filtro; o resto da tela (Consumo por Lote, Resumo
+        // Mensal) continua com seus próprios períodos fixos.
+        $periodoConversao = in_array((int) $request->query('periodo_conversao'), [7, 30, 90], true)
+            ? (int) $request->query('periodo_conversao')
+            : 7;
+
+        $conversoesAlimentares = $this->montarConversaoAlimentarAutomatica($lotes, $racaos, $racaoIdFiltro, $periodoConversao);
         $conversoesAlimentaresTotal = $conversoesAlimentares->count();
         $conversoesAlimentaresExibidas = $conversoesAlimentares->take(self::CONVERSOES_INICIAL)->values();
+        $comparativoConversao = $this->montarComparativoConversao($conversoesAlimentares);
+        $evolucaoConversao = $this->montarEvolucaoConversao($lotes);
+        $statCardsTopo = $this->montarStatCardsTopo($dash, $lotes->count());
 
         return view('cadastroplano', array_merge(
             compact(
@@ -665,11 +757,47 @@ class PlanoController extends Controller
                 'filtrosAplicados',
                 'conversoesAlimentaresExibidas',
                 'conversoesAlimentaresTotal',
+                'comparativoConversao',
+                'evolucaoConversao',
+                'periodoConversao',
+                'statCardsTopo',
                 'mesesDisponiveis',
                 'mesSelecionado'
             ),
             $dash
         ));
+    }
+
+    /**
+     * Faixa de indicadores no topo da tela: consumo/custo/eficiência de HOJE
+     * (histórico real de lote_consumo_snapshots, com variação vs ontem) e o
+     * total de lotes em escopo — mesmo componente .stat-card do Relatório
+     * Avançado, pra dar uma visão geral antes de descer pras tabelas/cards.
+     */
+    private function montarStatCardsTopo(array $dash, int $totalLotes): array
+    {
+        $ultimos7Dias = $dash['ultimos7Dias'] ?? collect();
+        $hoje = $ultimos7Dias->last();
+        $ontem = $ultimos7Dias->count() > 1 ? $ultimos7Dias->get($ultimos7Dias->count() - 2) : null;
+
+        return [
+            'consumoHoje' => [
+                'valor' => $hoje->consumo ?? 0,
+                'variacao' => $ontem ? $this->variacaoPercentual((float) ($hoje->consumo ?? 0), (float) $ontem->consumo) : null,
+            ],
+            'custoHoje' => [
+                'valor' => $hoje->custo ?? 0,
+                'variacao' => $ontem ? $this->variacaoPercentual((float) ($hoje->custo ?? 0), (float) $ontem->custo) : null,
+            ],
+            'lotesAtivos' => [
+                'valor' => $totalLotes,
+                'comRacao' => $dash['lotesComRacao'] ?? 0,
+            ],
+            'eficienciaMedia' => [
+                'valor' => $hoje->eficiencia ?? 0,
+                'variacao' => $ontem ? $this->variacaoPercentual((float) ($hoje->eficiencia ?? 0), (float) $ontem->eficiencia) : null,
+            ],
+        ];
     }
 
     // LISTAR
@@ -739,7 +867,10 @@ class PlanoController extends Controller
             ->get();
 
         $racoes = $this->racoesDoUsuario()->get();
-        $conversoes = $this->montarConversaoAlimentarAutomatica($lotes, $racoes, $filtros['racao_id'] ?? null);
+        $periodoConversao = in_array((int) $request->query('periodo_conversao'), [7, 30, 90], true)
+            ? (int) $request->query('periodo_conversao')
+            : 7;
+        $conversoes = $this->montarConversaoAlimentarAutomatica($lotes, $racoes, $filtros['racao_id'] ?? null, $periodoConversao);
 
         $restante = $conversoes->slice(self::CONVERSOES_INICIAL)->values();
 
@@ -792,5 +923,86 @@ class PlanoController extends Controller
         return back()->with('success', $racaoId
             ? 'Ração vinculada ao lote com sucesso!'
             : 'Vínculo de ração removido do lote.');
+    }
+
+    // REGISTRAR PESAGEM: checkpoint de peso médio do lote, usado pra
+    // calcular a Conversão Alimentar REAL (kg de ração / kg de peso ganho)
+    // desde a pesagem anterior. Reaproveita a tabela "desempenho_lotes"
+    // (ver App\Models\DesempenhoLote) — sem pesagem anterior registrada,
+    // esta primeira só grava a baseline (ganho/conversão ficam zerados: sem
+    // duas pesagens não existe "ganho" real pra medir, e a tela nunca
+    // inventa um número pra isso).
+    public function registrarPesagem(Request $request, $loteId)
+    {
+        if ($redirect = $this->exigirLogin()) {
+            return $redirect;
+        }
+
+        $lote = $this->lotesDoUsuario()->findOrFail($loteId);
+
+        $validado = $request->validate([
+            'peso_medio_kg' => ['required', 'numeric', 'min:0.01', 'max:99999'],
+            'data' => ['required', 'date', 'before_or_equal:today'],
+        ]);
+
+        $dataRegistro = Carbon::parse($validado['data'])->startOfDay();
+
+        $ultimaPesagem = DesempenhoLote::where('lote_id', $lote->id)
+            ->orderByDesc('data_registro')
+            ->first();
+
+        // A conversão é calculada como um delta entre duas pesagens em
+        // ordem — uma data anterior à última já registrada corromperia essa
+        // sequência, então o formulário não aceita "voltar no tempo".
+        if ($ultimaPesagem && $dataRegistro->lte($ultimaPesagem->data_registro)) {
+            return back()
+                ->withErrors(['data' => 'A data precisa ser posterior à última pesagem registrada (' . $ultimaPesagem->data_registro->format('d/m/Y') . ').'])
+                ->withInput();
+        }
+
+        $pesoNovo = (float) $validado['peso_medio_kg'];
+        $quantidadeAnimais = (int) ($lote->quantidade_animais ?? 0);
+
+        $ganhoPesoKg = 0.0;
+        $consumoKg = 0.0;
+        $custoRs = 0.0;
+        $eficienciaAlimentar = 0.0;
+
+        if ($ultimaPesagem) {
+            $pesoAnterior = (float) ($lote->peso_medio ?? 0);
+
+            if ($pesoAnterior > 0 && $quantidadeAnimais > 0) {
+                $ganhoPesoKg = round(($pesoNovo - $pesoAnterior) * $quantidadeAnimais, 2);
+            }
+
+            $consumoKg = (float) LoteConsumoSnapshot::where('lote_id', $lote->id)
+                ->whereBetween('data', [$ultimaPesagem->data_registro->toDateString(), $dataRegistro->toDateString()])
+                ->sum('consumo_kg');
+            $custoRs = round($consumoKg * self::PRECO_MEDIO_KG, 2);
+
+            // FCR (kg ração / kg ganho) só faz sentido com ganho positivo —
+            // perda de peso ou estagnação ficam visíveis pelo próprio
+            // ganho_peso_kg (podendo ser zero/negativo), sem uma "conversão"
+            // fabricada em cima disso.
+            if ($ganhoPesoKg > 0) {
+                $eficienciaAlimentar = round($consumoKg / $ganhoPesoKg, 2);
+            }
+        }
+
+        DesempenhoLote::updateOrCreate(
+            ['lote_id' => $lote->id, 'data_registro' => $dataRegistro->toDateString()],
+            [
+                'consumo_kg' => $consumoKg,
+                'custo_rs' => $custoRs,
+                'ganho_peso_kg' => $ganhoPesoKg,
+                'eficiencia_alimentar' => $eficienciaAlimentar,
+            ]
+        );
+
+        $lote->update(['peso_medio' => $pesoNovo]);
+
+        return back()->with('success', $ultimaPesagem
+            ? 'Pesagem registrada! Conversão alimentar do período atualizada.'
+            : 'Primeira pesagem registrada — a conversão alimentar aparece a partir da próxima.');
     }
 }
