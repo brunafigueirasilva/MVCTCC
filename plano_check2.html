@@ -1,0 +1,3333 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AgriFarm | Plano Alimentar</title>
+
+    <!-- Fontes e Ícones -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+    <!-- Chart.js para renderização idêntica dos gráficos -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        /* ==========================================================================
+           RESET & VARIÁVEIS DE ESTILO PREMIUM (FOTO DE ALTA FIDELIDADE)
+           ========================================================================== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            /* Mesma fonte do Dashboard e das demais páginas — esta era a
+               única tela do sistema usando "Inter" (com import próprio do
+               Google Fonts), o que fazia a sidebar e todo o resto do
+               conteúdo parecerem "de outro sistema" ao lado das outras
+               telas. */
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+        }
+
+        /* Link "pular para o conteúdo": invisível até receber foco por
+           teclado (Tab), pra quem navega sem mouse não precisar passar por
+           toda a sidebar de novo em cada página. */
+        .skip-link {
+            position: absolute;
+            top: -48px;
+            left: 12px;
+            background: #123f22;
+            color: #ffffff;
+            padding: 10px 18px;
+            border-radius: 0 0 8px 8px;
+            font-weight: 600;
+            font-size: 0.875rem;
+            text-decoration: none;
+            z-index: 1100;
+            transition: top 0.2s ease;
+        }
+
+        .skip-link:focus {
+            top: 0;
+            outline: 3px solid #4ade80;
+            outline-offset: 2px;
+        }
+
+        /* Some visualmente mas continua legível por leitor de tela — usado
+           em legendas/rótulos que só existem pra dar contexto a quem não
+           enxerga a tela (ex.: legenda de tabela, título de seção). */
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+
+        :root {
+            --bg-global: #f8fafc;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --brand-green-dark: #163a24;
+            --brand-green-gradient: #123f22;
+            --brand-green-light: #4ade80;
+            --chart-blue-light: #bfdbfe;
+            --chart-blue-dark: #1d4ed8;
+            --chart-red: #ef4444;
+            --chart-green: #15803d;
+            --success-bg: #dcfce7;
+            --success-text: #15803d;
+            --warning-bg: #fef3c7;
+            --warning-text: #b45309;
+            --danger-bg: #fee2e2;
+            --danger-text: #b91c1c;
+            --border-color: #e2e8f0;
+            --card-bg: #ffffff;
+            --sidebar-width: 260px;
+
+            /* Mesmas variáveis de navbar/sidebar do Dashboard, para os dois
+               ficarem visualmente idênticos. */
+            --navbar-bg: #123f22;
+            --sidebar-bg: #123f22;
+            --surface-border: rgba(255, 255, 255, 0.15);
+            --menu-text: #b2cbb9;
+            --menu-text-hover: #ffffff;
+            --menu-hover-bg: rgba(255, 255, 255, 0.05);
+            --menu-active-bg: rgba(255, 255, 255, 0.08);
+            --menu-active-text: #4ade80;
+            --menu-active-accent: #4ade80;
+        }
+
+        body {
+            background: var(--bg-global);
+            color: var(--text-main);
+            overflow-x: hidden;
+        }
+
+        .sidebar, .navbar, .main {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Quando o painel de acessibilidade está aberto, desfoca navbar,
+           sidebar e conteúdo principal (mesmo comportamento do Dashboard). */
+        body.acc-modal-open .sidebar,
+        body.acc-modal-open .navbar,
+        body.acc-modal-open .main {
+            filter: blur(6px);
+            pointer-events: none;
+        }
+
+        /* Fundo escurecido do menu mobile (fecha a sidebar ao clicar fora),
+           igual ao Dashboard. */
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.45);
+            z-index: 997;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        @media (max-width: 992px) {
+            .sidebar-overlay.active {
+                display: block;
+                opacity: 1;
+            }
+        }
+
+        .ca-section-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-muted, #64748b);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin: 4px 0 10px;
+}
+
+.ca-container-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 12px 16px;
+    margin-bottom: 10px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.ca-header {
+    margin-bottom: 10px;
+}
+
+.ca-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: #334155;
+    margin: 0;
+}
+
+.ca-grid {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.ca-item {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    flex: 1;
+    min-width: 140px;
+}
+
+.ca-icon-wrapper {
+    width: 32px;
+    height: 32px;
+    border-radius: 7px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
+}
+
+/* Paleta de Cores dos Ícones baseada na imagem */
+.bg-green-light { background-color: #e8f5e9; }
+.text-green { color: #2e7d32; }
+.text-green-bold { color: #1b5e20; font-weight: 700; }
+.text-green-dark { color: #0a5c20; }
+.bg-transparent { background-color: transparent; }
+
+.bg-green-circle {
+    background-color: #e8f5e9;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+}
+.text-green-circle-icon { color: #2e7d32; }
+
+.ca-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.ca-label-flex {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.ca-label {
+    font-size: 10.5px;
+    color: #64748b;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.ca-value {
+    font-size: 14px;
+    font-weight: 700;
+    color: #1e293b;
+    margin-top: 1px;
+}
+
+.ca-divider {
+    width: 1px;
+    height: 28px;
+    background-color: #e2e8f0;
+}
+
+.tooltip-icon {
+    /* Agora é um <button> de verdade (focável por teclado, com nome
+       acessível via aria-label) em vez de um <i> clicável — este reset
+       devolve a aparência de ícone simples que tinha antes. */
+    background: none;
+    border: none;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    color: #94a3b8;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.tooltip-icon:hover {
+    color: #475569;
+}
+
+.tooltip-icon:focus-visible {
+    outline: 2px solid #16a34a;
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+
+/* Responsividade para telas menores */
+@media (max-width: 1024px) {
+    .ca-divider { display: none; }
+    .ca-grid { justify-content: flex-start; }
+}
+
+        /* ==========================================================================
+           NAVBAR SUPERIOR (FIXA)
+           ========================================================================== */
+        .navbar {
+            height: 70px;
+            background: var(--navbar-bg);
+            border-bottom: 1px solid var(--surface-border);
+            box-shadow: 0 2px 12px rgba(15, 23, 42, 0.04);
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 32px;
+            z-index: 999;
+        }
+
+        .navbar-left {
+            display: flex;
+            align-items: center;
+            gap: 22px;
+            min-width: 0;
+        }
+
+        .toggle-menu-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid var(--surface-border);
+            color: var(--brand-green-light);
+            font-size: 1.063rem;
+            padding: 9px 13px;
+            border-radius: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .toggle-menu-btn:hover {
+            background: rgba(255, 255, 255, 0.18);
+            border-color: rgba(255, 255, 255, 0.25);
+            color: #ffffff;
+            transform: translateY(-1px);
+        }
+
+        /* Logo diretamente sobre o fundo escuro da navbar, sem caixa/quadrado
+           atrás — igual ao Dashboard. */
+        .navbar-logo {
+            display: flex;
+            align-items: center;
+            min-width: 0;
+        }
+
+        .navbar-logo img {
+            height: 44px;
+            width: auto;
+            max-width: 220px;
+            object-fit: contain;
+            display: block;
+            image-rendering: -webkit-optimize-contrast;
+        }
+
+        .navbar-right {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            padding: 6px 10px;
+            margin: -6px -10px;
+            border-radius: 12px;
+            cursor: pointer;
+        }
+
+        .user-profile:hover {
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--brand-green-light);
+            font-size: 1rem;
+            border: 1px solid var(--surface-border);
+            flex-shrink: 0;
+        }
+
+        .user-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .user-name {
+            color: #ffffff;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+
+        .user-role {
+            color: #a7f3d0;
+            font-size: 0.6875rem;
+            font-weight: 500;
+        }
+
+        .navbar-divider {
+            width: 1px;
+            height: 28px;
+            background: var(--surface-border);
+        }
+
+        .navbar-logout {
+            text-decoration: none;
+            color: #fca5a5;
+            font-weight: 600;
+            font-size: 0.875rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 16px;
+            border-radius: 10px;
+            background: rgba(239, 68, 68, 0.08);
+            border: 1px solid rgba(239, 68, 68, 0.12);
+        }
+
+        .navbar-logout:hover {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ffffff;
+        }
+
+        /* Botão de acessibilidade inserido dentro da navbar (ver partials/acessibilidade). */
+        .navbar-right .accessibility-trigger {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--brand-green-light);
+            border: 1px solid var(--surface-border);
+        }
+        .navbar-right .accessibility-trigger:hover {
+            background: rgba(255, 255, 255, 0.2);
+            color: #ffffff;
+        }
+
+        /* ==========================================================================
+           SIDEBAR LATERAL
+           ========================================================================== */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: var(--sidebar-bg);
+            border-right: 1px solid var(--surface-border);
+            box-shadow: 2px 0 12px rgba(15, 23, 42, 0.03);
+            color: var(--menu-text);
+            position: fixed;
+            top: 70px;
+            left: 0;
+            bottom: 0;
+            padding: 0 16px 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            z-index: 998;
+        }
+
+        .sidebar.collapsed {
+            left: calc(-1 * var(--sidebar-width));
+        }
+
+        .menu {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            min-height: 100%;
+            padding-top: 20px;
+        }
+
+        .menu a {
+            text-decoration: none;
+            color: var(--menu-text);
+            padding: 12px 14px;
+            /* Cantos arredondados só do lado direito, com a barra de
+               destaque (border-left) saindo como uma linha limpa e
+               contínua — igual ao Dashboard. */
+            border-radius: 0 10px 10px 0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            border-left: 4px solid transparent;
+            position: relative;
+            transition: background-color 0.18s ease, color 0.18s ease, border-left-color 0.18s ease;
+        }
+
+        .menu a:hover {
+            background: var(--menu-hover-bg);
+            color: var(--menu-text-hover);
+        }
+
+        .menu a.active {
+            background: var(--menu-active-bg);
+            color: var(--menu-active-text);
+            font-weight: 700;
+            border-left-color: var(--menu-active-accent);
+            box-shadow: inset 0 0 0 1px rgba(74, 222, 128, 0.12);
+        }
+
+        .menu i {
+            width: 20px;
+            font-size: 1rem;
+            text-align: center;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .footer-right {
+            margin-top: auto;
+            padding-top: 20px;
+            border-top: 1px solid var(--surface-border);
+            text-align: center;
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.35);
+            letter-spacing: 0.5px;
+        }
+
+        /* ==========================================================================
+           ÁREA PRINCIPAL & GRID DE DASHBOARD HIGH FIDELITY
+           ========================================================================== */
+        .main {
+            margin-left: var(--sidebar-width);
+            width: calc(100% - var(--sidebar-width));
+            padding: 40px;
+            padding-top: 100px;
+        }
+
+        .main.expanded {
+            margin-left: 0;
+            width: 100%;
+        }
+
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            gap: 20px;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            color: #0f172a;
+            margin-bottom: 6px;
+            font-weight: 700;
+        }
+
+        .header p {
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        .btn-add {
+            background: #0f602e;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(15, 96, 46, 0.2);
+        }
+
+        .btn-add:hover {
+            background: #14753a;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(15, 96, 46, 0.3);
+        }
+
+        .alerta-flash {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 14px 18px;
+            border-radius: 12px;
+            margin-bottom: 18px;
+            font-size: 0.875rem;
+        }
+
+        .alerta-flash i { margin-top: 2px; flex-shrink: 0; }
+        .alerta-flash ul { margin: 6px 0 0 18px; }
+        .alerta-flash strong { display: block; }
+
+        .alerta-erro {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #991b1b;
+        }
+
+        .alerta-sucesso {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            color: #15803d;
+        }
+
+        /* Antes só a navbar/sidebar/menu escureciam no tema escuro (e só 2
+           classes de alerta no alto contraste) — o resto da página (cards,
+           tabelas, badges, modais, formulário) ficava sempre no visual
+           claro, mesmo com os dois modos ativados. Agora cobre as mesmas
+           variáveis e componentes do padrão usado no cadastro de
+           Cocho/Lote/Fazenda. */
+        body.dark-theme {
+            --bg-global: #0a1810;
+            --text-main: #f1f9f4;
+            --text-muted: #9db8a8;
+            --border-color: #2a4d38;
+            --card-bg: #12251a;
+
+            --navbar-bg: #0c1b12;
+            --sidebar-bg: #0c1b12;
+            --surface-border: rgba(74, 222, 128, 0.14);
+            --menu-text: #9db8a8;
+            --menu-text-hover: #4ade80;
+            --menu-hover-bg: rgba(74, 222, 128, 0.08);
+            --menu-active-bg: rgba(74, 222, 128, 0.12);
+            --menu-active-text: #4ade80;
+            --menu-active-accent: #4ade80;
+        }
+
+        body.dark-theme .alerta-erro { background: rgba(239, 68, 68, 0.12); border-color: rgba(239, 68, 68, 0.3); color: #fca5a5; }
+        body.dark-theme .alerta-sucesso { background: rgba(74, 222, 128, 0.12); border-color: rgba(74, 222, 128, 0.3); color: #4ade80; }
+
+        /* Textos com cor fixa (não usavam var(--text-main)) — sem isso,
+           ficavam escuros demais para ler sobre o fundo escuro. */
+        body.dark-theme .header h1,
+        body.dark-theme .card-title,
+        body.dark-theme .ca-title,
+        body.dark-theme .lote-title,
+        body.dark-theme .bold-total-cell,
+        body.dark-theme .progress-percent,
+        body.dark-theme .metric-value,
+        body.dark-theme .modal-top h2,
+        body.dark-theme .smart-headline,
+        body.dark-theme label {
+            color: #f1f9f4;
+        }
+
+        body.dark-theme .photo-table td,
+        body.dark-theme .time-weight-cell .weight,
+        body.dark-theme .ca-value {
+            color: #d9ede1;
+        }
+
+        body.dark-theme .ca-label { color: #9db8a8; }
+        body.dark-theme .ca-divider { background-color: #2a4d38; }
+
+        body.dark-theme .photo-table th { background: #16281c; }
+        body.dark-theme .photo-table td { border-bottom-color: #1e3a2a; }
+
+        body.dark-theme .ca-container-card,
+        body.dark-theme .smart-analysis-container,
+        body.dark-theme .modal-card {
+            background: #12251a;
+            border-color: #2a4d38;
+        }
+
+        body.dark-theme .close {
+            background: #1e3a2a;
+            color: #d9ede1;
+        }
+        body.dark-theme .close:hover {
+            background: #2a4d38;
+            color: #f1f9f4;
+        }
+
+        body.dark-theme .input-box input,
+        body.dark-theme .input-box select {
+            background: #0f1712;
+            color: #ededec;
+            border-color: #374151;
+        }
+        body.dark-theme .input-box input:focus,
+        body.dark-theme .input-box select:focus {
+            background: #16281c;
+            border-color: #4ade80;
+        }
+
+        body.dark-theme .select-filter,
+        body.dark-theme .btn-view-more {
+            background: #16281c;
+            border-color: #2a4d38;
+            color: #d9ede1;
+        }
+        body.dark-theme .btn-view-more:hover {
+            background: #1e3a2a;
+            border-color: #374151;
+        }
+
+        /* ALTO CONTRASTE — cobertura geral (mesmo padrão do Cocho/Lote):
+           regra "coringa" garante texto legível em qualquer elemento que
+           esta página não estilizou individualmente, mais overrides
+           específicos pros componentes de cor/fundo que o coringa sozinho
+           não resolve. */
+        body.high-contrast h1, body.high-contrast h2, body.high-contrast h3, body.high-contrast h4,
+        body.high-contrast p, body.high-contrast span, body.high-contrast i, body.high-contrast label,
+        body.high-contrast div, body.high-contrast strong {
+            color: #ffff00 !important;
+        }
+
+        body.high-contrast .alerta-erro,
+        body.high-contrast .alerta-sucesso,
+        body.high-contrast .dashboard-card,
+        body.high-contrast .ca-container-card,
+        body.high-contrast .smart-analysis-container,
+        body.high-contrast .modal-card {
+            background: #000000 !important;
+            border: 2px solid #ffff00 !important;
+            color: #ffff00 !important;
+        }
+
+        body.high-contrast .ca-icon-wrapper,
+        body.high-contrast .bg-green-circle {
+            background: #000000 !important;
+            border: 2px solid #ffff00 !important;
+        }
+
+        body.high-contrast .status-badge,
+        body.high-contrast .select-filter,
+        body.high-contrast .btn-view-more {
+            background: #000000 !important;
+            border: 2px solid #ffff00 !important;
+            color: #ffff00 !important;
+        }
+
+        body.high-contrast .progress-bar-bg { background: #111111 !important; }
+        body.high-contrast .progress-bar-fill { background: #ffff00 !important; }
+
+        body.high-contrast .btn-add,
+        body.high-contrast .submit-btn {
+            background: #000000 !important;
+            color: #ffff00 !important;
+            border: 2px solid #ffff00 !important;
+            box-shadow: none !important;
+        }
+
+        body.high-contrast .close,
+        body.high-contrast .tooltip-icon {
+            background: #000000 !important;
+            color: #ffffff !important;
+            border: 2px solid #ffffff !important;
+        }
+
+        body.high-contrast .input-box input,
+        body.high-contrast .input-box select {
+            background: #000000 !important;
+            color: #ffffff !important;
+            border: 2px solid #ffffff !important;
+        }
+
+        body.high-contrast a:focus-visible,
+        body.high-contrast button:focus-visible {
+            outline: 3px solid #ffff00 !important;
+            outline-offset: 2px !important;
+        }
+
+        /* O Grid unificado combinando a foto e a estrutura original */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1.4fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .dashboard-card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+            padding: 24px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .card-header-flex {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .card-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #1e293b;
+        }
+
+        /* SELECT ESTILIZADO DE FILTRO */
+        .select-filter {
+            padding: 8px 14px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background-color: #fff;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-main);
+            outline: none;
+            cursor: pointer;
+        }
+
+        /* ==========================================================================
+           TABELA INTERNA DE CONSUMO (IDÊNTICA À IMAGEM PROPORCIONADA)
+           ========================================================================== */
+        .photo-table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        .photo-table th {
+            padding: 12px 10px;
+            color: var(--text-muted);
+            font-size: 12px;
+            font-weight: 600;
+            border-bottom: 1px solid var(--border-color);
+            background: #fafafa;
+        }
+
+        .photo-table td {
+            padding: 16px 10px;
+            font-size: 13px;
+            color: #334155;
+            border-bottom: 1px solid #f1f5f9;
+            vertical-align: middle;
+        }
+
+        .photo-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .lote-info-cell {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .lote-title {
+            font-weight: 700;
+            color: #0f172a;
+            font-size: 14px;
+        }
+
+        .lote-subtitle {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .time-weight-cell {
+            display: flex;
+            flex-direction: column;
+            font-size: 13px;
+        }
+
+        .time-weight-cell .time {
+            color: var(--text-muted);
+            font-size: 12px;
+        }
+
+        .time-weight-cell .weight {
+            font-weight: 500;
+            color: #1e293b;
+            margin-top: 1px;
+        }
+
+        .bold-total-cell {
+            font-weight: 700;
+            color: #0f172a;
+            font-size: 14px;
+        }
+
+        .meta-cell {
+            color: var(--text-main);
+            font-size: 13px;
+        }
+
+        /* BARRAS DE PROGRESSO PROPORCIONAIS */
+        .progress-container {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            min-width: 80px;
+        }
+
+        .progress-percent {
+            font-weight: 700;
+            font-size: 13px;
+            color: #0f172a;
+        }
+
+        .progress-bar-bg {
+            width: 100%;
+            height: 6px;
+            background: #e2e8f0;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+        }
+
+        .fill-success { background: #16a34a; }
+        .fill-warning { background: #ea580c; }
+        .fill-danger  { background: #dc2626; }
+
+        /* STATUS BADGES PERFEITAS */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .status-success { background: var(--success-bg); color: var(--success-text); }
+        .status-warning { background: var(--warning-bg); color: var(--warning-text); }
+        .status-danger  { background: var(--danger-bg); color: var(--danger-text); }
+
+        .center-footer-btn {
+            display: flex;
+            justify-content: center;
+            margin-top: 15px;
+        }
+
+        .btn-view-more {
+            background: #fff;
+            border: 1px solid var(--border-color);
+            padding: 8px 20px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-main);
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .btn-view-more:hover {
+            background: #f8fafc;
+            border-color: #cbd5e1;
+        }
+
+        /* ==========================================================================
+           COMPONENTE DE RESUMO MENSAL ESQUERDO
+           ========================================================================== */
+        .monthly-layout {
+            display: grid;
+            grid-template-columns: 1fr 1.8fr;
+            gap: 20px;
+            height: 100%;
+        }
+
+        .monthly-metrics {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            border-right: 1px solid var(--border-color);
+            padding-right: 20px;
+        }
+
+        .metric-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            font-size: 14px;
+        }
+
+        .metric-label {
+            color: var(--text-muted);
+        }
+
+        .metric-value {
+            font-weight: 700;
+            color: #0f172a;
+        }
+
+        .metric-value.highlight-up {
+            color: #16a34a;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .metric-value.highlight-down {
+            color: #dc2626;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        /* ==========================================================================
+           ANÁLISE INTELIGENTE (CARD DA IMAGEM)
+           ========================================================================== */
+        .smart-analysis-container {
+            background: #f4f9f5;
+            border: 1px solid #d1e7dd;
+        }
+
+        .smart-list {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .smart-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+            padding-bottom: 14px;
+            border-bottom: 1px solid rgba(0,0,0,0.03);
+        }
+
+        .smart-item:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+        .smart-icon {
+            font-size: 20px;
+            margin-top: 2px;
+        }
+
+        .smart-icon.success { color: #198754; }
+        .smart-icon.info { color: #0dcaf0; }
+        .smart-icon.warning { color: #ea580c; }
+        .smart-icon.danger { color: #dc2626; }
+
+        .smart-text-block {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .smart-headline {
+            font-size: 14px;
+            font-weight: 700;
+            color: #1e293b;
+        }
+
+        .smart-desc {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .green-action-btn {
+            background: #198754;
+            color: white;
+            border: none;
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            text-align: center;
+            transition: background 0.2s;
+        }
+
+        .green-action-btn:hover {
+            background: #146c43;
+        }
+
+        /* ==========================================================================
+           TABELA PRINCIPAL ORIGINAL (CRUD & GERENCIAMENTO)
+           ========================================================================== */
+        .crud-container {
+            background: white;
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+            overflow: hidden;
+            margin-top: 10px;
+        }
+
+        .table-premium {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .table-premium thead {
+            background: #e8f5e9;
+        }
+
+        .table-premium th {
+            padding: 18px 24px;
+            text-align: left;
+            color: #166534;
+            font-size: 13px;
+            font-weight: 600;
+            border-bottom: 2px solid #bbf7d0;
+        }
+
+        .table-premium td {
+            padding: 18px 24px;
+            border-bottom: 1px solid #f1f5f9;
+            color: #334155;
+            font-size: 14px;
+            vertical-align: middle;
+        }
+
+        .table-premium tbody tr:hover {
+            background: #f8fafc;
+        }
+
+        .crud-badge {
+            display: inline-flex;
+            background: #e8f5e9;
+            color: #166534;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 12px;
+        }
+
+        .table-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-action {
+            border: none;
+            padding: 8px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 13px;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            text-decoration: none;
+        }
+
+        .btn-action.edit { background: #f1f5f9; color: #334155; }
+        .btn-action.edit:hover { background: #e2e8f0; }
+        .btn-action.delete { background: var(--danger-bg); color: var(--danger-text); }
+        .btn-action.delete:hover { background: #fca5a5; }
+
+        /* ==========================================================================
+           MODAIS UNIFICADOS E ACESSIBILIDADE
+           ========================================================================== */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(4px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .modal.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-card {
+            background: white;
+            width: 480px;
+            max-width: 95%;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
+            position: relative;
+            transform: translateY(20px);
+            transition: transform 0.3s ease;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal.active .modal-card {
+            transform: translateY(0);
+        }
+
+        .modal-top {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .modal-top img {
+            width: 70px;
+            margin-bottom: 10px;
+        }
+
+        .modal-top h2 {
+            color: #0f172a;
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .modal-top p {
+            font-size: 14px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .close {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 32px;
+            height: 32px;
+            border: none;
+            border-radius: 8px;
+            background: #f1f5f9;
+            color: #64748b;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .close:hover {
+            background: #e2e8f0;
+            color: #0f172a;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #334155;
+        }
+
+        .input-box {
+            position: relative;
+            margin-bottom: 16px;
+        }
+
+        .input-box i {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #94a3b8;
+            pointer-events: none;
+        }
+
+        .input-box input, 
+        .input-box select {
+            width: 100%;
+            padding: 11px 14px 11px 40px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background: #f8fafc;
+            outline: none;
+            font-size: 14px;
+            transition: 0.2s;
+        }
+
+        .input-box input:focus, 
+        .input-box select:focus {
+            border-color: #16a34a;
+            background: white;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 12px;
+        }
+
+        .form-row .campo {
+            flex: 1;
+        }
+
+        .submit-btn {
+            width: 100%;
+            background: var(--brand-green-dark);
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: background 0.2s;
+            margin-top: 10px;
+        }
+
+        .submit-btn:hover {
+            background: #1d4d2f;
+        }
+
+        /* ==========================================================================
+           RESPONSIVIDADE COMPLETA
+           ========================================================================== */
+        @media(max-width: 1200px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 992px) {
+            .main { margin-left: 0; width: 100%; padding: 24px; padding-top: 90px; }
+            .sidebar { left: -260px; }
+            .sidebar.active-mobile { left: 0; box-shadow: 10px 0 30px rgba(0, 0, 0, 0.18); }
+            .user-info { display: none; }
+        }
+
+        @media (max-width: 768px) {
+            .navbar { padding: 0 20px; }
+            .navbar-logo img { height: 36px; }
+            .main { padding: 18px; padding-top: 86px; }
+            .header h1 { font-size: 1.5rem; }
+
+            .top-bar { flex-direction: column; gap: 20px; align-items: flex-start; }
+            .monthly-layout { grid-template-columns: 1fr; }
+            .monthly-metrics { border-right: none; border-bottom: 1px solid var(--border-color); padding-bottom: 20px; padding-right: 0; }
+            .photo-table, .table-premium { display: block; overflow-x: auto; white-space: nowrap; }
+            .form-row { flex-direction: column; gap: 0; }
+        }
+
+        @media (max-width: 576px) {
+            .navbar { padding: 0 14px; gap: 10px; }
+            .navbar-logo img { height: 30px; }
+            .header p { font-size: 0.844rem; }
+        }
+
+        @media (max-width: 400px) {
+            .navbar-right { gap: 10px; }
+            .navbar-logout span { display: none; }
+        }
+    </style>
+</head>
+
+<body>
+    <a href="#conteudo-principal" class="skip-link">Pular para o conteúdo principal</a>
+
+    <!-- Fundo escurecido do menu mobile (fecha a sidebar ao clicar fora) -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- SIDEBAR LATERAL -->
+    <div class="sidebar" id="sidebar">
+        <div class="menu">
+            <a href="http://localhost/dashboard">
+                <i class="fa-solid fa-chart-line"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="http://localhost/fazenda/listar">
+                <i class="fa-solid fa-location-dot"></i>
+                <span>Fazendas</span>
+            </a>
+            <a href="http://localhost/lotes">
+                <i class="fa-solid fa-layer-group"></i>
+                <span>Lotes</span>
+            </a>
+            <a href="http://localhost/cocho/listar">
+                <i class="fa-solid fa-cube"></i>
+                <span>Cochos</span>
+            </a>
+            <a href="http://localhost/racao/listar">
+                <i class="fa-solid fa-wheat-awn"></i>
+                <span>Rações</span>
+            </a>
+            <a href="http://localhost/estoque/listar">
+                <i class="fa-solid fa-box"></i>
+                <span>Estoque</span>
+            </a>
+            <a href="http://localhost/plano/listar" class="active">
+                <i class="fa-solid fa-clipboard-list"></i>
+                <span>Plano Alimentar</span>
+            </a>
+            <a href="http://localhost/relatorio/listar">
+                <i class="fa-regular fa-file-lines"></i>
+                <span>Relatórios</span>
+            </a>
+            <a href="http://localhost/perfil">
+                <i class="fa-solid fa-user-gear"></i>
+                <span>Meu Perfil</span>
+            </a>
+            <a href="http://localhost/ajuda">
+                <i class="fa-solid fa-circle-question"></i>
+                <span>Central de Ajuda</span>
+            </a>
+            <div class="footer-right">© 2026 AgriFarm</div>
+        </div>
+    </div>
+
+    <!-- NAVBAR SUPERIOR -->
+    <div class="navbar" id="navbar">
+        <div class="navbar-left">
+            <button class="toggle-menu-btn" id="toggleMenuBtn" title="Menu Lateral"><i class="fa-solid fa-bars"></i></button>
+            <div class="navbar-logo">
+                <img src="http://localhost/agrifarm-removebg-preview.png" alt="Logo">
+            </div>
+        </div>
+        <div class="navbar-right">
+            <a href="http://localhost/perfil" class="user-profile" title="Meu perfil">
+                <div class="user-avatar">
+                                            <i class="fa-solid fa-user-gear"></i>
+                                    </div>
+                <div class="user-info">
+                    <span class="user-name">Olá, </span>
+                    <span class="user-role">Administrador</span>
+                </div>
+            </a>
+            <div class="navbar-divider"></div>
+            <a href="http://localhost/logout" class="navbar-logout"><i class="fa-solid fa-right-from-bracket"></i> <span>Sair</span></a>
+        </div>
+    </div>
+
+    <!-- CONTEÚDO PRINCIPAL -->
+    <div class="main" id="conteudo-principal" role="main">
+        <div class="top-bar">
+            <div class="header">
+                <h1>Plano Alimentar</h1>
+                <p>Defina o plano alimentar de cada lote e garanta a meta de ganho de peso projetada.</p>
+            </div>
+            <button class="btn-add" onclick="abrirModal()">
+                <i class="fa-solid fa-plus"></i> Adicionar Novo Plano
+            </button>
+        </div>
+
+        
+        
+        <!-- ==========================================================================
+             SEÇÃO DE DASHBOARD DE ALTA FIDELIDADE (IMAGEM FORNECIDA)
+             ========================================================================== */ -->
+        <div class="dashboard-grid">
+            
+          <!-- Card 1: Consumo por Lote - Hoje -->
+<div class="dashboard-card">
+    <div class="card-header-flex">
+        <span class="card-title">Consumo por Lote - Hoje</span>
+    </div>
+    <table class="photo-table">
+        <caption class="sr-only">Consumo de ração por lote registrado hoje</caption>
+        <thead>
+            <tr>
+                <th scope="col">Lote</th>
+                <th scope="col">Manhã</th>
+                <th scope="col">Tarde</th>
+                <th scope="col">Noite</th>
+                <th scope="col">Total do Dia</th>
+                <th scope="col">Meta</th>
+                <th scope="col">Progresso</th>
+                <th scope="col">Status</th>
+            </tr>
+        </thead>
+        <tbody id="corpoConsumoLotes">
+            <tr>
+    <td>
+        <div class="lote-info-cell">
+            <span class="lote-title">Lote A1</span>
+            <span class="lote-subtitle">Suino • 56 cabeças</span>
+        </div>
+    </td>
+    <td>
+        <div class="time-weight-cell">
+            <span class="time">—</span>
+            <span class="weight">0 kg</span>
+        </div>
+    </td>
+    <td>
+        <div class="time-weight-cell">
+            <span class="time">—</span>
+            <span class="weight">0 kg</span>
+        </div>
+    </td>
+    <td>
+        <div class="time-weight-cell">
+            <span class="time">—</span>
+            <span class="weight">0 kg</span>
+        </div>
+    </td>
+    <td class="bold-total-cell">0 kg</td>
+    <td class="meta-cell">0 kg</td>
+    <td>
+        <div class="progress-container">
+            <span class="progress-percent">0%</span>
+            <div class="progress-bar-bg">
+                <div class="progress-bar-fill fill-warning" style="width: 0%;"></div>
+            </div>
+        </div>
+    </td>
+    <td>
+        <span class="status-badge status-warning">
+            <i class="fa-solid fa-triangle-exclamation"></i> Sem registro hoje
+        </span>
+    </td>
+</tr>
+<tr>
+    <td>
+        <div class="lote-info-cell">
+            <span class="lote-title">Lote A2</span>
+            <span class="lote-subtitle">Suíno • 56 cabeças</span>
+        </div>
+    </td>
+    <td>
+        <div class="time-weight-cell">
+            <span class="time">—</span>
+            <span class="weight">0 kg</span>
+        </div>
+    </td>
+    <td>
+        <div class="time-weight-cell">
+            <span class="time">—</span>
+            <span class="weight">0 kg</span>
+        </div>
+    </td>
+    <td>
+        <div class="time-weight-cell">
+            <span class="time">—</span>
+            <span class="weight">0 kg</span>
+        </div>
+    </td>
+    <td class="bold-total-cell">0 kg</td>
+    <td class="meta-cell">0 kg</td>
+    <td>
+        <div class="progress-container">
+            <span class="progress-percent">0%</span>
+            <div class="progress-bar-bg">
+                <div class="progress-bar-fill fill-warning" style="width: 0%;"></div>
+            </div>
+        </div>
+    </td>
+    <td>
+        <span class="status-badge status-warning">
+            <i class="fa-solid fa-triangle-exclamation"></i> Sem registro hoje
+        </span>
+    </td>
+</tr>
+<tr>
+    <td>
+        <div class="lote-info-cell">
+            <span class="lote-title">Lote A1</span>
+            <span class="lote-subtitle">Equino • 12 cabeças</span>
+        </div>
+    </td>
+    <td>
+        <div class="time-weight-cell">
+            <span class="time">—</span>
+            <span class="weight">0 kg</span>
+        </div>
+    </td>
+    <td>
+        <div class="time-weight-cell">
+            <span class="time">—</span>
+            <span class="weight">0 kg</span>
+        </div>
+    </td>
+    <td>
+        <div class="time-weight-cell">
+            <span class="time">—</span>
+            <span class="weight">0 kg</span>
+        </div>
+    </td>
+    <td class="bold-total-cell">0 kg</td>
+    <td class="meta-cell">0 kg</td>
+    <td>
+        <div class="progress-container">
+            <span class="progress-percent">0%</span>
+            <div class="progress-bar-bg">
+                <div class="progress-bar-fill fill-warning" style="width: 0%;"></div>
+            </div>
+        </div>
+    </td>
+    <td>
+        <span class="status-badge status-warning">
+            <i class="fa-solid fa-triangle-exclamation"></i> Sem registro hoje
+        </span>
+    </td>
+</tr>
+<tr>
+    <td>
+        <div class="lote-info-cell">
+            <span class="lote-title">Lote A2</span>
+            <span class="lote-subtitle">Equino • 16 cabeças</span>
+        </div>
+    </td>
+    <td>
+        <div class="time-weight-cell">
+            <span class="time">—</span>
+            <span class="weight">0 kg</span>
+        </div>
+    </td>
+    <td>
+        <div class="time-weight-cell">
+            <span class="time">—</span>
+            <span class="weight">0 kg</span>
+        </div>
+    </td>
+    <td>
+        <div class="time-weight-cell">
+            <span class="time">—</span>
+            <span class="weight">0 kg</span>
+        </div>
+    </td>
+    <td class="bold-total-cell">0 kg</td>
+    <td class="meta-cell">0 kg</td>
+    <td>
+        <div class="progress-container">
+            <span class="progress-percent">0%</span>
+            <div class="progress-bar-bg">
+                <div class="progress-bar-fill fill-warning" style="width: 0%;"></div>
+            </div>
+        </div>
+    </td>
+    <td>
+        <span class="status-badge status-warning">
+            <i class="fa-solid fa-triangle-exclamation"></i> Sem registro hoje
+        </span>
+    </td>
+</tr>
+<tr>
+    <td>
+        <div class="lote-info-cell">
+            <span class="lote-title">Lote A4</span>
+            <span class="lote-subtitle">Equino • 12 cabeças</span>
+        </div>
+    </td>
+    <td>
+        <div class="time-weight-cell">
+            <span class="time">—</span>
+            <span class="weight">0 kg</span>
+        </div>
+    </td>
+    <td>
+        <div class="time-weight-cell">
+            <span class="time">—</span>
+            <span class="weight">0 kg</span>
+        </div>
+    </td>
+    <td>
+        <div class="time-weight-cell">
+            <span class="time">—</span>
+            <span class="weight">0 kg</span>
+        </div>
+    </td>
+    <td class="bold-total-cell">0 kg</td>
+    <td class="meta-cell">0 kg</td>
+    <td>
+        <div class="progress-container">
+            <span class="progress-percent">0%</span>
+            <div class="progress-bar-bg">
+                <div class="progress-bar-fill fill-warning" style="width: 0%;"></div>
+            </div>
+        </div>
+    </td>
+    <td>
+        <span class="status-badge status-warning">
+            <i class="fa-solid fa-triangle-exclamation"></i> Sem registro hoje
+        </span>
+    </td>
+</tr>
+        </tbody>
+    </table>
+        <div class="center-footer-btn" id="footerConsultarLotes">
+        <button type="button" class="btn-view-more" id="btnConsultarLotes" onclick="consultarLotes()">Consultar Lotes</button>
+    </div>
+    </div>
+
+           <!-- Card 2: Consumo dos Últimos 7 Dias -->
+<div class="dashboard-card">
+    <div class="card-header-flex">
+        <span class="card-title">Consumo dos Últimos 7 Dias</span>
+        <select class="select-filter">
+            <option>Semana Atual</option>
+        </select>
+    </div>
+    <div style="flex-grow: 1; height: 220px; position: relative;">
+        <canvas id="chart7Dias"></canvas>
+    </div>
+    <div class="card-header-flex" style="margin-bottom: 0; margin-top: 15px;">
+        <span style="font-size: 14px; font-weight: 700;">Total da Semana: <span style="color:#0f172a;">0 kg</span></span>
+    </div>
+</div>
+<!-- Card 3: Resumo Mensal -->
+<div class="dashboard-card">
+    <div class="card-header-flex">
+        <span class="card-title">Resumo Mensal - Agosto/2026</span>
+        <select class="select-filter">
+            <option>Agosto/2026</option>
+        </select>
+    </div>
+    <div class="monthly-layout">
+        <div class="monthly-metrics">
+            <div class="metric-row">
+                <span class="metric-label">Total de Ração</span>
+                <span class="metric-value">0 kg</span>
+            </div>
+            <div class="metric-row">
+                <span class="metric-label">Custo Total</span>
+                <span class="metric-value">R$ 0,00</span>
+            </div>
+            <div class="metric-row">
+                <span class="metric-label">Média Diária</span>
+                <span class="metric-value">0 kg</span>
+            </div>
+            <div class="metric-row">
+                <span class="metric-label">Maior Consumo</span>
+                <span class="metric-value highlight-up"><i class="fa-solid fa-arrow-up"></i> Sem registros no mês</span>
+            </div>
+            <div class="metric-row">
+                <span class="metric-label">Menor Consumo</span>
+                <span class="metric-value highlight-down"><i class="fa-solid fa-arrow-down"></i> Sem registros no mês</span>
+            </div>
+        </div>
+        <div style="position: relative; height: 200px; flex-grow: 1;">
+            <canvas id="chartMensal"></canvas>
+        </div>
+    </div>
+</div>
+
+            <!-- Card 4: Análise Inteligente (gerada a partir dos planos de hoje) -->
+            <div class="dashboard-card smart-analysis-container">
+                <div class="card-header-flex">
+                    <span class="card-title">Análise Inteligente - Hoje</span>
+                </div>
+                <div class="smart-list">
+                    <div class="smart-item">
+                                                    <i class="fa-solid fa-circle-info smart-icon info"></i>
+                            <div class="smart-text-block">
+                                <span class="smart-headline">Sem indicador de consumo hoje</span>
+                                <span class="smart-desc">Nenhum plano de hoje informou um percentual de consumo ideal.</span>
+                            </div>
+                                            </div>
+
+                    <div class="smart-item">
+                                                    <i class="fa-solid fa-triangle-exclamation smart-icon warning"></i>
+                            <div class="smart-text-block">
+                                <span class="smart-headline">7 lotes sem registro hoje</span>
+                                <span class="smart-desc">0 de 7 lotes já têm alimentação lançada hoje.</span>
+                            </div>
+                                            </div>
+
+                    <div class="smart-item">
+                        <i class="fa-solid fa-wheat-awn smart-icon info"></i>
+                        <div class="smart-text-block">
+                            <span class="smart-headline">Consumo total de hoje</span>
+                            <span class="smart-desc">0,0 kg &middot; custo estimado de R$ 0,00.</span>
+                        </div>
+                    </div>
+
+                    <div class="smart-item">
+                                                    <i class="fa-solid fa-circle-info smart-icon info"></i>
+                            <div class="smart-text-block">
+                                <span class="smart-headline">Nenhum destaque hoje</span>
+                                <span class="smart-desc">Cadastre um plano alimentar para começar a acompanhar os lotes.</span>
+                            </div>
+                                            </div>
+                </div>
+                <a href="http://localhost/relatorio/listar" class="green-action-btn" style="text-decoration:none; text-align:center; display:block;">Ver Relatório Completo</a>
+            </div>
+
+        </div>
+
+<!-- Card Amplo: Conversão Alimentar -->
+<h2 class="ca-section-title">Conversão Alimentar por Lote</h2>
+<div class="ca-container-card">
+    <div class="ca-header">
+        <h3 class="ca-title">Lote A1</h3>
+    </div>
+    
+    <div class="ca-grid">
+        <!-- Métrica 1: Peso Inicial -->
+        <div class="ca-item">
+            <div class="ca-icon-wrapper bg-green-light">
+                <i class="fa-solid fa-weight-hanging text-green"></i>
+            </div>
+            <div class="ca-info">
+                <span class="ca-label">Peso Inicial</span>
+                <span class="ca-value">420 kg</span>
+            </div>
+        </div>
+
+        <div class="ca-divider"></div>
+
+        <!-- Métrica 2: Peso Atual -->
+        <div class="ca-item">
+            <div class="ca-icon-wrapper bg-green-light">
+                <i class="fa-solid fa-scale-balanced text-green"></i>
+            </div>
+            <div class="ca-info">
+                <span class="ca-label">Peso Atual</span>
+                <span class="ca-value">448 kg</span>
+            </div>
+        </div>
+
+        <div class="ca-divider"></div>
+
+        <!-- Métrica 3: Ganho de Peso -->
+        <div class="ca-item">
+            <div class="ca-icon-wrapper bg-transparent">
+                <i class="fa-solid fa-chart-line text-green" style="font-size: 15px;"></i>
+            </div>
+            <div class="ca-info">
+                <span class="ca-label">Ganho de Peso</span>
+                <span class="ca-value text-green-bold">28 kg</span>
+            </div>
+        </div>
+
+        <div class="ca-divider"></div>
+
+        <!-- Métrica 4: Consumo de Ração -->
+        <div class="ca-item">
+            <div class="ca-icon-wrapper bg-transparent">
+                <i class="fa-solid fa-bucket text-green-dark" style="font-size: 15px;"></i>
+            </div>
+            <div class="ca-info">
+                <span class="ca-label">Consumo de Ração</span>
+                <span class="ca-value">620 kg</span>
+            </div>
+        </div>
+
+        <div class="ca-divider"></div>
+
+        <!-- Métrica 5: Conversão Alimentar -->
+        <div class="ca-item">
+            <div class="ca-icon-wrapper bg-green-circle">
+                <i class="fa-solid fa-arrow-trend-up text-green-circle-icon"></i>
+            </div>
+            <div class="ca-info">
+                <div class="ca-label-flex">
+                    <span class="ca-label">Conversão Alimentar</span>
+                    <button type="button" class="tooltip-icon" aria-label="O que é conversão alimentar?" title="Quantidade de ração consumida para cada kg de peso ganho pelo lote.">
+                        <i class="fa-regular fa-circle-question" aria-hidden="true"></i>
+                    </button>
+                </div>
+                <span class="ca-value">22,1 kg/kg ganho</span>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="ca-container-card">
+    <div class="ca-header">
+        <h3 class="ca-title">Lote A2</h3>
+    </div>
+    
+    <div class="ca-grid">
+        <!-- Métrica 1: Peso Inicial -->
+        <div class="ca-item">
+            <div class="ca-icon-wrapper bg-green-light">
+                <i class="fa-solid fa-weight-hanging text-green"></i>
+            </div>
+            <div class="ca-info">
+                <span class="ca-label">Peso Inicial</span>
+                <span class="ca-value">420 kg</span>
+            </div>
+        </div>
+
+        <div class="ca-divider"></div>
+
+        <!-- Métrica 2: Peso Atual -->
+        <div class="ca-item">
+            <div class="ca-icon-wrapper bg-green-light">
+                <i class="fa-solid fa-scale-balanced text-green"></i>
+            </div>
+            <div class="ca-info">
+                <span class="ca-label">Peso Atual</span>
+                <span class="ca-value">448 kg</span>
+            </div>
+        </div>
+
+        <div class="ca-divider"></div>
+
+        <!-- Métrica 3: Ganho de Peso -->
+        <div class="ca-item">
+            <div class="ca-icon-wrapper bg-transparent">
+                <i class="fa-solid fa-chart-line text-green" style="font-size: 15px;"></i>
+            </div>
+            <div class="ca-info">
+                <span class="ca-label">Ganho de Peso</span>
+                <span class="ca-value text-green-bold">28 kg</span>
+            </div>
+        </div>
+
+        <div class="ca-divider"></div>
+
+        <!-- Métrica 4: Consumo de Ração -->
+        <div class="ca-item">
+            <div class="ca-icon-wrapper bg-transparent">
+                <i class="fa-solid fa-bucket text-green-dark" style="font-size: 15px;"></i>
+            </div>
+            <div class="ca-info">
+                <span class="ca-label">Consumo de Ração</span>
+                <span class="ca-value">620 kg</span>
+            </div>
+        </div>
+
+        <div class="ca-divider"></div>
+
+        <!-- Métrica 5: Conversão Alimentar -->
+        <div class="ca-item">
+            <div class="ca-icon-wrapper bg-green-circle">
+                <i class="fa-solid fa-arrow-trend-up text-green-circle-icon"></i>
+            </div>
+            <div class="ca-info">
+                <div class="ca-label-flex">
+                    <span class="ca-label">Conversão Alimentar</span>
+                    <button type="button" class="tooltip-icon" aria-label="O que é conversão alimentar?" title="Quantidade de ração consumida para cada kg de peso ganho pelo lote.">
+                        <i class="fa-regular fa-circle-question" aria-hidden="true"></i>
+                    </button>
+                </div>
+                <span class="ca-value">22,1 kg/kg ganho</span>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="ca-container-card">
+    <div class="ca-header">
+        <h3 class="ca-title">Lote A1</h3>
+    </div>
+    
+    <div class="ca-grid">
+        <!-- Métrica 1: Peso Inicial -->
+        <div class="ca-item">
+            <div class="ca-icon-wrapper bg-green-light">
+                <i class="fa-solid fa-weight-hanging text-green"></i>
+            </div>
+            <div class="ca-info">
+                <span class="ca-label">Peso Inicial</span>
+                <span class="ca-value">420 kg</span>
+            </div>
+        </div>
+
+        <div class="ca-divider"></div>
+
+        <!-- Métrica 2: Peso Atual -->
+        <div class="ca-item">
+            <div class="ca-icon-wrapper bg-green-light">
+                <i class="fa-solid fa-scale-balanced text-green"></i>
+            </div>
+            <div class="ca-info">
+                <span class="ca-label">Peso Atual</span>
+                <span class="ca-value">448 kg</span>
+            </div>
+        </div>
+
+        <div class="ca-divider"></div>
+
+        <!-- Métrica 3: Ganho de Peso -->
+        <div class="ca-item">
+            <div class="ca-icon-wrapper bg-transparent">
+                <i class="fa-solid fa-chart-line text-green" style="font-size: 15px;"></i>
+            </div>
+            <div class="ca-info">
+                <span class="ca-label">Ganho de Peso</span>
+                <span class="ca-value text-green-bold">28 kg</span>
+            </div>
+        </div>
+
+        <div class="ca-divider"></div>
+
+        <!-- Métrica 4: Consumo de Ração -->
+        <div class="ca-item">
+            <div class="ca-icon-wrapper bg-transparent">
+                <i class="fa-solid fa-bucket text-green-dark" style="font-size: 15px;"></i>
+            </div>
+            <div class="ca-info">
+                <span class="ca-label">Consumo de Ração</span>
+                <span class="ca-value">620 kg</span>
+            </div>
+        </div>
+
+        <div class="ca-divider"></div>
+
+        <!-- Métrica 5: Conversão Alimentar -->
+        <div class="ca-item">
+            <div class="ca-icon-wrapper bg-green-circle">
+                <i class="fa-solid fa-arrow-trend-up text-green-circle-icon"></i>
+            </div>
+            <div class="ca-info">
+                <div class="ca-label-flex">
+                    <span class="ca-label">Conversão Alimentar</span>
+                    <button type="button" class="tooltip-icon" aria-label="O que é conversão alimentar?" title="Quantidade de ração consumida para cada kg de peso ganho pelo lote.">
+                        <i class="fa-regular fa-circle-question" aria-hidden="true"></i>
+                    </button>
+                </div>
+                <span class="ca-value">22,1 kg/kg ganho</span>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="ca-container-card">
+    <div class="ca-header">
+        <h3 class="ca-title">Lote A2</h3>
+    </div>
+    
+    <div class="ca-grid">
+        <!-- Métrica 1: Peso Inicial -->
+        <div class="ca-item">
+            <div class="ca-icon-wrapper bg-green-light">
+                <i class="fa-solid fa-weight-hanging text-green"></i>
+            </div>
+            <div class="ca-info">
+                <span class="ca-label">Peso Inicial</span>
+                <span class="ca-value">420 kg</span>
+            </div>
+        </div>
+
+        <div class="ca-divider"></div>
+
+        <!-- Métrica 2: Peso Atual -->
+        <div class="ca-item">
+            <div class="ca-icon-wrapper bg-green-light">
+                <i class="fa-solid fa-scale-balanced text-green"></i>
+            </div>
+            <div class="ca-info">
+                <span class="ca-label">Peso Atual</span>
+                <span class="ca-value">448 kg</span>
+            </div>
+        </div>
+
+        <div class="ca-divider"></div>
+
+        <!-- Métrica 3: Ganho de Peso -->
+        <div class="ca-item">
+            <div class="ca-icon-wrapper bg-transparent">
+                <i class="fa-solid fa-chart-line text-green" style="font-size: 15px;"></i>
+            </div>
+            <div class="ca-info">
+                <span class="ca-label">Ganho de Peso</span>
+                <span class="ca-value text-green-bold">28 kg</span>
+            </div>
+        </div>
+
+        <div class="ca-divider"></div>
+
+        <!-- Métrica 4: Consumo de Ração -->
+        <div class="ca-item">
+            <div class="ca-icon-wrapper bg-transparent">
+                <i class="fa-solid fa-bucket text-green-dark" style="font-size: 15px;"></i>
+            </div>
+            <div class="ca-info">
+                <span class="ca-label">Consumo de Ração</span>
+                <span class="ca-value">620 kg</span>
+            </div>
+        </div>
+
+        <div class="ca-divider"></div>
+
+        <!-- Métrica 5: Conversão Alimentar -->
+        <div class="ca-item">
+            <div class="ca-icon-wrapper bg-green-circle">
+                <i class="fa-solid fa-arrow-trend-up text-green-circle-icon"></i>
+            </div>
+            <div class="ca-info">
+                <div class="ca-label-flex">
+                    <span class="ca-label">Conversão Alimentar</span>
+                    <button type="button" class="tooltip-icon" aria-label="O que é conversão alimentar?" title="Quantidade de ração consumida para cada kg de peso ganho pelo lote.">
+                        <i class="fa-regular fa-circle-question" aria-hidden="true"></i>
+                    </button>
+                </div>
+                <span class="ca-value">22,1 kg/kg ganho</span>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="ca-container-card">
+    <div class="ca-header">
+        <h3 class="ca-title">Lote A4</h3>
+    </div>
+    
+    <div class="ca-grid">
+        <!-- Métrica 1: Peso Inicial -->
+        <div class="ca-item">
+            <div class="ca-icon-wrapper bg-green-light">
+                <i class="fa-solid fa-weight-hanging text-green"></i>
+            </div>
+            <div class="ca-info">
+                <span class="ca-label">Peso Inicial</span>
+                <span class="ca-value">420 kg</span>
+            </div>
+        </div>
+
+        <div class="ca-divider"></div>
+
+        <!-- Métrica 2: Peso Atual -->
+        <div class="ca-item">
+            <div class="ca-icon-wrapper bg-green-light">
+                <i class="fa-solid fa-scale-balanced text-green"></i>
+            </div>
+            <div class="ca-info">
+                <span class="ca-label">Peso Atual</span>
+                <span class="ca-value">448 kg</span>
+            </div>
+        </div>
+
+        <div class="ca-divider"></div>
+
+        <!-- Métrica 3: Ganho de Peso -->
+        <div class="ca-item">
+            <div class="ca-icon-wrapper bg-transparent">
+                <i class="fa-solid fa-chart-line text-green" style="font-size: 15px;"></i>
+            </div>
+            <div class="ca-info">
+                <span class="ca-label">Ganho de Peso</span>
+                <span class="ca-value text-green-bold">28 kg</span>
+            </div>
+        </div>
+
+        <div class="ca-divider"></div>
+
+        <!-- Métrica 4: Consumo de Ração -->
+        <div class="ca-item">
+            <div class="ca-icon-wrapper bg-transparent">
+                <i class="fa-solid fa-bucket text-green-dark" style="font-size: 15px;"></i>
+            </div>
+            <div class="ca-info">
+                <span class="ca-label">Consumo de Ração</span>
+                <span class="ca-value">620 kg</span>
+            </div>
+        </div>
+
+        <div class="ca-divider"></div>
+
+        <!-- Métrica 5: Conversão Alimentar -->
+        <div class="ca-item">
+            <div class="ca-icon-wrapper bg-green-circle">
+                <i class="fa-solid fa-arrow-trend-up text-green-circle-icon"></i>
+            </div>
+            <div class="ca-info">
+                <div class="ca-label-flex">
+                    <span class="ca-label">Conversão Alimentar</span>
+                    <button type="button" class="tooltip-icon" aria-label="O que é conversão alimentar?" title="Quantidade de ração consumida para cada kg de peso ganho pelo lote.">
+                        <i class="fa-regular fa-circle-question" aria-hidden="true"></i>
+                    </button>
+                </div>
+                <span class="ca-value">22,1 kg/kg ganho</span>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="ca-container-card">
+    <div class="ca-header">
+        <h3 class="ca-title">Lote A3</h3>
+    </div>
+    
+    <div class="ca-grid">
+        <!-- Métrica 1: Peso Inicial -->
+        <div class="ca-item">
+            <div class="ca-icon-wrapper bg-green-light">
+                <i class="fa-solid fa-weight-hanging text-green"></i>
+            </div>
+            <div class="ca-info">
+                <span class="ca-label">Peso Inicial</span>
+                <span class="ca-value">420 kg</span>
+            </div>
+        </div>
+
+        <div class="ca-divider"></div>
+
+        <!-- Métrica 2: Peso Atual -->
+        <div class="ca-item">
+            <div class="ca-icon-wrapper bg-green-light">
+                <i class="fa-solid fa-scale-balanced text-green"></i>
+            </div>
+            <div class="ca-info">
+                <span class="ca-label">Peso Atual</span>
+                <span class="ca-value">448 kg</span>
+            </div>
+        </div>
+
+        <div class="ca-divider"></div>
+
+        <!-- Métrica 3: Ganho de Peso -->
+        <div class="ca-item">
+            <div class="ca-icon-wrapper bg-transparent">
+                <i class="fa-solid fa-chart-line text-green" style="font-size: 15px;"></i>
+            </div>
+            <div class="ca-info">
+                <span class="ca-label">Ganho de Peso</span>
+                <span class="ca-value text-green-bold">28 kg</span>
+            </div>
+        </div>
+
+        <div class="ca-divider"></div>
+
+        <!-- Métrica 4: Consumo de Ração -->
+        <div class="ca-item">
+            <div class="ca-icon-wrapper bg-transparent">
+                <i class="fa-solid fa-bucket text-green-dark" style="font-size: 15px;"></i>
+            </div>
+            <div class="ca-info">
+                <span class="ca-label">Consumo de Ração</span>
+                <span class="ca-value">620 kg</span>
+            </div>
+        </div>
+
+        <div class="ca-divider"></div>
+
+        <!-- Métrica 5: Conversão Alimentar -->
+        <div class="ca-item">
+            <div class="ca-icon-wrapper bg-green-circle">
+                <i class="fa-solid fa-arrow-trend-up text-green-circle-icon"></i>
+            </div>
+            <div class="ca-info">
+                <div class="ca-label-flex">
+                    <span class="ca-label">Conversão Alimentar</span>
+                    <button type="button" class="tooltip-icon" aria-label="O que é conversão alimentar?" title="Quantidade de ração consumida para cada kg de peso ganho pelo lote.">
+                        <i class="fa-regular fa-circle-question" aria-hidden="true"></i>
+                    </button>
+                </div>
+                <span class="ca-value">22,1 kg/kg ganho</span>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="ca-container-card">
+    <div class="ca-header">
+        <h3 class="ca-title">Lote B3</h3>
+    </div>
+    
+    <div class="ca-grid">
+        <!-- Métrica 1: Peso Inicial -->
+        <div class="ca-item">
+            <div class="ca-icon-wrapper bg-green-light">
+                <i class="fa-solid fa-weight-hanging text-green"></i>
+            </div>
+            <div class="ca-info">
+                <span class="ca-label">Peso Inicial</span>
+                <span class="ca-value">420 kg</span>
+            </div>
+        </div>
+
+        <div class="ca-divider"></div>
+
+        <!-- Métrica 2: Peso Atual -->
+        <div class="ca-item">
+            <div class="ca-icon-wrapper bg-green-light">
+                <i class="fa-solid fa-scale-balanced text-green"></i>
+            </div>
+            <div class="ca-info">
+                <span class="ca-label">Peso Atual</span>
+                <span class="ca-value">448 kg</span>
+            </div>
+        </div>
+
+        <div class="ca-divider"></div>
+
+        <!-- Métrica 3: Ganho de Peso -->
+        <div class="ca-item">
+            <div class="ca-icon-wrapper bg-transparent">
+                <i class="fa-solid fa-chart-line text-green" style="font-size: 15px;"></i>
+            </div>
+            <div class="ca-info">
+                <span class="ca-label">Ganho de Peso</span>
+                <span class="ca-value text-green-bold">28 kg</span>
+            </div>
+        </div>
+
+        <div class="ca-divider"></div>
+
+        <!-- Métrica 4: Consumo de Ração -->
+        <div class="ca-item">
+            <div class="ca-icon-wrapper bg-transparent">
+                <i class="fa-solid fa-bucket text-green-dark" style="font-size: 15px;"></i>
+            </div>
+            <div class="ca-info">
+                <span class="ca-label">Consumo de Ração</span>
+                <span class="ca-value">620 kg</span>
+            </div>
+        </div>
+
+        <div class="ca-divider"></div>
+
+        <!-- Métrica 5: Conversão Alimentar -->
+        <div class="ca-item">
+            <div class="ca-icon-wrapper bg-green-circle">
+                <i class="fa-solid fa-arrow-trend-up text-green-circle-icon"></i>
+            </div>
+            <div class="ca-info">
+                <div class="ca-label-flex">
+                    <span class="ca-label">Conversão Alimentar</span>
+                    <button type="button" class="tooltip-icon" aria-label="O que é conversão alimentar?" title="Quantidade de ração consumida para cada kg de peso ganho pelo lote.">
+                        <i class="fa-regular fa-circle-question" aria-hidden="true"></i>
+                    </button>
+                </div>
+                <span class="ca-value">22,1 kg/kg ganho</span>
+            </div>
+        </div>
+    </div>
+</div>
+    </div>
+    <!-- ==========================================================================
+         MODAIS OPERACIONAIS (ADICIONAR & EDITAR)
+         ========================================================================== -->
+    <!-- Modal Inserir -->
+    <div class="modal" id="modal">
+        <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="tituloModalInserir">
+            <button class="close" onclick="fecharModal()" aria-label="Fechar"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
+            <div class="modal-top">
+                <img src="http://localhost/Logo.png" alt="Logo">
+                <h2 id="tituloModalInserir">Novo Plano Alimentar</h2>
+                <p>Preencha os dados abaixo para criar a programação</p>
+            </div>
+
+            <form action="http://localhost/plano/add" method="POST">
+                <input type="hidden" name="_token" value="" autocomplete="off">                <div class="campo">
+                    <label for="lote_id">Selecionar Lote</label>
+                    <div class="input-box">
+                        <i class="fa-solid fa-layer-group" aria-hidden="true"></i>
+                        <select name="lote_id" id="lote_id" required>
+                            <option value="">Escolha o lote</option>
+                                                            <option value="1">Lote A1</option>
+                                                            <option value="2">Lote A2</option>
+                                                            <option value="5">Lote A1</option>
+                                                            <option value="6">Lote A2</option>
+                                                            <option value="7">Lote A4</option>
+                                                            <option value="8">Lote A3</option>
+                                                            <option value="9">Lote B3</option>
+                                                    </select>
+                    </div>
+                </div>
+
+                <div class="campo">
+                    <label for="racao_id">Selecionar o Tipo da Ração</label>
+                    <div class="input-box">
+                        <i class="fa-solid fa-wheat-awn" aria-hidden="true"></i>
+                        <select name="racao_id" id="racao_id" required>
+                            <option value="">Escolha o Tipo da Ração</option>
+                                                    </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="campo">
+                        <label for="quantidade">Quantidade (kg)</label>
+                        <div class="input-box">
+                            <i class="fa-solid fa-weight-hanging" aria-hidden="true"></i>
+                            <input type="number" step="0.01" name="quantidade" id="quantidade" placeholder="10" required>
+                        </div>
+                    </div>
+                    <div class="campo">
+                        <label for="horario">Horário</label>
+                        <div class="input-box">
+                            <i class="fa-solid fa-clock" aria-hidden="true"></i>
+                            <input type="time" name="horario" id="horario" required>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="campo">
+                    <label for="consumo_ideal">Consumo Ideal</label>
+                    <div class="input-box">
+                        <i class="fa-solid fa-chart-line" aria-hidden="true"></i>
+                        <input type="text" name="consumo_ideal" id="consumo_ideal" placeholder="Ex: 96%" required>
+                    </div>
+                </div>
+
+                <button type="submit" class="submit-btn">Salvar Plano Alimentar</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Editar -->
+    <div class="modal" id="modal-m">
+        <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="tituloModalEditar">
+            <button class="close" onclick="fecharModalM()" aria-label="Fechar"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
+            <div class="modal-top">
+                <img src="http://localhost/Logo.png" alt="Logo">
+                <h2 id="tituloModalEditar">Atualizar Plano Alimentar</h2>
+                <p>Modifique as propriedades planejadas do lote selecionado</p>
+            </div>
+
+            <form id="formEditar" method="POST">
+                <input type="hidden" name="_token" value="" autocomplete="off">                <input type="hidden" name="_method" value="PUT">
+                <div class="campo">
+                    <label for="edit_lote_id">Selecionar Lote</label>
+                    <div class="input-box">
+                        <i class="fa-solid fa-layer-group" aria-hidden="true"></i>
+                        <select name="lote_id" id="edit_lote_id" required>
+                                                            <option value="1">Lote A1</option>
+                                                            <option value="2">Lote A2</option>
+                                                            <option value="5">Lote A1</option>
+                                                            <option value="6">Lote A2</option>
+                                                            <option value="7">Lote A4</option>
+                                                            <option value="8">Lote A3</option>
+                                                            <option value="9">Lote B3</option>
+                                                    </select>
+                    </div>
+                </div>
+
+                <div class="campo">
+                    <label for="edit_racao_id">Selecionar o Tipo da Ração</label>
+                    <div class="input-box">
+                        <i class="fa-solid fa-wheat-awn" aria-hidden="true"></i>
+                        <select name="racao_id" id="edit_racao_id" required>
+                                                    </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="campo">
+                        <label for="edit_quantidade">Quantidade (kg)</label>
+                        <div class="input-box">
+                            <i class="fa-solid fa-weight-hanging" aria-hidden="true"></i>
+                            <input type="number" step="0.01" id="edit_quantidade" name="quantidade" required>
+                        </div>
+                    </div>
+                    <div class="campo">
+                        <label for="edit_horario">Horário</label>
+                        <div class="input-box">
+                            <i class="fa-solid fa-clock" aria-hidden="true"></i>
+                            <input type="time" id="edit_horario" name="horario" required>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="campo">
+                    <label for="edit_consumo_ideal">Consumo Ideal</label>
+                    <div class="input-box">
+                        <i class="fa-solid fa-chart-line" aria-hidden="true"></i>
+                        <input type="text" id="edit_consumo_ideal" name="consumo_ideal" required>
+                    </div>
+                </div>
+
+                <button type="submit" class="submit-btn">Atualizar Dados do Plano</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ==========================================================================
+     PAINEL DE ACESSIBILIDADE (COMPONENTE PADRONIZADO E REUTILIZÁVEL)
+     Inclua com @include('partials.acessibilidade') em qualquer página que
+     tenha uma navbar fixa. O componente é autossuficiente (CSS + HTML + JS).
+     ========================================================================== -->
+<style>
+    html {
+        /* Usamos "zoom" em vez de "transform: scale()" de propósito: um
+           transform no <html> cria um novo containing block para todo
+           elemento position:fixed da página (navbar, sidebar, modais),
+           fazendo-os "descolar" do viewport e sumir em páginas com pouco
+           conteúdo. A propriedade zoom escala sem esse efeito colateral. */
+        font-size: var(--font-scale, 100%);
+        zoom: var(--zoom-scale, 1);
+    }
+
+    .accessibility-trigger {
+        /* Posição padrão (fallback): usada apenas em páginas sem .navbar-right,
+           como as telas de autenticação. Em páginas com navbar, o script abaixo
+           move este botão para dentro de .navbar-right, junto ao "Sair", para que
+           ele nunca sobreponha outros elementos do topo. */
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        width: 46px;
+        height: 46px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.1);
+        color: var(--brand-green-light, #4ade80);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        cursor: pointer;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        z-index: 1005;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        flex-shrink: 0;
+        transition: transform 0.3s ease, background-color 0.2s;
+    }
+
+    .accessibility-trigger.acc-trigger-inline {
+        position: static;
+        width: 38px;
+        height: 38px;
+        font-size: 17px;
+        box-shadow: none;
+    }
+
+    .accessibility-trigger:hover {
+        transform: scale(1.1) rotate(45deg);
+        background: rgba(255, 255, 255, 0.2);
+        color: #ffffff;
+    }
+
+    body.high-contrast .accessibility-trigger {
+        /* Antes era um fundo amarelo cheio com ícone preto e borda branca —
+           três cores diferentes no mesmo botão pequeno, fora do padrão
+           preto/amarelo usado no resto do alto contraste. Unificado com o
+           mesmo estilo dos demais controles (fundo preto, ícone e borda
+           amarelos), com o preenchimento amarelo reservado para o hover. */
+        background: #000000;
+        color: #ffff00;
+        border: 2px solid #ffff00;
+    }
+
+    body.high-contrast .accessibility-trigger:hover {
+        background: #ffff00;
+        color: #000000;
+    }
+
+    /* A página que inclui este painel (ex.: dashboard) costuma ter uma
+       regra genérica tipo "body.high-contrast i { color: #ffff00 !important }"
+       para deixar todo ícone amarelo. Ela é mais específica/importante que a
+       cor herdada do botão no hover, então o ícone ficava amarelo sobre um
+       fundo que também vira amarelo no hover — sumindo. Estas regras miram
+       o <i> diretamente, com especificidade maior, para garantir que o
+       ícone sempre acompanhe a cor de texto correta do próprio botão. */
+    body.high-contrast .accessibility-trigger:hover i {
+        color: #000000 !important;
+    }
+
+    .accessibility-modal {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%) scale(0.9);
+        width: 90%;
+        max-width: 550px;
+        background: var(--panel-bg, #ffffff);
+        color: var(--panel-text, #1f2937);
+        border-radius: 24px;
+        box-shadow: 0 25px 60px rgba(0, 0, 0, 0.35);
+        z-index: 1002;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        opacity: 0;
+        pointer-events: none;
+        transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease;
+    }
+
+    .accessibility-modal.open {
+        opacity: 1;
+        pointer-events: auto;
+        transform: translate(-50%, -50%) scale(1);
+    }
+
+    .accessibility-modal .modal-header {
+        padding: 20px 24px;
+        border-bottom: 1px solid var(--border-color, #e2e8f0);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .accessibility-modal .modal-header h3 {
+        font-size: 1.2rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .accessibility-modal .modal-close {
+        background: transparent;
+        border: none;
+        font-size: 30px;
+        color: var(--text-muted, #64748b);
+        cursor: pointer;
+        line-height: 1;
+    }
+
+    .accessibility-modal .modal-close:hover {
+        color: var(--text-main, #1e293b);
+    }
+
+    .accessibility-modal .modal-body {
+        padding: 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        max-height: 80vh;
+        overflow-y: auto;
+    }
+
+    .accessibility-modal .modal-section {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .accessibility-modal .modal-section h4 {
+        font-size: 0.88rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--text-muted, #64748b);
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 4px;
+    }
+
+    .accessibility-modal .control-grid {
+        display: grid;
+        /* Fluido em vez de "1fr 1fr" fixo: o próprio "Zoom do Sistema" deste
+           painel amplia o painel junto com o resto da página (já que o
+           efeito é global, via <html>{zoom}) — com 2 colunas fixas, os
+           cartões de controle apertavam/cortavam texto e botões quando o
+           zoom subia, pois a media query de largura da tela não percebia
+           esse espaço extra necessário. Com auto-fit cada cartão nunca fica
+           menor que 170px e a grade se ajusta sozinha em qualquer zoom. */
+        grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+        gap: 12px;
+    }
+
+    .accessibility-modal .control-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: var(--panel-item-bg, #f9fafb);
+        padding: 12px 16px;
+        border-radius: 12px;
+        border: 1px solid var(--border-color, #e2e8f0);
+    }
+
+    .accessibility-modal .control-item-vertical {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        background: var(--panel-item-bg, #f9fafb);
+        padding: 14px;
+        border-radius: 12px;
+        border: 1px solid var(--border-color, #e2e8f0);
+    }
+
+    .accessibility-modal .control-label {
+        font-weight: 600;
+        font-size: 0.9rem;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .accessibility-modal .switch-btn {
+        position: relative;
+        display: inline-block;
+        width: 46px;
+        height: 24px;
+    }
+
+    .accessibility-modal .switch-btn input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+
+    .accessibility-modal .slider-switch {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #ccc;
+        transition: .3s;
+        border-radius: 24px;
+    }
+
+    .accessibility-modal .slider-switch:before {
+        position: absolute;
+        content: "";
+        height: 16px;
+        width: 16px;
+        left: 4px;
+        bottom: 4px;
+        background-color: white;
+        transition: .3s;
+        border-radius: 50%;
+    }
+
+    .accessibility-modal input:checked + .slider-switch {
+        background-color: #16a34a;
+    }
+
+    .accessibility-modal input:checked + .slider-switch:before {
+        transform: translateX(22px);
+    }
+
+    .accessibility-modal .btn-group-row {
+        display: flex;
+        gap: 6px;
+    }
+
+    .accessibility-modal .acc-btn {
+        flex: 1;
+        padding: 8px;
+        border: 1px solid var(--border-color, #e2e8f0);
+        background: var(--panel-btn-bg, #e5e7eb);
+        color: var(--panel-btn-text, #374151);
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 0.85rem;
+        transition: 0.2s;
+    }
+
+    .accessibility-modal .acc-btn:hover {
+        background: var(--panel-btn-hover, #d1d5db);
+    }
+
+    .accessibility-modal .acc-btn.btn-secondary {
+        background: transparent;
+    }
+
+    .accessibility-modal .voice-box {
+        background: var(--panel-item-bg, #f9fafb);
+        border: 1px solid var(--border-color, #e2e8f0);
+        padding: 16px;
+        border-radius: 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .accessibility-modal .voice-controls {
+        display: flex;
+        gap: 10px;
+    }
+
+    .accessibility-modal .acc-btn-voice {
+        flex: 1;
+        padding: 12px;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        color: white;
+    }
+
+    .accessibility-modal .voice-start { background: #14532d; }
+    .accessibility-modal .voice-start:hover { background: #166534; }
+    .accessibility-modal .voice-stop { background: #b91c1c; }
+    .accessibility-modal .voice-stop:hover { background: #dc2626; }
+
+    .accessibility-modal .voice-tip {
+        font-size: 0.78rem;
+        color: var(--text-muted, #64748b);
+        line-height: 1.4;
+    }
+
+    .modal-overlay {
+        position: fixed;
+        /* "top/left/right/bottom: 0" em vez de "width: 100vw; height: 100vh":
+           quando a página está com o "Zoom do Sistema" deste mesmo painel
+           aplicado (via zoom no <html>), unidades de viewport (vw/vh)
+           podem ficar dessincronizadas do tamanho real já escalado do
+           elemento fixo, deixando uma faixa da tela sem o fundo escurecido.
+           Fixando pelas 4 bordas o overlay sempre cobre 100% do seu próprio
+           containing block, em qualquer zoom. */
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(15, 23, 42, 0.5);
+        backdrop-filter: blur(4px);
+        z-index: 1001;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s ease;
+    }
+
+    .modal-overlay.active {
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    body.dark-theme .accessibility-modal .select-fazenda,
+    body.dark-theme .accessibility-modal { color: #f8fafc; }
+
+    body.high-contrast .accessibility-modal {
+        background: #000000 !important;
+        color: #ffffff !important;
+        border: 3px solid #ffffff !important;
+        box-shadow: 0 0 0 5px #000000, 0 25px 60px rgba(0, 0, 0, 0.9) !important;
+    }
+
+    body.high-contrast .accessibility-modal .modal-header {
+        border-bottom: 2px solid #ffffff !important;
+    }
+
+    body.high-contrast .accessibility-modal .modal-header h3,
+    body.high-contrast .accessibility-modal .modal-close,
+    body.high-contrast .accessibility-modal .modal-section h4 {
+        color: #ffff00 !important;
+    }
+
+    body.high-contrast .accessibility-modal .control-item,
+    body.high-contrast .accessibility-modal .control-item-vertical,
+    body.high-contrast .accessibility-modal .voice-box {
+        background: #000000 !important;
+        border: 2px solid #ffffff !important;
+        color: #ffffff !important;
+    }
+
+    body.high-contrast .accessibility-modal .control-label,
+    body.high-contrast .accessibility-modal .voice-tip {
+        color: #ffffff !important;
+    }
+
+    body.high-contrast .accessibility-modal .acc-btn {
+        background: #000000 !important;
+        color: #ffffff !important;
+        border: 2px solid #ffffff !important;
+    }
+
+    body.high-contrast .accessibility-modal .acc-btn:hover {
+        background: #ffffff !important;
+        color: #000000 !important;
+    }
+
+    /* Mesmo motivo do botão de acessibilidade: sem isso, o ícone (seta de
+       "+"/"-") ficava amarelo (regra genérica da página) sobre o fundo
+       branco do hover, em vez de acompanhar o texto preto do botão. */
+    body.high-contrast .accessibility-modal .acc-btn:hover i {
+        color: #000000 !important;
+    }
+
+    body.high-contrast .accessibility-modal .acc-btn.btn-secondary {
+        color: #ffff00 !important;
+        border-color: #ffff00 !important;
+    }
+
+    body.high-contrast .accessibility-modal .voice-start {
+        background: #000000 !important;
+        color: #ffff00 !important;
+        border: 2px solid #ffff00 !important;
+    }
+
+    body.high-contrast .accessibility-modal .voice-stop {
+        background: #000000 !important;
+        color: #ffffff !important;
+        border: 2px solid #ffffff !important;
+    }
+
+    body.high-contrast .accessibility-modal input:checked + .slider-switch {
+        background-color: #ffff00 !important;
+    }
+
+    body.high-contrast .accessibility-modal input:checked + .slider-switch:before {
+        background-color: #000000 !important;
+    }
+
+    body.high-contrast .modal-overlay {
+        background: rgba(0, 0, 0, 0.5) !important;
+    }
+
+    @media (max-width: 576px) {
+        .accessibility-modal { width: 95%; border-radius: 16px; }
+        .control-grid { grid-template-columns: 1fr; }
+    }
+</style>
+
+<!-- BOTÃO FIXO DE ACESSIBILIDADE -->
+<button class="accessibility-trigger" id="accTrigger" aria-label="Abrir configurações de acessibilidade">
+    <i class="fa-solid fa-universal-access"></i>
+</button>
+
+<!-- QUADRADO CENTRAL DO PAINEL DE ACESSIBILIDADE -->
+<div class="accessibility-modal" id="accModal">
+    <div class="modal-header">
+        <h3><i class="fa-solid fa-universal-access"></i> Painel de Acessibilidade</h3>
+        <button class="modal-close" id="accClose" aria-label="Fechar painel">&times;</button>
+    </div>
+
+    <div class="modal-body">
+        <div class="modal-section">
+            <h4><i class="fa-solid fa-palette"></i> Preferências de Tema</h4>
+            <div class="control-grid">
+                <div class="control-item">
+                    <span class="control-label"><i class="fa-solid fa-moon"></i> Modo Escuro</span>
+                    <label class="switch-btn">
+                        <input type="checkbox" id="chkDarkMode">
+                        <span class="slider-switch"></span>
+                    </label>
+                </div>
+                <div class="control-item">
+                    <span class="control-label"><i class="fa-solid fa-circle-half-stroke"></i> Alto Contraste</span>
+                    <label class="switch-btn">
+                        <input type="checkbox" id="chkHighContrast">
+                        <span class="slider-switch"></span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-section">
+            <h4><i class="fa-solid fa-sliders"></i> Dimensionamento</h4>
+            <div class="control-grid">
+                <div class="control-item-vertical">
+                    <span class="control-label"><i class="fa-solid fa-font"></i> Tamanho do Texto</span>
+                    <div class="btn-group-row">
+                        <button class="acc-btn" id="btnDecreaseFont" title="Diminuir texto"><i class="fa-solid fa-minus"></i></button>
+                        <button class="acc-btn btn-secondary" id="btnResetFont" title="Restaurar texto">Padrão</button>
+                        <button class="acc-btn" id="btnIncreaseFont" title="Aumentar texto"><i class="fa-solid fa-plus"></i></button>
+                    </div>
+                </div>
+                <div class="control-item-vertical">
+                    <span class="control-label"><i class="fa-solid fa-magnifying-glass-plus"></i> Zoom do Sistema</span>
+                    <div class="btn-group-row">
+                        <button class="acc-btn" id="btnDecreaseZoom" title="Diminuir zoom"><i class="fa-solid fa-minus"></i></button>
+                        <button class="acc-btn btn-secondary" id="btnResetZoom" title="Restaurar zoom">Padrão</button>
+                        <button class="acc-btn" id="btnIncreaseZoom" title="Aumentar zoom"><i class="fa-solid fa-plus"></i></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-section">
+            <h4><i class="fa-solid fa-volume-high"></i> Leitura de Tela (Voz)</h4>
+            <div class="voice-box">
+                <div class="voice-controls">
+                    <button class="acc-btn-voice voice-start" id="btnStartVoice">
+                        <i class="fa-solid fa-play"></i> Ouvir Página
+                    </button>
+                    <button class="acc-btn-voice voice-stop" id="btnStopVoice">
+                        <i class="fa-solid fa-stop"></i> Parar Áudio
+                    </button>
+                </div>
+                <p class="voice-tip">Clique em "Ouvir Página" para escutar de forma automatizada o resumo do conteúdo desta tela.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Overlay escuro ao fundo -->
+<div class="modal-overlay" id="accOverlay"></div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const accTrigger = document.getElementById('accTrigger');
+        const accModal = document.getElementById('accModal');
+        const accClose = document.getElementById('accClose');
+        const accOverlay = document.getElementById('accOverlay');
+
+        const chkDarkMode = document.getElementById('chkDarkMode');
+        const chkHighContrast = document.getElementById('chkHighContrast');
+        const btnDecreaseFont = document.getElementById('btnDecreaseFont');
+        const btnResetFont = document.getElementById('btnResetFont');
+        const btnIncreaseFont = document.getElementById('btnIncreaseFont');
+        const btnDecreaseZoom = document.getElementById('btnDecreaseZoom');
+        const btnResetZoom = document.getElementById('btnResetZoom');
+        const btnIncreaseZoom = document.getElementById('btnIncreaseZoom');
+        const btnStartVoice = document.getElementById('btnStartVoice');
+        const btnStopVoice = document.getElementById('btnStopVoice');
+
+        if (!accTrigger || !accModal) {
+            return;
+        }
+
+        // Se a página tiver uma navbar padrão, o botão passa a viver dentro
+        // de .navbar-right (como mais um item, ao lado do "Sair"), em vez de
+        // flutuar sobre o conteúdo — assim nunca sobrepõe botões da página.
+        const navbarRight = document.querySelector('.navbar-right');
+        if (navbarRight) {
+            const divider = document.createElement('div');
+            divider.className = 'navbar-divider';
+            navbarRight.appendChild(divider);
+            navbarRight.appendChild(accTrigger);
+            accTrigger.classList.add('acc-trigger-inline');
+        }
+
+        let currentFontScale = 100;
+        let currentZoomScale = 1.0;
+        let speechUtterance = null;
+
+        const toggleModal = () => {
+            accModal.classList.toggle('open');
+            accOverlay.classList.toggle('active');
+            // Classe usada por páginas com navbar/sidebar fixas (ex.:
+            // dashboard) para desfocar esses elementos diretamente — o
+            // backdrop-filter do overlay sozinho não desfoca de forma
+            // confiável vários elementos "position: fixed" empilhados.
+            document.body.classList.toggle('acc-modal-open');
+        };
+
+        accTrigger.addEventListener('click', toggleModal);
+        accClose.addEventListener('click', toggleModal);
+        accOverlay.addEventListener('click', toggleModal);
+
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && accModal.classList.contains('open')) {
+                toggleModal();
+            }
+        });
+
+        chkDarkMode.addEventListener('change', (e) => {
+            if (e.target.checked) {
+                document.body.classList.add('dark-theme');
+                document.body.classList.remove('high-contrast');
+                chkHighContrast.checked = false;
+                localStorage.setItem('theme', 'dark');
+            } else {
+                document.body.classList.remove('dark-theme');
+                localStorage.setItem('theme', 'light');
+            }
+        });
+
+        chkHighContrast.addEventListener('change', (e) => {
+            if (e.target.checked) {
+                document.body.classList.add('high-contrast');
+                document.body.classList.remove('dark-theme');
+                chkDarkMode.checked = false;
+                localStorage.setItem('theme', 'contrast');
+            } else {
+                document.body.classList.remove('high-contrast');
+                localStorage.setItem('theme', 'light');
+            }
+        });
+
+        const updateFontScale = (newScale) => {
+            currentFontScale = Math.max(80, Math.min(newScale, 150));
+            document.documentElement.style.setProperty('--font-scale', `${currentFontScale}%`);
+            localStorage.setItem('fontScale', currentFontScale);
+        };
+        btnIncreaseFont.addEventListener('click', () => updateFontScale(currentFontScale + 10));
+        btnDecreaseFont.addEventListener('click', () => updateFontScale(currentFontScale - 10));
+        btnResetFont.addEventListener('click', () => updateFontScale(100));
+
+        const updateZoomScale = (newZoom) => {
+            currentZoomScale = Math.max(0.8, Math.min(newZoom, 1.3));
+            document.documentElement.style.setProperty('--zoom-scale', currentZoomScale);
+            localStorage.setItem('zoomScale', currentZoomScale);
+        };
+        btnIncreaseZoom.addEventListener('click', () => updateZoomScale(currentZoomScale + 0.05));
+        btnDecreaseZoom.addEventListener('click', () => updateZoomScale(currentZoomScale - 0.05));
+        btnResetZoom.addEventListener('click', () => updateZoomScale(1.0));
+
+        btnStartVoice.addEventListener('click', () => {
+            window.speechSynthesis.cancel();
+            let textToRead = "";
+
+            const heading = document.querySelector('.header-title h2, .header h1');
+            const description = document.querySelector('.header-title p, .header p');
+
+            if (heading) textToRead += heading.innerText + ". ";
+            if (description) textToRead += description.innerText + ". ";
+
+            document.querySelectorAll('.premium-card, .card-title').forEach(el => {
+                const label = el.querySelector ? el.querySelector('.premium-card-label') : null;
+                const value = el.querySelector ? el.querySelector('.premium-card-value') : null;
+                if (label && value) {
+                    textToRead += label.innerText + ": " + value.innerText + ". ";
+                }
+            });
+
+            document.querySelectorAll('.alert-item-text h4').forEach(alerta => {
+                textToRead += "Alerta: " + alerta.innerText + ". ";
+            });
+
+            // Fallback genérico: páginas sem os elementos específicos acima
+            // (ex.: a landing page pública) caem aqui, lendo os títulos e
+            // parágrafos do conteúdo principal na ordem em que aparecem.
+            if (!textToRead.trim()) {
+                const raiz = document.querySelector('main, #mainArea, #mainContent') || document.body;
+                raiz.querySelectorAll('h1, h2, h3, h4, p, li').forEach(el => {
+                    if (el.closest('.accessibility-modal, .accessibility-trigger, nav, .mobile-menu, footer, script, style')) {
+                        return;
+                    }
+                    const texto = el.innerText.trim();
+                    if (texto) {
+                        textToRead += texto + ". ";
+                    }
+                });
+            }
+
+            if (!textToRead.trim()) return;
+
+            speechUtterance = new SpeechSynthesisUtterance(textToRead);
+            speechUtterance.lang = 'pt-BR';
+
+            btnStartVoice.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Lendo...';
+
+            speechUtterance.onend = () => btnStartVoice.innerHTML = '<i class="fa-solid fa-play"></i> Ouvir Página';
+            speechUtterance.onerror = () => btnStartVoice.innerHTML = '<i class="fa-solid fa-play"></i> Ouvir Página';
+
+            window.speechSynthesis.speak(speechUtterance);
+        });
+
+        btnStopVoice.addEventListener('click', () => {
+            window.speechSynthesis.cancel();
+            btnStartVoice.innerHTML = '<i class="fa-solid fa-play"></i> Ouvir Página';
+        });
+
+        const loadPreferences = () => {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'dark') {
+                document.body.classList.add('dark-theme');
+                chkDarkMode.checked = true;
+            } else if (savedTheme === 'contrast') {
+                document.body.classList.add('high-contrast');
+                chkHighContrast.checked = true;
+            }
+
+            const savedFont = localStorage.getItem('fontScale');
+            if (savedFont) {
+                currentFontScale = parseInt(savedFont, 10);
+                document.documentElement.style.setProperty('--font-scale', `${currentFontScale}%`);
+            }
+
+            const savedZoom = localStorage.getItem('zoomScale');
+            if (savedZoom) {
+                currentZoomScale = parseFloat(savedZoom);
+                document.documentElement.style.setProperty('--zoom-scale', currentZoomScale);
+            }
+        };
+        loadPreferences();
+    });
+</script>
+
+    <!-- LOGIC CONTROLLERS & RENDER CHARTS JS -->
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            // Sidebar toggle logic
+            const toggleBtn = document.getElementById('toggleMenuBtn');
+            const sidebar = document.getElementById('sidebar');
+            const mainContent = document.querySelector('.main');
+            const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+            toggleBtn.addEventListener('click', function() {
+                if (window.innerWidth > 992) {
+                    sidebar.classList.toggle('collapsed');
+                    mainContent.classList.toggle('expanded');
+                } else {
+                    sidebar.classList.toggle('active-mobile');
+                    if (sidebarOverlay) sidebarOverlay.classList.toggle('active');
+                }
+
+                // Os gráficos (Chart.js) não recalculam sozinhos o tamanho
+                // do canvas durante a transição CSS da sidebar/main (300ms,
+                // ver ".sidebar, .navbar, .main" acima) — sem isso, ficavam
+                // esticados/desalinhados depois de abrir ou fechar o menu.
+                // Espera a transição terminar e força o resize.
+                setTimeout(function() {
+                    if (window.Chart && window.Chart.instances) {
+                        Object.values(window.Chart.instances).forEach(function(chart) {
+                            chart.resize();
+                        });
+                    }
+                }, 320);
+            });
+
+            if (sidebarOverlay) {
+                sidebarOverlay.addEventListener('click', function() {
+                    sidebar.classList.remove('active-mobile');
+                    sidebarOverlay.classList.remove('active');
+                });
+            }
+
+            // ==========================================
+// CHART 1: CONSUMO DOS ÚLTIMOS 7 DIAS DINÂMICO
+// ==========================================
+const ctx7 = document.getElementById('chart7Dias').getContext('2d');
+
+// Injeção segura de arrays do Blade para o Javascript
+const labelsDoBanco = ["Ter 11","Qua 12","Qui 13","Sex 14","S\u00e1b 15","Dom 16","Hoje 17"];
+const valoresDoBanco = [0,0,0,0,0,0,0];
+
+// Gera as cores respeitando a regra: os primeiros dias são azul claro (#bfdbfe), o dia de hoje (último elemento) é verde (#15803d)
+const coresDinamicas = valoresDoBanco.map((val, idx) => {
+    return idx === (valoresDoBanco.length - 1) ? '#15803d' : '#bfdbfe';
+});
+
+new Chart(ctx7, {
+    type: 'bar',
+    data: {
+        labels: labelsDoBanco,
+        datasets: [{
+            data: valoresDoBanco,
+            backgroundColor: coresDinamicas,
+            borderRadius: 4,
+            borderSkipped: false,
+            barThickness: 24
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { display: false }
+        },
+        scales: {
+            x: { grid: { display: false } },
+            y: { 
+                beginAtZero: true,
+                ticks: {
+                    callback: function(value) {
+                        return value + ' kg';
+                    }
+                }
+            }
+        }
+    }
+});
+           // ==========================================
+// CHART 2: CONSUMO MENSAL DINÂMICO
+// ==========================================
+const ctxMensal = document.getElementById('chartMensal').getContext('2d');
+
+const labelsMensalDoBanco = ["Semana 1"];
+const valoresMensalDoBanco = [0];
+
+new Chart(ctxMensal, {
+    type: 'line',
+    data: {
+        labels: labelsMensalDoBanco,
+        datasets: [{
+            data: valoresMensalDoBanco,
+            borderColor: '#0f172a', // Cor escura elegante
+            backgroundColor: 'rgba(15, 23, 42, 0.05)',
+            borderWidth: 3,
+            fill: true,
+            tension: 0.3, // Curva suave nos pontos
+            pointBackgroundColor: '#0f172a',
+            pointRadius: 4
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { display: false }
+        },
+        scales: {
+            x: { grid: { display: false } },
+            y: { 
+                beginAtZero: false,
+                ticks: {
+                    callback: function(value) {
+                        return value + ' kg';
+                    }
+                }
+            }
+        }
+    }
+});
+
+        });
+
+        // Modal Action Helpers — declaradas fora do DOMContentLoaded de
+        // propósito: os botões do HTML chamam essas funções via onclick
+        // inline, que só enxerga escopo global. Estando dentro do
+        // DOMContentLoaded acima (como estavam antes), "abrirModal" nunca
+        // existia de verdade pra esses onclick — o botão "Adicionar Novo
+        // Plano" lançava "ReferenceError: abrirModal is not defined" e não
+        // abria nada, pra qualquer usuário (mouse ou teclado).
+        let elementoComFocoAntesDoModal = null;
+
+        function abrirModal() {
+            elementoComFocoAntesDoModal = document.activeElement;
+            const modal = document.getElementById('modal');
+            modal.classList.add('active');
+            const primeiroCampo = modal.querySelector('select, input, button');
+            if (primeiroCampo) primeiroCampo.focus();
+        }
+
+        function fecharModal() {
+            document.getElementById('modal').classList.remove('active');
+            // Devolve o foco pra quem abriu o modal (o botão "Adicionar
+            // Novo Plano"), senão quem navega por teclado perde a posição
+            // e o foco volta pro topo da página.
+            if (elementoComFocoAntesDoModal) elementoComFocoAntesDoModal.focus();
+        }
+
+        function abrirModalEditar(id, lote_id, racao_id, quantidade, horario, consumo_ideal) {
+            elementoComFocoAntesDoModal = document.activeElement;
+            document.getElementById('edit_lote_id').value = lote_id;
+            document.getElementById('edit_racao_id').value = racao_id;
+            document.getElementById('edit_quantidade').value = quantidade;
+            document.getElementById('edit_horario').value = horario;
+            document.getElementById('edit_consumo_ideal').value = consumo_ideal;
+
+            document.getElementById('formEditar').action = `/plano/update/${id}`;
+            const modalM = document.getElementById('modal-m');
+            modalM.classList.add('active');
+            const primeiroCampo = modalM.querySelector('select, input, button');
+            if (primeiroCampo) primeiroCampo.focus();
+        }
+
+        function fecharModalM() {
+            document.getElementById('modal-m').classList.remove('active');
+            if (elementoComFocoAntesDoModal) elementoComFocoAntesDoModal.focus();
+        }
+
+        function confirmarExclusao() {
+            return confirm("Deseja realmente excluir este plano alimentar de forma permanente?");
+        }
+
+        window.onclick = function(event) {
+            const modal = document.getElementById('modal');
+            const modalM = document.getElementById('modal-m');
+            if (event.target == modal) fecharModal();
+            if (event.target == modalM) fecharModalM();
+        }
+
+        // Fecha o modal aberto ao pressionar Esc — sem isso, quem navega só
+        // pelo teclado não tinha nenhuma forma de fechar o modal (o clique
+        // fora dele, tratado acima, não é alcançável via teclado).
+        document.addEventListener('keydown', function(event) {
+            if (event.key !== 'Escape') return;
+            const modal = document.getElementById('modal');
+            const modalM = document.getElementById('modal-m');
+            if (modal.classList.contains('active')) fecharModal();
+            if (modalM.classList.contains('active')) fecharModalM();
+        });
+
+        // Card "Consumo por Lote - Hoje": busca no backend os lotes que
+        // ficaram de fora da carga inicial e insere na tabela.
+        async function consultarLotes() {
+            const botao = document.getElementById('btnConsultarLotes');
+            const textoOriginal = botao.textContent;
+            botao.disabled = true;
+            botao.textContent = 'Carregando...';
+
+            try {
+                const resposta = await fetch('http://localhost/plano/lotes-consumo');
+                const dados = await resposta.json();
+
+                if (dados.success) {
+                    document.getElementById('corpoConsumoLotes').insertAdjacentHTML('beforeend', dados.html);
+                    document.getElementById('footerConsultarLotes').remove();
+                } else {
+                    botao.disabled = false;
+                    botao.textContent = textoOriginal;
+                }
+            } catch (erro) {
+                botao.disabled = false;
+                botao.textContent = textoOriginal;
+            }
+        }
+    </script>
+</body>
+</html>

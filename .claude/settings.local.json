@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -n \"elementoComFocoAntesDoModal\\\\|ReferenceError\\\\|function abrirModal\" \"/c/Users/490957~1/AppData/Local/Temp/claude/c--Users-49095793893-Documents-MVCTCC/1267c6be-0d94-47ad-807b-c5f11f3fffcd/scratchpad/jsdomtest7/plano_check2.html\")",
+      "Read(//c/Users/490957~1/AppData/Local/Temp/claude/c--Users-49095793893-Documents-MVCTCC/1267c6be-0d94-47ad-807b-c5f11f3fffcd/scratchpad/jsdomtest7/**)"
+    ]
+  }
+}

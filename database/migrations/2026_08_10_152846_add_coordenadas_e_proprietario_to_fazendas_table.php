@@ -1,0 +1,24 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::table('fazendas', function (Blueprint $table) {
+            $table->string('proprietario')->nullable()->after('nome_fazenda');
+            $table->decimal('latitude', 10, 7)->nullable()->after('estado');
+            $table->decimal('longitude', 10, 7)->nullable()->after('latitude');
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::table('fazendas', function (Blueprint $table) {
+            $table->dropColumn(['proprietario', 'latitude', 'longitude']);
+        });
+    }
+};
