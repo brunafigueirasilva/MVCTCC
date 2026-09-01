@@ -89,8 +89,15 @@ class LoteRequest extends FormRequest
 
             // "after_or_equal:today" usa a data atual do SERVIDOR (Carbon,
             // no fuso configurado em config/app.php) — nunca o relógio do
-            // computador de quem está preenchendo o formulário.
-            'data_entrada' => ['required', 'date', 'after_or_equal:today'],
+            // computador de quem está preenchendo o formulário. Só se aplica
+            // ao CADASTRO (não dá pra criar um lote com entrada no passado);
+            // na EDIÇÃO o campo já vem preenchido com a data real (possivel-
+            // mente passada) do lote, então exigir "hoje ou futuro" aqui
+            // travava a edição de qualquer lote que não tivesse entrado
+            // hoje, mesmo mudando um campo sem relação com a data.
+            'data_entrada' => $this->route('id')
+                ? ['required', 'date']
+                : ['required', 'date', 'after_or_equal:today'],
 
             'status' => ['nullable', Rule::in(LoteRegras::STATUS)],
         ];

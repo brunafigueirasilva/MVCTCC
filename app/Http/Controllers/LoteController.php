@@ -7,6 +7,7 @@ use App\Http\Requests\LoteRequest;
 use App\Models\Cadastro;
 use App\Models\Lote;
 use App\Models\Fazenda;
+use App\Support\AnimalRegras;
 use App\Support\LoteRegras;
 use Illuminate\Support\Facades\DB;
 
@@ -58,6 +59,13 @@ class LoteController extends Controller
             // Data mínima aceita no campo "Data de entrada" — sempre a data
             // atual do servidor, nunca a do computador de quem preenche.
             'hoje' => now()->format('Y-m-d'),
+
+            // Opções dos modais "Adicionar Animal"/"Registrar Ordenha" da
+            // seção "Animais deste lote" (ver .lote-row-detalhes) — mesma
+            // fonte que AnimalController::opcoesAnimal() usa pra tela de
+            // detalhe do animal, nunca duplicada/dessincronizada.
+            'sexosAnimal' => AnimalRegras::SEXOS,
+            'turnosOrdenha' => AnimalRegras::TURNOS_ORDENHA,
         ];
     }
 
