@@ -60,6 +60,10 @@
             background: currentColor;
         }
 
+        .det-simulado { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; font-size: 0.78rem; font-weight: 700; background: #ede9fe; color: #6d28d9; }
+        .det-simulado[hidden] { display: none; }
+        body.dark-theme .det-simulado { background: rgba(167, 139, 250, 0.16); color: #c4b5fd; }
+        body.high-contrast .det-simulado { background: #000; color: #ffff00; border: 1px solid #ffff00; }
         .det-status.online { background: #dcfce7; color: #15803d; }
         .det-status.offline { background: #fef3c7; color: #b45309; }
         .det-status.erro { background: #fee2e2; color: #dc2626; }
@@ -296,12 +300,13 @@
                 <a href="{{ route('cocho.listar') }}" class="det-voltar"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Gestão de Cochos</a>
                 <h1 class="pg-title"><i class="fa-solid fa-cube titulo-icone" aria-hidden="true"></i> {{ $cocho->nome_cocho }}</h1>
                 <p class="pg-sub">
-                    Lote {{ $cocho->lote->nome_lote ?? '—' }} · {{ $cocho->lote->fazenda->nome_fazenda ?? 'Sem fazenda' }}
+                    @php($nomeLote = $cocho->lote->nome_lote ?? '—'){{ preg_match('/^lote\b/i', $nomeLote) ? $nomeLote : 'Lote ' . $nomeLote }} · {{ $cocho->lote->fazenda->nome_fazenda ?? 'Sem fazenda' }}
                     · monitoramento IoT (sensor de distância e balança)
                 </p>
             </div>
             <div class="pg-top-actions">
                 <span class="det-status" id="detStatus" role="status" aria-live="polite">Carregando…</span>
+                <span class="det-simulado" id="detSimulado" hidden title="Leituras geradas pelo simulador (php artisan iot:simular), não por um sensor físico"><i class="fa-solid fa-flask" aria-hidden="true"></i> Dados simulados</span>
                 <span class="det-ao-vivo" id="detAoVivo" title="Balança, distância, tabela e gráficos atualizam sozinhos"><span class="det-ao-vivo-ponto" aria-hidden="true"></span> Ao vivo</span>
                 <button type="button" class="det-btn" id="detAtualizar"><i class="fa-solid fa-rotate" aria-hidden="true"></i> Atualizar</button>
             </div>
@@ -490,7 +495,10 @@
         let graficoConsumo = null;
         let ultimoHistorico = null;
 
-        const ROTULO_STATUS = { online: 'Online', offline: 'Offline', erro: 'Erro', sem_leitura: 'Sem leitura' };
+        const ROTULO_STATUS = { online: 'Online', offline: 'Sem comunicação', erro: 'Erro na leitura', sem_leitura: 'Sem leitura' };
+        // Sensores "SIM-..." vêm do simulador (php artisan iot:simular), não
+        // de um ESP32 — a tela avisa para não confundir com leitura real.
+        const simulado = (s) => /^SIM-/i.test(s.codigo || '');
         const ICONE_ALERTA = { critico: 'fa-triangle-exclamation', baixo: 'fa-circle-exclamation', info: 'fa-circle-info' };
 
         const esc = (texto) => { const d = document.createElement('div'); d.textContent = texto == null ? '' : String(texto); return d.innerHTML; };
@@ -521,7 +529,7 @@
         // ---------------------------------------------------- situação atual
         // Tudo que vem da balança e do sensor de distância: status, nível do
         // cocho medido, cards de peso/distância e lista de sensores. Usado
-        // também pela atualização ao vivo (a cada 5 s).
+        // também pela atualização ao vivo (a cada 2 s).
         function renderizarSensores(d) {
             const status = d.status_sensor || 'sem_leitura';
             const elStatus = document.getElementById('detStatus');
@@ -529,33 +537,44 @@
             elStatus.textContent = 'Sensor ' + (ROTULO_STATUS[status] || status).toLowerCase()
                 + (d.data_hora_leitura ? ' · ' + dataHora(d.data_hora_leitura) : '');
 
-            // Cocho → quantidade medida pelo sensor (0 até a primeira leitura).
+            // A API manda 0 quando ainda não existe leitura; aqui isso vira
+            // "—" para não parecer uma medição real de cocho vazio.
+            const desatualizada = status === 'offline' || status === 'erro';
             const cs = d.cocho_sensor || { quantidade_kg: 0, percentual: 0, tem_leitura: false };
-            campo('cocho_quantidade', kg(cs.quantidade_kg));
+            campo('cocho_quantidade', cs.tem_leitura ? kg(cs.quantidade_kg) : '—');
             campo('cocho_sub', cs.tem_leitura
                 ? 'de ' + kg(d.capacidade_total) + ' de capacidade · leitura de ' + dataHora(cs.data_hora)
+                    + (desatualizada ? '<br><strong>Leitura desatualizada</strong> — sensor sem comunicação' : '')
                 : 'Sem leitura do sensor ainda — de ' + kg(d.capacidade_total) + ' de capacidade'
                     + (d.quantidade_atual > 0 ? '<br>Abastecido pelo estoque: <strong>' + kg(d.quantidade_atual) + '</strong>' : ''));
-            campo('cocho_percentual', cs.tem_leitura ? num(cs.percentual, 0) + '%' : '0%');
-            pintarTanque('detTanque', cs.percentual, corNivel(cs.percentual), 'Nível do cocho medido pelo sensor: ' + num(cs.percentual, 1) + '%');
+            campo('cocho_percentual', cs.tem_leitura ? num(cs.percentual, 0) + '%' : '—');
+            pintarTanque('detTanque', cs.tem_leitura ? cs.percentual : 0, corNivel(cs.percentual),
+                cs.tem_leitura ? 'Nível do cocho medido pelo sensor: ' + num(cs.percentual, 1) + '%' : 'Nível do cocho: sem leitura do sensor');
 
             const sensores = d.sensores || [];
             const dist = sensores.find((s) => s.tipo === 'distancia' && s.ativo);
             const bal = sensores.find((s) => s.tipo === 'balanca' && s.ativo);
+            // Situação curta do sensor para o subtítulo dos cards.
+            const situacao = (s) => (simulado(s) ? ' · simulado' : '')
+                + (s.status === 'online' ? '' : ' · ' + (ROTULO_STATUS[s.status] || s.status).toLowerCase()
+                    + (s.ultima_leitura_em && s.status !== 'sem_leitura' ? ' desde ' + dataHora(s.ultima_leitura_em) : ''));
 
-            campo('distancia_cm', num(d.distancia_cm, 1) + ' cm');
+            campo('distancia_cm', dist && dist.ultima_leitura_em ? num(d.distancia_cm, 1) + ' cm' : '—');
             campo('distancia_sub', dist
-                ? esc(dist.codigo) + ' · nível físico ' + num(d.nivel_sensor_percentual, 0) + '%' + (dist.calibrado ? '' : ' · sem calibração')
+                ? esc(dist.codigo) + (dist.ultima_leitura_em ? ' · nível físico ' + num(d.nivel_sensor_percentual, 0) + '%' : '')
+                    + (dist.calibrado ? '' : ' · sem calibração') + situacao(dist)
                 : 'Nenhum sensor cadastrado');
 
-            campo('peso_kg', kg(d.peso_kg));
-            campo('peso_sub', bal ? esc(bal.codigo) + ' · ' + (ROTULO_STATUS[bal.status] || bal.status) : 'Nenhuma balança cadastrada');
+            campo('peso_kg', bal && bal.ultima_leitura_em ? kg(d.peso_kg) : '—');
+            campo('peso_sub', bal ? esc(bal.codigo) + situacao(bal) : 'Nenhuma balança cadastrada');
+
+            document.getElementById('detSimulado').hidden = !sensores.some((s) => s.ativo && simulado(s));
 
             document.getElementById('detSensores').innerHTML = sensores.length
                 ? sensores.map((s) => '<div class="det-sensor">'
                     + '<div class="det-sensor-ico ' + esc(s.tipo) + '"><i class="fa-solid ' + (s.tipo === 'balanca' ? 'fa-weight-scale' : 'fa-ruler-vertical') + '" aria-hidden="true"></i></div>'
                     + '<div><strong>' + esc(s.codigo) + '</strong>'
-                    + '<span>' + (s.tipo === 'balanca' ? 'Balança / célula de carga' : 'Sensor de distância') + (s.ativo ? '' : ' · desativado') + '</span>'
+                    + '<span>' + (s.tipo === 'balanca' ? 'Balança / célula de carga' : 'Sensor de distância') + (s.ativo ? '' : ' · desativado') + (simulado(s) ? ' · simulado' : '') + '</span>'
                     + (s.tipo === 'distancia' ? '<span>Calibração: ' + (s.calibrado ? 'vazio ' + num(s.distancia_vazio_cm, 1) + ' cm · cheio ' + num(s.distancia_cheio_cm || 0, 1) + ' cm' : 'pendente') + '</span>' : '')
                     + '<span>Última leitura: ' + dataHora(s.ultima_leitura_em) + '</span>'
                     + '<span class="det-status ' + esc(s.status) + '">' + esc(ROTULO_STATUS[s.status] || s.status) + '</span>'
@@ -584,7 +603,9 @@
                 ? '<div class="det-racao-lote-grid">'
                     + '<span><strong>' + esc(rl.nome_racao) + '</strong> · ' + kg(rl.estoque_kg)
                     + (rl.estoque_total_kg ? ' de ' + kg(rl.estoque_total_kg) : '') + '</span>'
-                    + (rl.percentual != null ? '<span class="pg-meter" style="--meter-cor:' + corNivel(rl.percentual) + '" role="img" aria-label="Estoque da ração: ' + rl.percentual + '%"><span style="--v:' + rl.percentual + '%"></span></span>' : '')
+                    // Cor pelo status (que considera os dias restantes), não só
+                    // pela ocupação — senão "Estoque baixo" aparecia com barra verde.
+                    + (rl.percentual != null ? '<span class="pg-meter" style="--meter-cor:' + ({ esgotado: '#dc2626', baixo: '#f59e0b' }[rl.status_estoque] || corNivel(rl.percentual)) + '" role="img" aria-label="Estoque da ração: ' + rl.percentual + '%"><span style="--v:' + rl.percentual + '%"></span></span>' : '')
                     + '<span>' + esc(rotuloEstoque[rl.status_estoque] || rl.status_estoque)
                     + (rl.dias_restantes != null ? ' · ' + rl.dias_restantes + ' dia(s) de estoque' : '') + '</span>'
                     + '</div>'
@@ -594,7 +615,9 @@
             campo('espaco_livre', 'Espaço livre: ' + kg(d.espaco_livre_kg));
 
             const ind = d.indicadores || {};
-            campo('ind_percentual', num(cs.percentual, 1) + '%<small>' + kg(cs.quantidade_kg) + ' de ' + kg(d.capacidade_total) + (cs.tem_leitura ? '' : ' · sem leitura') + '</small>');
+            campo('ind_percentual', cs.tem_leitura
+                ? num(cs.percentual, 1) + '%<small>' + kg(cs.quantidade_kg) + ' de ' + kg(d.capacidade_total) + '</small>'
+                : '—<small>Sem leitura do sensor · capacidade ' + kg(d.capacidade_total) + '</small>');
             campo('ind_consumo_hoje', kg(ind.consumo_hoje_kg));
             campo('ind_consumo_7', kg(ind.consumo_7_dias_kg));
             campo('ind_consumo_medio', ind.consumo_medio_diario_kg != null
@@ -609,7 +632,7 @@
             campo('ind_leitura', ind.ultima_leitura
                 ? dataHora(ind.ultima_leitura.data_hora) + '<small>' + esc(ind.tempo_desde_ultima_leitura || '') + ' · ' + esc(ind.ultima_leitura.sensor_codigo || ind.ultima_leitura.tipo_sensor) + '</small>'
                 : '—<small>Ainda não existe leitura do sensor</small>');
-            campo('ind_status', esc(ROTULO_STATUS[status] || status) + '<small>Offline após ' + esc(d.minutos_offline) + ' min sem leitura</small>');
+            campo('ind_status', esc(ROTULO_STATUS[status] || status) + '<small>Sem comunicação após ' + esc(d.minutos_offline) + ' min sem leitura</small>');
 
             document.getElementById('detAlertas').innerHTML = (d.alertas || []).map((a) =>
                 '<div class="det-alerta ' + esc(a.prioridade) + '"><i class="fa-solid ' + (ICONE_ALERTA[a.prioridade] || 'fa-circle-info') + '" aria-hidden="true"></i><span>' + esc(a.mensagem) + '</span></div>'

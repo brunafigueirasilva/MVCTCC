@@ -460,14 +460,20 @@ class CochoIotService
     private function alertas(Cocho $cocho): array
     {
         $alertas = [];
+        $ativos = $cocho->sensores->where('ativo', true);
+
+        // Com todos os sensores sem comunicação, o nível é o da última
+        // leitura — o alerta avisa que pode não ser o de agora.
+        $semComunicacao = $ativos->isNotEmpty()
+            && $ativos->every(fn (Sensor $s) => in_array($s->status(), [Sensor::STATUS_OFFLINE, Sensor::STATUS_ERRO], true));
+        $ressalva = $semComunicacao ? ' (pela última leitura recebida — os sensores estão sem comunicação)' : '';
 
         if ($cocho->statusAbastecimento() === 'Vazio') {
-            $alertas[] = ['tipo' => 'nivel_baixo', 'prioridade' => 'critico', 'mensagem' => 'Cocho vazio — nenhuma ração disponível.'];
+            $alertas[] = ['tipo' => 'nivel_baixo', 'prioridade' => 'critico', 'mensagem' => 'Cocho vazio — nenhuma ração disponível' . $ressalva . '.'];
         } elseif ($cocho->statusAbastecimento() === 'Baixo') {
-            $alertas[] = ['tipo' => 'nivel_baixo', 'prioridade' => 'baixo', 'mensagem' => 'Nível abaixo de ' . Cocho::PERCENTUAL_ALERTA . '% da capacidade — considere reabastecer.'];
+            $alertas[] = ['tipo' => 'nivel_baixo', 'prioridade' => 'baixo', 'mensagem' => 'Nível abaixo de ' . Cocho::PERCENTUAL_ALERTA . '% da capacidade' . $ressalva . ' — considere reabastecer.'];
         }
 
-        $ativos = $cocho->sensores->where('ativo', true);
         if ($ativos->isEmpty()) {
             $alertas[] = ['tipo' => 'sem_sensor', 'prioridade' => 'info', 'mensagem' => 'Nenhum sensor IoT cadastrado neste cocho.'];
         }
@@ -476,8 +482,9 @@ class CochoIotService
             $nome = ($sensor->tipo === Sensor::TIPO_BALANCA ? 'Balança' : 'Sensor de distância') . " {$sensor->codigo}";
 
             match ($sensor->status()) {
-                Sensor::STATUS_OFFLINE => $alertas[] = ['tipo' => 'sensor_offline', 'prioridade' => 'baixo', 'mensagem' => "{$nome} offline — sem leitura há mais de " . config('iot.minutos_offline') . ' min.'],
-                Sensor::STATUS_ERRO => $alertas[] = ['tipo' => 'sensor_erro', 'prioridade' => 'critico', 'mensagem' => "{$nome} com erro: {$sensor->ultimo_erro}"],
+                Sensor::STATUS_OFFLINE => $alertas[] = ['tipo' => 'sensor_offline', 'prioridade' => 'baixo', 'mensagem' => "{$nome} sem comunicação — nenhuma leitura há mais de " . config('iot.minutos_offline') . ' min'
+                    . ($sensor->ultima_leitura_em ? ' (última em ' . $sensor->ultima_leitura_em->format('d/m H:i') . ')' : '') . '. Verifique a energia e o Wi-Fi do ESP32.'],
+                Sensor::STATUS_ERRO => $alertas[] = ['tipo' => 'sensor_erro', 'prioridade' => 'critico', 'mensagem' => "{$nome} com erro na leitura: {$sensor->ultimo_erro}"],
                 Sensor::STATUS_SEM_LEITURA => $alertas[] = ['tipo' => 'sem_leitura', 'prioridade' => 'info', 'mensagem' => "{$nome} ainda não enviou nenhuma leitura."],
                 default => null,
             };

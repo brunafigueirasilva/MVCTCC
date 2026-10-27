@@ -2164,6 +2164,58 @@
         });
     </script>
 
+    <script>
+        // Trava contra envio duplicado em TODOS os formulários POST das telas
+        // internas: no primeiro envio o botão fica desabilitado, com "Salvando…",
+        // até a página seguinte carregar. Fica de fora o que não recarrega a
+        // página (envio por fetch — o script da tela chama preventDefault),
+        // formulários GET (filtros), os que abrem em outra aba (exportar PDF)
+        // e os marcados com data-sem-trava.
+        (function () {
+            const travar = function (form) {
+                form.setAttribute('aria-busy', 'true');
+                form.querySelectorAll('button[type="submit"], button:not([type]), input[type="submit"]').forEach(function (botao) {
+                    botao.disabled = true;
+                    if (botao.tagName === 'BUTTON' && !botao.dataset.textoOriginal) {
+                        botao.dataset.textoOriginal = botao.innerHTML;
+                        botao.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin" aria-hidden="true"></i> ' + (botao.dataset.textoEnviando || 'Salvando…');
+                    }
+                });
+            };
+
+            const liberar = function (form) {
+                delete form.dataset.enviando;
+                form.removeAttribute('aria-busy');
+                form.querySelectorAll('[data-texto-original]').forEach(function (botao) {
+                    botao.innerHTML = botao.dataset.textoOriginal;
+                    delete botao.dataset.textoOriginal;
+                    botao.disabled = false;
+                });
+            };
+
+            document.addEventListener('submit', function (evento) {
+                const form = evento.target;
+                if (!(form instanceof HTMLFormElement) || evento.defaultPrevented) return;
+                if ((form.getAttribute('method') || 'get').toLowerCase() !== 'post') return;
+                if (form.target === '_blank' || form.hasAttribute('data-sem-trava')) return;
+
+                if (form.dataset.enviando) {
+                    evento.preventDefault();
+                    return;
+                }
+                form.dataset.enviando = '1';
+                // Desabilita o botão só depois que o envio começou: antes disso
+                // o name/value dele sairia dos dados enviados.
+                setTimeout(function () { travar(form); }, 0);
+            });
+
+            // Voltar pelo navegador (página restaurada do cache) libera os botões.
+            window.addEventListener('pageshow', function (evento) {
+                if (evento.persisted) document.querySelectorAll('form[data-enviando]').forEach(liberar);
+            });
+        })();
+    </script>
+
     @stack('scripts')
 </body>
 

@@ -157,6 +157,8 @@
             display: flex;
             align-items: center;
             gap: 8px;
+            /* É um <a> aqui ("Definir cochos pelo Lote"): sem sublinhado. */
+            text-decoration: none;
             transition: all 0.3s ease;
             box-shadow: 0 4px 12px color-mix(in srgb, var(--verde-principal, #0e4a27) 20%, transparent);
         }
@@ -1522,7 +1524,7 @@
                     <span class="filtros-badge {{ count($filtrosAplicados ?? []) ? 'visivel' : '' }}">{{ count($filtrosAplicados ?? []) }}</span>
                 </button>
                 <a href="{{ route('lote.listar') }}" class="btn-add">
-                    <i class="fa-solid fa-layer-group"></i> Definir cochos pelo Lote
+                    <i class="fa-solid fa-layer-group" aria-hidden="true"></i> Definir cochos pelo Lote
                 </a>
             </div>
         </div>
@@ -1768,8 +1770,12 @@
                                 $sensorDist = $cocho->sensores->firstWhere('tipo', \App\Models\Sensor::TIPO_DISTANCIA);
                                 $sensorBal = $cocho->sensores->firstWhere('tipo', \App\Models\Sensor::TIPO_BALANCA);
                                 $statusSensor = $cocho->statusSensor();
-                                $rotuloStatusSensor = ['online' => 'Online', 'offline' => 'Offline', 'erro' => 'Erro', 'sem_leitura' => 'Sem leitura'][$statusSensor];
-                                $codigosSensores = $cocho->sensores->where('ativo', true)->pluck('codigo')->implode(' · ');
+                                $rotuloStatusSensor = ['online' => 'Online', 'offline' => 'Sem comunicação', 'erro' => 'Erro na leitura', 'sem_leitura' => 'Sem leitura'][$statusSensor];
+                                $sensoresAtivos = $cocho->sensores->where('ativo', true);
+                                $codigosSensores = $sensoresAtivos->pluck('codigo')->implode(' · ');
+                                // Sensores "SIM-" vêm do simulador (iot:simular), não de um ESP32.
+                                $sensorSimulado = $sensoresAtivos->contains(fn ($s) => str_starts_with(strtoupper($s->codigo), 'SIM-'));
+                                $ultimaLeituraSensor = $sensoresAtivos->max('ultima_leitura_em');
                                 $dadosEdicao = [
                                     'id' => $cocho->id,
                                     'nome' => $cocho->nome_cocho,
@@ -1785,7 +1791,7 @@
                             <div class="cocho-row">
                                 <div class="cocho-row-main">
                                     <div class="cocho-row-id">
-                                        <div class="cocho-mini-icon"><i class="fa-solid fa-cube"></i></div>
+                                        <div class="cocho-mini-icon"><i class="fa-solid fa-cube" aria-hidden="true"></i></div>
                                         <div class="cocho-row-nome">{{ $cocho->nome_cocho }}@if ($cocho->localizacao)<small class="dica-campo" style="display:block; margin:2px 0 0; font-weight:500;"><i class="fa-solid fa-location-dot" aria-hidden="true"></i> {{ $cocho->localizacao }}</small>@endif</div>
                                     </div>
 
@@ -1802,8 +1808,8 @@
 
                                         <div class="cocho-row-col">
                                             <span class="cocho-row-col-label">Sensor IoT</span>
-                                            <span class="sensor-badge sensor-{{ $statusSensor }}" title="{{ $codigosSensores ?: 'Nenhum sensor cadastrado' }}">
-                                                <i class="fa-solid fa-wifi" aria-hidden="true"></i> {{ $rotuloStatusSensor }}
+                                            <span class="sensor-badge sensor-{{ $statusSensor }}" title="{{ ($codigosSensores ?: 'Nenhum sensor cadastrado') . ($ultimaLeituraSensor ? ' · última leitura ' . $ultimaLeituraSensor->format('d/m/Y H:i') : '') }}">
+                                                <i class="fa-solid fa-wifi" aria-hidden="true"></i> {{ $rotuloStatusSensor }}@if ($sensorSimulado) · simulado @endif
                                             </span>
                                         </div>
 
