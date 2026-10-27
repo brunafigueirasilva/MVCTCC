@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Api\MovimentacaoEstoqueRequest;
 use App\Models\Cadastro;
 use App\Models\Fazenda;
 use App\Models\Racao;
+use App\Services\EstoqueService;
 use App\Support\LoteRegras;
 use Illuminate\Http\Request;
 
@@ -25,29 +27,57 @@ class EstoqueController extends Controller
         return Racao::whereIn('fazenda_id', $this->fazendaIdsDoUsuario());
     }
 
-    private function exigirLogin()
-    {
-        if (!session()->has('usuario_id')) {
-            return redirect()->route('login.index');
-        }
+    // A autenticação em si (sessão válida) já é garantida pelo middleware
+    // 'auth.cadastro' aplicado ao grupo de rotas (ver routes/web.php).
 
-        return null;
+    /**
+     * ENTRADA (compra/reposição) e SAÍDA (uso, perda, venda) de ração pela
+     * tela de Estoque — mesma validação (MovimentacaoEstoqueRequest) e mesmo
+     * serviço (EstoqueService) da API: o histórico registra exatamente o que
+     * aconteceu, em vez de um "ajuste" de saldo. Saída nunca deixa negativo.
+     */
+    public function entrada(MovimentacaoEstoqueRequest $request, EstoqueService $estoque)
+    {
+        return $this->movimentar($request, $estoque, 'entrada');
+    }
+
+    public function saida(MovimentacaoEstoqueRequest $request, EstoqueService $estoque)
+    {
+        return $this->movimentar($request, $estoque, 'saida');
+    }
+
+    private function movimentar(MovimentacaoEstoqueRequest $request, EstoqueService $estoque, string $tipo)
+    {
+        $racao = $this->racoesDoUsuario()->findOrFail($request->validated('racao_id'));
+        $contexto = array_filter([
+            'cadastro_id' => $request->cadastroId(),
+            'lote_id' => $request->validated('lote_id'),
+            'observacao' => $request->validated('observacao'),
+            'data_movimentacao' => $request->validated('data_movimentacao'),
+            'origem' => 'manual',
+        ], fn ($v) => $v !== null);
+
+        $movimentacao = $tipo === 'entrada'
+            ? $estoque->entrada($racao, (float) $request->validated('quantidade'), $contexto)
+            : $estoque->saida($racao, (float) $request->validated('quantidade'), $contexto);
+
+        $acao = $tipo === 'entrada' ? 'Entrada' : 'Saída';
+
+        return redirect()->route('estoque.listar')->with('success',
+            "{$acao} de " . number_format($movimentacao->quantidade, 2, ',', '.') . " kg registrada em \"{$racao->nome_racao}\". Estoque atual: " . number_format($movimentacao->saldo_posterior, 2, ',', '.') . ' kg.'
+        );
     }
 
     /**
-     * Tela de Estoque: só exibe, direto da Ração (estoque, fornecedor,
-     * valor/kg, status), o que já é gerenciado na tela de Rações — não
+     * Tela de Estoque: só exibe, direto da Ração (estoque, valor/kg,
+     * status), o que já é gerenciado na tela de Rações — não
      * existe mais um registro de "movimentação" próprio e independente
-     * (o antigo model Estoque, com sua própria quantidade/capacidade/
-     * fornecedor, duplicava e podia divergir do estoque real da ração).
+     * (o antigo model Estoque, com sua própria quantidade/capacidade,
+     * duplicava e podia divergir do estoque real da ração).
      * Editar o estoque de uma ração acontece na própria tela de Rações.
      */
     public function listar(Request $request)
     {
-        if ($redirect = $this->exigirLogin()) {
-            return $redirect;
-        }
-
         $fazendas = Fazenda::where('cadastro_id', session('usuario_id'))->orderBy('nome_fazenda')->get();
         $cadastroLogado = Cadastro::find(session('usuario_id'));
 

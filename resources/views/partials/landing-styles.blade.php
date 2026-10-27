@@ -44,9 +44,12 @@
             --section-py: clamp(72px, 10vw, 140px);
             --ease-premium: cubic-bezier(0.16, 1, 0.3, 1);
             /* Curva usada nos hovers (botões/cards/links/ícones) — mesma
-               "desaceleração" do --ease-premium só que num tempo mais curto,
-               pensada pra reação de mouse (ver --hover-duration abaixo). */
-            --hover-duration: .28s;
+               "desaceleração" do --ease-premium, só que num tempo pensado
+               pra reação de mouse/teclado (ver --hover-duration abaixo).
+               0.5s (dentro da faixa 0.4s–0.6s pedida): rápido o bastante
+               pra não parecer travado, lento o bastante pra ler como um
+               movimento deliberado/sofisticado em vez de um "flash". */
+            --hover-duration: .5s;
 
             /* Aliases genéricos — mesmos valores acima, com nomes de
                propósito ("qual é o fundo principal", "qual é a cor de
@@ -123,7 +126,14 @@
            JS (.tilt-active, .hero-orb, .nav-scrolled) são as mesmas usadas
            pelos efeitos novos abaixo; ver partials/landing-scripts.blade.php. */
         @media (prefers-reduced-motion: reduce) {
-            *, *::before, *::after {
+            /* Fora a intro de abertura (#splash), o card do gráfico
+               (.lote-chart) e as letras dos títulos (.section-title): são as
+               animações principais da landing, pedidas explicitamente, e com
+               elas zeradas não apareciam — no Windows com "Mostrar animações"
+               desligado essa preferência vem ligada sem a pessoa perceber. */
+            :not(#splash, #splash *, .lote-chart, .lote-chart *, .section-title, .section-title *),
+            :not(#splash, #splash *, .lote-chart, .lote-chart *, .section-title, .section-title *)::before,
+            :not(#splash, #splash *, .lote-chart, .lote-chart *, .section-title, .section-title *)::after {
                 animation-duration: 0.001ms !important;
                 animation-iteration-count: 1 !important;
                 transition-duration: 0.001ms !important;
@@ -205,6 +215,8 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            min-width: 24px; /* alvo de toque mínimo (WCAG 2.5.8) */
+            min-height: 24px;
             color: rgba(255, 255, 255, 0.7);
             font-size: 13px;
             transition: color var(--hover-duration) var(--ease-premium), transform var(--hover-duration) var(--ease-premium);
@@ -270,16 +282,24 @@
         }
 
         .logo img {
-            height: 40px;
+            height: 46px;
             width: auto;
             object-fit: contain;
             display: block;
+            filter: drop-shadow(0 2px 6px rgba(0, 0, 0, .55)) drop-shadow(0 0 14px rgba(0, 0, 0, .35));
             transition: transform var(--hover-duration) var(--ease-premium), filter var(--hover-duration) ease;
         }
 
-        .logo:hover img {
+        .logo:hover img,
+        .logo:focus-visible img {
             transform: scale(1.05);
-            filter: drop-shadow(0 2px 10px rgba(209, 161, 54, .35));
+            filter: drop-shadow(0 2px 6px rgba(0, 0, 0, .55)) drop-shadow(0 0 12px rgba(209, 161, 54, .45));
+        }
+
+        .logo:focus-visible {
+            outline: 2px solid #e8c463;
+            outline-offset: 4px;
+            border-radius: 6px;
         }
 
         /* Botão "Acessar Sistema" + botão de acessibilidade + hambúrguer,
@@ -328,10 +348,11 @@
             height: 2px;
             border-radius: 2px;
             background: linear-gradient(90deg, #6aaa2e, #e8c463);
-            transition: transform 0.3s var(--ease-premium);
+            transition: transform var(--hover-duration) var(--ease-premium);
         }
 
         .nav-links a:not(.btn-nav):hover,
+        .nav-links a:not(.btn-nav):focus-visible,
         .nav-links a.active {
             color: #ffffff;
             background: rgba(255, 255, 255, 0.06);
@@ -339,8 +360,18 @@
         }
 
         .nav-links a:not(.btn-nav):hover::after,
+        .nav-links a:not(.btn-nav):focus-visible::after,
         .nav-links a.active::after {
             transform: scaleX(1);
+        }
+
+        /* Anel de foco visível (teclado) nos links do menu — o outline
+           padrão do navegador ficava recortado pelo overflow/backdrop da
+           navbar em alguns casos; este é sempre visível e consistente com
+           a paleta. */
+        .nav-links a:focus-visible {
+            outline: 2px solid #e8c463;
+            outline-offset: 2px;
         }
 
         /* ───────── BOTÃO ACESSAR SISTEMA ───────── */
@@ -360,7 +391,7 @@
             text-decoration: none;
             letter-spacing: .2px;
             box-shadow: 0 6px 18px -4px rgba(20, 40, 10, 0.55), inset 0 1px 0 rgba(232, 196, 99, 0.25);
-            transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+            transition: transform var(--hover-duration) ease, box-shadow var(--hover-duration) ease, border-color var(--hover-duration) ease;
         }
 
         .btn-nav i {
@@ -381,14 +412,21 @@
             transition: left .65s ease;
         }
 
-        .btn-nav:hover::before {
+        .btn-nav:hover::before,
+        .btn-nav:focus-visible::before {
             left: 140%;
         }
 
-        .btn-nav:hover {
+        .btn-nav:hover,
+        .btn-nav:focus-visible {
             transform: translateY(-2px) scale(1.02);
             box-shadow: 0 10px 26px -4px rgba(20, 40, 10, 0.65), 0 0 0 1px rgba(232, 196, 99, 0.35);
             border-color: rgba(232, 196, 99, 0.55);
+        }
+
+        .btn-nav:focus-visible {
+            outline: 2px solid #e8c463;
+            outline-offset: 3px;
         }
 
         .btn-nav:active {
@@ -409,7 +447,8 @@
             transition: background var(--hover-duration) var(--ease-premium), border-color var(--hover-duration) var(--ease-premium), transform var(--hover-duration) var(--ease-premium), box-shadow var(--hover-duration) var(--ease-premium);
         }
 
-        .hamburger:hover {
+        .hamburger:hover,
+        .hamburger:focus-visible {
             background: rgba(255, 255, 255, 0.18);
             border-color: rgba(232, 196, 99, 0.4);
             transform: translateY(-2px);
@@ -431,9 +470,18 @@
             }
         }
 
+        /* Tablet: o botão "Acessar Sistema" e o de acessibilidade continuam
+           com texto, mas mais compactos. */
+        @media (max-width: 900px) {
+            .nav-inner { gap: 12px; padding: 0 20px; }
+            .nav-right { gap: 10px; }
+            .btn-nav { padding: 10px 16px; }
+        }
+
         @media (max-width: 576px) {
             .nav-inner {
-                padding: 0 20px;
+                padding: 0 14px;
+                grid-template-columns: auto 1fr auto;
             }
 
             /* .topbar já fica escondida nesse breakpoint — a navbar sobe
@@ -441,6 +489,43 @@
             nav {
                 top: 0;
             }
+
+            /* Celular: "Acessar Sistema" e "Acessibilidade" viram botões
+               redondos só com ícone (o texto continua lá pra leitores de
+               tela) — antes eles empurravam o ☰ pra fora da tela. */
+            .nav-right { gap: 8px; }
+
+            .btn-nav {
+                width: 42px;
+                height: 42px;
+                padding: 0;
+                justify-content: center;
+                font-size: 0;
+                gap: 0;
+            }
+
+            .btn-nav i { font-size: 16px; }
+
+            .accessibility-trigger.acc-trigger-inline .acc-trigger-label {
+                position: absolute;
+                width: 1px;
+                height: 1px;
+                overflow: hidden;
+                clip: rect(0 0 0 0);
+                white-space: nowrap;
+            }
+
+            .accessibility-trigger.acc-trigger-inline {
+                width: 42px;
+                height: 42px;
+                padding: 0;
+                justify-content: center;
+                border-radius: 50%;
+                background: rgba(255, 255, 255, 0.1);
+                border: 1px solid rgba(255, 255, 255, 0.18);
+            }
+
+            .hamburger { width: 42px; height: 42px; justify-content: center; }
         }
 
         .mobile-menu {
@@ -611,33 +696,19 @@
             opacity: 1;
         }
 
-        .section-title.reveal-title .word-nowrap {
-            display: inline-block;
-            white-space: nowrap;
-        }
-
-        .section-title.reveal-title .char {
-            display: inline-block;
-            opacity: 0;
-            white-space: pre;
-        }
-
-        .section-title.reveal-title.revealed .char {
-            animation: charRise 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
-        }
-
-        .section-title.reveal-title .accent .char {
-            color: #4F7724;
-        }
-
-        .section-title.reveal-title.revealed .accent .char {
-            animation: charGlow 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
-        }
+        /* Títulos de seção: texto simples, cor sólida (sem efeito letra por
+           letra). */
+        .section-title { color: #f1f9f4; }
+        body.light-theme .section-title { color: #1c2f20; }
+        .section-title.reveal-title .accent { color: #5fd06b; }
+        body.light-theme .section-title.reveal-title .accent { color: #4a9a2a; }
+        body.high-contrast .section-title { color: #ffffff !important; }
+        body.high-contrast .section-title .accent { color: #ffff00 !important; }
 
         .section-tag {
             display: block;
             text-align: center;
-            color: var(--brown-light);
+            color: #cc8645; /* marrom do AgriFarm um tom mais claro: 4,5:1 no fundo escuro */
             font-size: 12px;
             font-weight: 700;
             text-transform: uppercase;
@@ -834,13 +905,19 @@
             text-decoration: none;
             font-size: 15px;
             box-shadow: 0 8px 32px rgba(79, 119, 36, .35);
-            transition: transform .3s var(--ease-premium), box-shadow .3s var(--ease-premium), background .3s ease;
+            transition: transform var(--hover-duration) var(--ease-premium), box-shadow var(--hover-duration) var(--ease-premium), background var(--hover-duration) ease;
         }
 
-        .btn-primary:hover {
+        .btn-primary:hover,
+        .btn-primary:focus-visible {
             background: #6aaa2e;
             transform: translateY(-2px) scale(1.03);
             box-shadow: 0 14px 36px rgba(79, 119, 36, .45);
+        }
+
+        .btn-primary:focus-visible {
+            outline: 2px solid #e8c463;
+            outline-offset: 3px;
         }
 
         .btn-primary:active {
@@ -860,14 +937,20 @@
             font-size: 15px;
             border: 1px solid rgba(255, 255, 255, .28);
             backdrop-filter: blur(8px);
-            transition: transform .3s var(--ease-premium), box-shadow .3s var(--ease-premium), background .3s ease, border-color .3s ease;
+            transition: transform var(--hover-duration) var(--ease-premium), box-shadow var(--hover-duration) var(--ease-premium), background var(--hover-duration) ease, border-color var(--hover-duration) ease;
         }
 
-        .btn-secondary:hover {
+        .btn-secondary:hover,
+        .btn-secondary:focus-visible {
             background: rgba(255, 255, 255, .2);
             border-color: rgba(255, 255, 255, .45);
             transform: translateY(-2px) scale(1.03);
             box-shadow: 0 10px 28px rgba(0, 0, 0, .25);
+        }
+
+        .btn-secondary:focus-visible {
+            outline: 2px solid #ffffff;
+            outline-offset: 3px;
         }
 
         .btn-secondary:active {
@@ -1141,7 +1224,7 @@
             padding: 28px 22px;
             text-align: center;
             backdrop-filter: blur(6px);
-            transition: transform .25s var(--ease-premium), box-shadow .25s ease;
+            transition: transform var(--hover-duration) var(--ease-premium), box-shadow var(--hover-duration) ease;
             transform-style: preserve-3d;
         }
 
@@ -1303,7 +1386,7 @@
             border-radius: 18px;
             padding: 26px 18px;
             text-align: center;
-            transition: transform .3s var(--ease-premium), border-color .3s ease, box-shadow .3s ease;
+            transition: transform var(--hover-duration) var(--ease-premium), border-color var(--hover-duration) ease, box-shadow var(--hover-duration) ease;
             position: relative;
             overflow: hidden;
             transform-style: preserve-3d;
@@ -1316,7 +1399,7 @@
             border-radius: 18px;
             background: linear-gradient(135deg, rgba(79, 119, 36, .08) 0%, transparent 70%);
             opacity: 0;
-            transition: opacity .3s;
+            transition: opacity var(--hover-duration) ease;
         }
 
         .sol-feat:hover {
@@ -1448,7 +1531,7 @@
     border: 1px solid rgba(255, 255, 255, .1);
     border-radius: 20px;
     padding: 28px 32px; /* espaçamento interno mais compacto */
-    transition: transform .3s var(--ease-premium), background .3s ease, border-color .3s ease, box-shadow .3s ease;
+    transition: transform var(--hover-duration) var(--ease-premium), background var(--hover-duration) ease, border-color var(--hover-duration) ease, box-shadow var(--hover-duration) ease;
     transform-style: preserve-3d;
     will-change: transform;
 }
@@ -1623,7 +1706,7 @@
             align-items: center;
             justify-content: center;
             margin-bottom: 20px;
-            transition: background .3s, border-color .3s;
+            transition: background var(--hover-duration) ease, border-color var(--hover-duration) ease;
         }
 
         .benefit-card:hover .benefit-icon {
@@ -1742,7 +1825,7 @@
             border: 1px solid rgba(255, 255, 255, .1);
             border-radius: 14px;
             padding: 22px 18px;
-            transition: border-color .25s ease, background .25s ease, transform .25s var(--ease-premium);
+            transition: border-color var(--hover-duration) ease, background var(--hover-duration) ease, transform var(--hover-duration) var(--ease-premium);
             transform-style: preserve-3d;
         }
 
@@ -1795,7 +1878,7 @@
             border-radius: 18px;
             padding: 28px 18px;
             text-align: center;
-            transition: transform .3s var(--ease-premium), border-color .3s ease, box-shadow .3s ease;
+            transition: transform var(--hover-duration) var(--ease-premium), border-color var(--hover-duration) ease, box-shadow var(--hover-duration) ease;
             transform-style: preserve-3d;
             will-change: transform;
         }
@@ -1860,78 +1943,115 @@
             margin: 0 auto 16px;
         }
 
+        /* Grade da Equipe: virou uma grade de cartões individuais (não mais
+           uma "lista" compacta dentro de uma caixa única) — cada
+           integrante ganha seu próprio card, com a foto como elemento
+           central e bem maior (era um círculo de 38px, quase ilegível).
+           auto-fit + minmax deixa o número de colunas fluir sozinho
+           (4 em telas largas, 2-3 em tablets, 1 no celular) sem precisar
+           de um breakpoint pra cada largura. */
         .team-grid {
             display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 18px;
-            max-width: 800px;
+            grid-template-columns: repeat(auto-fit, minmax(min(190px, 100%), 1fr));
+            gap: 24px;
+            max-width: 1020px;
             margin: 56px auto 0;
-            background: rgba(32, 44, 22, .6);
-            backdrop-filter: blur(8px);
-            border: 1px solid rgba(106, 170, 46, .35);
-            border-radius: 24px;
-            padding: 32px;
-            perspective: 900px;
         }
 
-        .team-grid h3 {
+        .team-grid :is(h2, h3) {
             grid-column: 1/-1;
             text-align: center;
-            font-size: 1rem;
+            font-family: var(--font-display);
+            font-size: 1.35rem;
             font-weight: 700;
-            margin-bottom: 8px;
-            color: rgba(255, 255, 255, .8);
+            letter-spacing: -0.01em;
+            margin-bottom: 12px;
+            color: #ffffff;
         }
 
         .member {
             display: flex;
+            flex-direction: column;
             align-items: center;
-            gap: 14px;
-            background: rgba(255, 255, 255, .04);
-            border: 1px solid rgba(106, 170, 46, .25);
-            border-radius: 12px;
-            padding: 16px 18px;
-            transition: border-color .25s ease, background .25s ease, transform .25s var(--ease-premium);
+            text-align: center;
+            background: rgba(32, 44, 22, .6);
+            backdrop-filter: blur(6px);
+            border: 1px solid rgba(106, 170, 46, .22);
+            border-radius: 22px;
+            padding: 32px 20px 24px;
+            transition: border-color var(--hover-duration) ease, background var(--hover-duration) ease, transform var(--hover-duration) var(--ease-premium), box-shadow var(--hover-duration) ease;
             transform-style: preserve-3d;
         }
 
         .member:hover {
             border-color: rgba(106, 170, 46, .55);
-            background: rgba(255, 255, 255, .07);
-            transform: translateY(-3px);
+            background: rgba(255, 255, 255, .05);
+            transform: translateY(-5px);
+            box-shadow: 0 18px 40px rgba(0, 0, 0, .32);
         }
 
+        /* Foto bem maior e com destaque de verdade — círculo de 128px (era
+           38px), moldura mais grossa e uma sombra própria que a separa do
+           card por trás. overflow:hidden aqui garante que a <img> (ver
+           sobre.blade.php) sempre recorte certinho dentro do círculo,
+           mesmo que a foto original não seja perfeitamente quadrada. */
         .member-avatar {
-            width: 38px;
-            height: 38px;
+            width: 128px;
+            height: 128px;
             border-radius: 50%;
             flex-shrink: 0;
+            overflow: hidden;
+            margin-bottom: 18px;
             background: rgba(79, 119, 36, .18);
-            border: 2px solid rgba(106, 170, 46, .65);
+            border: 3px solid rgba(106, 170, 46, .55);
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: 800;
             color: #6aaa2e;
-            font-size: 14px;
-            transition: transform var(--hover-duration) var(--ease-premium), border-color var(--hover-duration) ease;
+            font-size: 2.4rem;
+            box-shadow: 0 10px 26px rgba(0, 0, 0, .35), inset 0 1px 0 rgba(255, 255, 255, .08);
+            transition: transform var(--hover-duration) var(--ease-premium), border-color var(--hover-duration) ease, box-shadow var(--hover-duration) ease;
+        }
+
+        /* object-position com viés pro topo: fotos de rosto costumam ter a
+           cabeça na metade superior — cortar exatamente no centro (padrão
+           do object-fit: cover) arrisca "comer" o queixo pra caber o
+           quadro, quando na verdade sobra fundo embaixo. 22% do topo
+           mantém o rosto inteiro visível na maioria das fotos de perfil. */
+        .member-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center 22%;
+            display: block;
         }
 
         .member:hover .member-avatar {
-            transform: scale(1.08);
-            border-color: rgba(232, 196, 99, .65);
+            transform: scale(1.06);
+            border-color: rgba(232, 196, 99, .7);
+            box-shadow: 0 14px 32px rgba(0, 0, 0, .45);
         }
 
         .member-name {
-            font-size: 13px;
-            font-weight: 600;
+            font-size: 15px;
+            font-weight: 700;
             color: #fff;
+            line-height: 1.35;
         }
 
         .member-role {
-            font-size: 11px;
+            font-size: 12.5px;
             color: var(--text-muted);
-            margin-top: 2px;
+            margin-top: 5px;
+        }
+
+        @media (max-width: 480px) {
+            .member-avatar {
+                width: 104px;
+                height: 104px;
+                font-size: 2rem;
+            }
         }
 
         /* ── FAQ ── */
@@ -1973,7 +2093,7 @@
             border: 1px solid rgba(255, 255, 255, .09);
             border-radius: 16px;
             overflow: hidden;
-            transition: border-color .25s, box-shadow .25s, transform .25s var(--ease-premium);
+            transition: border-color var(--hover-duration) ease, box-shadow var(--hover-duration) ease, transform var(--hover-duration) var(--ease-premium);
             transform-style: preserve-3d;
         }
 
@@ -1999,7 +2119,7 @@
             padding: 20px 24px;
             text-align: left;
             color: #fff;
-            transition: background .2s ease;
+            transition: background var(--hover-duration) ease;
         }
 
         .faq-question:hover {
@@ -2031,7 +2151,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: background .25s ease, transform var(--hover-duration) var(--ease-premium), border-color var(--hover-duration) ease;
+            transition: background var(--hover-duration) ease, transform var(--hover-duration) var(--ease-premium), border-color var(--hover-duration) ease;
         }
 
         .faq-icon svg {
@@ -2098,13 +2218,19 @@
             text-decoration: none;
             font-size: 14px;
             box-shadow: 0 6px 24px rgba(79, 119, 36, .3);
-            transition: transform .3s var(--ease-premium), box-shadow .3s var(--ease-premium), background .3s ease;
+            transition: transform var(--hover-duration) var(--ease-premium), box-shadow var(--hover-duration) var(--ease-premium), background var(--hover-duration) ease;
         }
 
-        .faq-cta a:hover {
+        .faq-cta a:hover,
+        .faq-cta a:focus-visible {
             background: #6aaa2e;
             transform: translateY(-2px) scale(1.03);
             box-shadow: 0 12px 30px rgba(79, 119, 36, .4);
+        }
+
+        .faq-cta a:focus-visible {
+            outline: 2px solid #e8c463;
+            outline-offset: 3px;
         }
 
         .faq-cta a svg {
@@ -2207,16 +2333,20 @@
             appearance: none;
         }
 
+        /* Placeholder legível (antes 28% de branco: ~2:1 sobre o fundo). */
         .form-input::placeholder,
         .form-textarea::placeholder {
-            color: rgba(255, 255, 255, .28);
+            color: rgba(255, 255, 255, .62);
         }
 
+        /* Foco nítido: borda verde cheia + anel (antes só a borda passava
+           de 30% para 60% de opacidade — quase imperceptível). */
         .form-input:focus,
         .form-textarea:focus,
         .form-select:focus {
-            border-color: rgba(79, 119, 36, .6);
+            border-color: #6aaa2e;
             background: rgba(255, 255, 255, .09);
+            box-shadow: 0 0 0 3px rgba(106, 170, 46, .38);
         }
 
         .form-textarea {
@@ -2272,15 +2402,21 @@
             cursor: pointer;
             font-size: 15px;
             font-family: inherit;
-            transition: transform .3s var(--ease-premium), box-shadow .3s var(--ease-premium), background .3s ease;
+            transition: transform var(--hover-duration) var(--ease-premium), box-shadow var(--hover-duration) var(--ease-premium), background var(--hover-duration) ease;
             box-shadow: 0 6px 24px rgba(79, 119, 36, .3);
             width: 100%;
         }
 
-        .btn-submit:hover {
+        .btn-submit:hover,
+        .btn-submit:focus-visible {
             background: #6aaa2e;
             box-shadow: 0 10px 34px rgba(79, 119, 36, .48);
             transform: translateY(-2px);
+        }
+
+        .btn-submit:focus-visible {
+            outline: 2px solid #e8c463;
+            outline-offset: 3px;
         }
 
         .btn-submit:active {
@@ -2391,10 +2527,14 @@
         }
 
         .footer-logo img {
-            width: 46px;
-            height: 46px;
+            width: auto;
+            height: 60px;
             object-fit: contain;
-            filter: drop-shadow(0 1px 6px rgba(0, 0, 0, 0.5));
+            /* Sem "drop-shadow" preto aqui: o rodapé já é escuro
+               (footer { background: ...#1a1208... }), então o duplo
+               drop-shadow preto e desfocado (0.6/0.4 de opacidade) criava
+               uma mancha/halo escuro atrás de toda a logo, em vez de um
+               contorno sutil. */
         }
 
         .footer-logo span {
@@ -2477,6 +2617,19 @@
             text-decoration: none;
             transition: color var(--hover-duration) var(--ease-premium), transform var(--hover-duration) var(--ease-premium);
             width: fit-content;
+        }
+
+        /* Celular: área de toque confortável (~40px) nos links do rodapé e
+           nas redes sociais, que tinham 15–20px de altura. Só a área
+           clicável cresce; o desenho continua o mesmo. */
+        @media (max-width: 767px) {
+            .footer-social { gap: 6px; margin-left: -10px; }
+            .footer-social a { width: 40px; height: 40px; }
+            .footer-col { gap: 2px; }
+            .footer-col a { min-height: 40px; }
+            /* Barra de contato do topo (visível até ~640px): mesmo cuidado. */
+            .topbar-contact-item { min-height: 32px; }
+            .topbar .topbar-social a { min-width: 32px; min-height: 32px; }
         }
 
         .footer-col a i {
@@ -2669,11 +2822,12 @@
             margin-top: 40px;
             width: 420px;
             max-width: 80vw;
-            height: 7px;
+            height: 8px;
 
             background: #1c3a1c;
             border-radius: 20px;
             overflow: hidden;
+            box-shadow: inset 0 1px 4px rgba(0, 0, 0, .45);
 
             opacity: 0;
 
@@ -2690,15 +2844,28 @@
 
         }
 
+        /* Antes a barra começava a encher em 1.6s (delay: "load 3s
+           linear") enquanto o container (".loader") ainda estava
+           INVISÍVEL — só ficava opaco de verdade em 3.5s. Resultado: ela
+           "aparecia" já ~65% cheia, num salto seco, e ainda terminava
+           cortada (o splash saía da tela aos 4s, antes dos 4.6s que a
+           animação levava pra completar). Agora ela só começa a encher
+           quando o container já está visível (mesmo delay, 2.5s), com uma
+           curva suave (--ease-premium, desacelera no final) em vez de
+           "linear" — e o setTimeout do splash (script inline logo abaixo
+           deste arquivo) foi ajustado pra dar tempo dela terminar antes de
+           a tela subir. */
         .loader-bar {
 
             height: 100%;
             width: 0%;
+            border-radius: 20px;
 
             background: linear-gradient(90deg, #3f8d3f, #d1a136 55%, #6b3f1a);
+            box-shadow: 0 0 14px rgba(209, 161, 54, .55);
 
-            animation: load 3s linear forwards;
-            animation-delay: 1.6s;
+            animation: load 3.4s var(--ease-premium) forwards;
+            animation-delay: 2.5s;
 
         }
 
@@ -2902,148 +3069,24 @@
             --text-muted: var(--text-on-light-muted);
         }
 
-        /* Navbar: o texto dos links é branco translúcido (pensado pra
-           ficar sobre o "vidro" verde semitransparente da navbar, que deixa
-           o fundo passar por trás). Com as seções agora claras atrás dela,
-           esse texto branco perde contraste — precisa virar escuro no tema
-           claro. Usa !important porque o script de destaque do link ativo
-           (rolagem da página) escreve a cor direto no atributo style a
-           cada scroll, o que teria prioridade sobre uma regra normal. */
-        body.light-theme .nav-links a {
-            color: var(--text-on-light) !important;
-        }
+        /* Navbar (topbar + nav): fica ESCURA também no Tema Claro, com a
+           mesma identidade visual do modo escuro original — maior
+           contraste, aparência mais profissional e uma "âncora" visual
+           fixa que não muda de aparência conforme o tema do conteúdo
+           abaixo dela muda. Por isso nenhuma regra própria é necessária
+           aqui: sem override, ela simplesmente herda o estilo escuro
+           padrão (fundo, links, logo, botão "Acessar Sistema", botão de
+           acessibilidade e hambúrguer todos já pensados pra esse fundo
+           escuro e já validados em WCAG AA lá).  */
 
-        body.light-theme .nav-links a.active {
-            color: var(--green-dark) !important;
-        }
-
-        /* Botão "Acessar Sistema" tem fundo verde sólido, então a letra
-           precisa continuar branca mesmo com a regra acima (que escurece
-           os links de navegação no tema claro). */
-        body.light-theme .nav-links a.btn-nav {
-            color: #ffffff !important;
-        }
-
-        /* O botão de acessibilidade (partial compartilhado) usa fundo/ícone
-           bem claros pensados pra ficar sobre a navbar escura original —
-           no tema claro ele quase desaparecia contra a navbar. Fica um
-           círculo escuro sólido, sempre visível. */
-        body.light-theme .accessibility-trigger {
-            background: var(--green-dark);
-            color: #eafbe4;
-            border-color: var(--green-dark);
-        }
-
-        body.light-theme .accessibility-trigger:hover {
-            background: var(--green);
-            color: #ffffff;
-        }
-
-        body.light-theme .hamburger {
-            color: var(--text-on-light);
-        }
-
-        /* ── HERO: overlay mais claro no tema claro, pra não sobrar um
-           bloco escuro isolado logo no topo de uma página clara. O vídeo
-           em si continua o mesmo — só a camada escura por cima clareia. ── */
-        /* Antes era uma cor sólida lisa (rgba branco 62%) — achatava o vídeo
-           num véu uniforme sem profundidade. Vira um degradê: mais forte no
-           topo (onde fica a tag/título, precisa de contraste), afinando no
-           meio, e fechando com um verde suave embaixo que já prepara a
-           transição pra seção "Problema" logo abaixo. */
-        body.light-theme .hero-overlay {
-            background: linear-gradient(
-                180deg,
-                rgba(248, 246, 241, .84) 0%,
-                rgba(248, 246, 241, .58) 32%,
-                rgba(248, 246, 241, .44) 68%,
-                rgba(240, 237, 228, .8) 100%
-            );
-        }
-
-        /* "Ração" usa a técnica de texto preenchido por gradiente
-           (background-clip:text + fill transparente) — um text-shadow por
-           cima disso desenha uma sombra sólida atrás das letras (já que a
-           sombra ignora o fill transparente), virando aquele halo/caixa
-           borrada. Em vez de sombra, vira uma cor verde sólida e escura,
-           que já se lê bem sozinha sobre o overlay claro. */
-        body.light-theme .hero-title .accent {
-            background: none;
-            -webkit-background-clip: unset;
-            -webkit-text-fill-color: var(--green-dark);
-            color: var(--green-dark);
-        }
-
-        body.light-theme .hero-tag {
-            background: var(--card-light-bg);
-            border-color: var(--card-light-border);
-            color: var(--text-on-light);
-            box-shadow: var(--card-light-shadow);
-        }
-
-        body.light-theme .hero-title {
-            color: var(--green-dark);
-        }
-
-        body.light-theme .hero-sub {
-            color: var(--green-dark);
-        }
-
-        body.light-theme .scroll-hint span,
-        body.light-theme .scroll-hint svg {
-            color: var(--text-on-light-muted);
-        }
-
-        /* Botão secundário do hero ("Conhecer a Solução") era um vidro
-           branco translúcido com letra branca — pensado pra ficar sobre um
-           fundo escuro. Com o hero claro, isso ficava quase invisível
-           (branco sobre branco). Vira um pílula verde-escura sólida,
-           mantendo a letra branca como pedido, mas com fundo que dá
-           contraste de verdade e ainda se distingue do botão principal. */
-        /* :not(.acc-btn) importante: o botão "Padrão" do Painel de
-           Acessibilidade reaproveita a classe genérica ".btn-secondary" e,
-           sem essa exclusão, herdava o fundo verde/letra branca pensados
-           pro botão "Conhecer a Solução" do hero — ficando com fundo
-           transparente (regra própria do painel) + letra branca, invisível
-           sobre o card claro do painel. */
-        body.light-theme .btn-secondary:not(.acc-btn) {
-            background: var(--green-dark);
-            color: #fff;
-            border-color: var(--green-dark);
-        }
-
-        body.light-theme .btn-secondary:not(.acc-btn):hover {
-            background: var(--green);
-            border-color: var(--green);
-        }
-
-        body.light-theme .topbar {
-            background: var(--green-dark);
-            border-bottom-color: rgba(255, 255, 255, .12);
-        }
-
-        body.light-theme nav {
-            background: linear-gradient(180deg, rgba(61, 94, 28, 0.95), rgba(79, 119, 36, 0.95));
-            border-bottom-color: rgba(209, 161, 54, .22);
-        }
-
-        body.light-theme nav.nav-scrolled {
-            background: linear-gradient(180deg, rgba(53, 82, 24, 0.98), rgba(61, 94, 28, 0.98));
-        }
-
-        /* Cartões de estatística do hero (15% / 24/7 / 100%) — mesma
-           lógica: fundo e texto brancos translúcidos ficavam ilegíveis
-           sobre o hero claro. */
-        body.light-theme .stat-card {
-            background: var(--card-light-bg);
-            border-color: var(--card-light-border);
-            box-shadow: var(--card-light-shadow);
-        }
-
-        body.light-theme .stat-label {
-            color: var(--text-on-light-muted);
-            text-shadow: none;
-        }
+        /* ── HERO: fica SEMPRE com o visual escuro original (vídeo +
+           overlay + textos brancos), mesmo no Tema Claro — só essa seção,
+           sem o rodapé, que continua trocando normalmente. Igual à navbar
+           (comentário logo acima), é uma "âncora" visual que não muda de
+           aparência conforme o tema do resto da página. Chegou a existir
+           uma versão clara aqui (overlay mais claro, textos verde-escuro,
+           cards brancos); foi removida a pedido — o hero volta a ser
+           idêntico em qualquer tema. ── */
 
         /* ── PROBLEMA: o "vermelho" de alerta (ícone X e o card de
            desperdício) vira verde no tema claro, pra manter só
@@ -3090,6 +3133,25 @@
             border-top-color: var(--card-light-border);
         }
 
+        /* Ícones sociais e a linha divisória de ".footer-bottom" eram
+           branco/quase-branco (pensados pro rodapé escuro original) — sobre
+           o fundo claro acima ficavam quase invisíveis (baixíssimo
+           contraste), como se só o resto do rodapé tivesse virado claro. */
+        body.light-theme .footer-social a {
+            color: var(--green-dark);
+            text-shadow: none;
+        }
+
+        body.light-theme .footer-social a:hover,
+        body.light-theme .footer-social a:focus-visible {
+            color: #b45309;
+            text-shadow: none;
+        }
+
+        body.light-theme .footer-bottom {
+            border-top-color: var(--card-light-border);
+        }
+
         /* Textos que eram brancos/var(--text-muted) direto (pensados pra
            fundo escuro) precisam virar escuros no tema claro. */
         body.light-theme .section-title,
@@ -3115,7 +3177,7 @@
         body.light-theme .faq-answer strong,
         body.light-theme .faq-cta p,
         body.light-theme .sobre-text,
-        body.light-theme .team-grid h3,
+        body.light-theme .team-grid :is(h2, h3),
         body.light-theme .member-name,
         body.light-theme .member-role,
         body.light-theme .form-label,
@@ -3167,6 +3229,22 @@
             color: var(--green-dark);
         }
 
+        /* Os cards amarelo/laranja mantinham o fundo escuro translúcido
+           original (pensado pra ficar sobre o hero escuro) — sobre o fundo
+           claro isso resultava numa cor terrosa neutra por trás do número,
+           derrubando o contraste do texto pra ~2.5:1 (abaixo do mínimo
+           3:1 do WCAG AA pra texto grande). Ganham o mesmo tratamento do
+           card vermelho: fundo bem claro na própria cor, texto mais escuro. */
+        body.light-theme .data-card.yellow {
+            background: linear-gradient(135deg, rgba(217, 119, 6, .08), rgba(217, 119, 6, .03));
+            border-color: rgba(217, 119, 6, .3);
+        }
+
+        body.light-theme .data-card.orange {
+            background: linear-gradient(135deg, rgba(194, 65, 12, .08), rgba(194, 65, 12, .03));
+            border-color: rgba(194, 65, 12, .3);
+        }
+
         body.light-theme .data-card.yellow .num {
             color: #b45309;
         }
@@ -3182,7 +3260,6 @@
         body.light-theme .benefit-card,
         body.light-theme .mini-stat,
         body.light-theme .faq-item,
-        body.light-theme .team-grid,
         body.light-theme .member,
         body.light-theme .form-container,
         body.light-theme .faq-cta {
@@ -3249,7 +3326,16 @@
 
         body.light-theme .form-input::placeholder,
         body.light-theme .form-textarea::placeholder {
-            color: rgba(28, 39, 22, .35);
+            color: rgba(28, 39, 22, .62);
+        }
+
+        /* Sem isto a borda de foco do tema claro ficava igual à de repouso
+           (a regra acima é mais específica que ".form-input:focus"). */
+        body.light-theme .form-input:focus,
+        body.light-theme .form-textarea:focus,
+        body.light-theme .form-select:focus {
+            border-color: #3d7a1f;
+            box-shadow: 0 0 0 3px rgba(61, 122, 31, .25);
         }
 
         /* Círculos/ícones translúcidos verdes continuam verdes, só ajusta o fundo */

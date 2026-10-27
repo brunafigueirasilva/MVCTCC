@@ -1,17 +1,12 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
+@extends('layouts.app')
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AgriFarm | Plano Alimentar</title>
+@section('title', 'AgriFarm | Plano Alimentar')
 
-    <!-- Fontes e Ícones -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+@push('scripts')
+<script src="{{ asset('js/vendor/chart.min.js') }}"></script>
+@endpush
 
-    <!-- Chart.js para renderização idêntica dos gráficos -->
-    <script src="{{ asset('js/vendor/chart.min.js') }}"></script>
-
+@push('styles')
     <style>
         /* ==========================================================================
            RESET & VARIÁVEIS DE ESTILO PREMIUM (FOTO DE ALTA FIDELIDADE)
@@ -28,30 +23,6 @@
             font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
         }
 
-
-        /* Link "pular para o conteúdo": invisível até receber foco por
-           teclado (Tab), pra quem navega sem mouse não precisar passar por
-           toda a sidebar de novo em cada página. */
-        .skip-link {
-            position: absolute;
-            top: -48px;
-            left: 12px;
-            background: #123f22;
-            color: #ffffff;
-            padding: 10px 18px;
-            border-radius: 0 0 8px 8px;
-            font-weight: 600;
-            font-size: 0.875rem;
-            text-decoration: none;
-            z-index: 1100;
-            transition: top 0.2s ease;
-        }
-
-        .skip-link:focus {
-            top: 0;
-            outline: 3px solid #4ade80;
-            outline-offset: 2px;
-        }
 
         /* Some visualmente mas continua legível por leitor de tela — usado
            em legendas/rótulos que só existem pra dar contexto a quem não
@@ -72,17 +43,17 @@
             --bg-global: #f8fafc;
             --text-main: #1e293b;
             --text-muted: #64748b;
-            --brand-green-dark: #163a24;
+            --brand-green-dark: var(--verde-principal, #0e4a27);
             --brand-green-gradient: #123f22;
-            --brand-green-light: #4ade80;
+            --brand-green-light: #0f172a;
             --chart-blue-light: #bfdbfe;
             --chart-blue-dark: #1d4ed8;
             --chart-red: #ef4444;
             --chart-green: #15803d;
             --chart-grid: #eef2f6;
             --chart-tick: #94a3b8;
-            --success-bg: #dcfce7;
-            --success-text: #15803d;
+            --success-bg: var(--verde-claro, #e8f5ee);
+            --success-text: var(--verde-texto, #0e4a27);
             --warning-bg: #fef3c7;
             --warning-text: #b45309;
             --danger-bg: #fee2e2;
@@ -96,26 +67,11 @@
 
             /* Mesmas variáveis de navbar/sidebar do Dashboard, para os dois
                ficarem visualmente idênticos. */
-            --navbar-bg: #123f22;
-            --sidebar-bg: #123f22;
-            --surface-border: rgba(255, 255, 255, 0.15);
-            --menu-text: #b2cbb9;
-            --menu-text-hover: #ffffff;
-            --menu-hover-bg: rgba(255, 255, 255, 0.05);
-            --menu-active-bg: rgba(255, 255, 255, 0.08);
-            --menu-active-text: #4ade80;
-            --menu-active-accent: #4ade80;
 
             /* Painel de Acessibilidade (componente compartilhado, ver
                partials/acessibilidade.blade.php) — sem essas variáveis o
                painel ficava sempre no visual claro padrão, mesmo com o tema
                escuro ou o alto contraste ativados nesta página. */
-            --panel-bg: #ffffff;
-            --panel-text: #1f2937;
-            --panel-item-bg: #f9fafb;
-            --panel-btn-bg: #e5e7eb;
-            --panel-btn-text: #374151;
-            --panel-btn-hover: #d1d5db;
 
             /* Paleta vibrante — usada nos gradientes dos cards de KPI, nos
                gráficos (barras/rosca/linha) e nos badges/ícones "3D" da
@@ -138,7 +94,7 @@
 
         body {
             background:
-                radial-gradient(1100px 560px at 8% -12%, rgba(16, 185, 129, 0.07), transparent 60%),
+                radial-gradient(1100px 560px at 8% -12%, color-mix(in srgb, var(--verde-principal, #0e4a27) 7%, transparent), transparent 60%),
                 radial-gradient(900px 480px at 100% 0%, rgba(37, 99, 235, 0.05), transparent 55%),
                 radial-gradient(700px 500px at 50% 100%, rgba(245, 158, 11, 0.04), transparent 60%),
                 var(--bg-global);
@@ -148,15 +104,14 @@
 
         body.dark-theme {
             background:
-                radial-gradient(1100px 560px at 8% -12%, rgba(74, 222, 128, 0.07), transparent 60%),
+                radial-gradient(1100px 560px at 8% -12%, color-mix(in srgb, var(--verde-secundario, #16a765) 7%, transparent), transparent 60%),
                 radial-gradient(900px 480px at 100% 0%, rgba(14, 165, 233, 0.05), transparent 55%),
                 var(--bg-global);
         }
-
         body.high-contrast { background: var(--bg-global); }
 
         .sidebar, .navbar, .main {
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, filter 0.25s ease, left 0.3s ease, width 0.3s ease, margin 0.3s ease;
         }
 
         /* Quando o painel de acessibilidade está aberto, desfoca navbar,
@@ -170,15 +125,6 @@
 
         /* Fundo escurecido do menu mobile (fecha a sidebar ao clicar fora),
            igual ao Dashboard. */
-        .sidebar-overlay {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.45);
-            z-index: 997;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
 
         @media (max-width: 992px) {
             .sidebar-overlay.active {
@@ -207,7 +153,7 @@
    de empilhar dentro de uma única célula. */
 .ca-cards-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr));
     gap: 20px;
     margin-bottom: 8px;
 }
@@ -259,18 +205,15 @@
     font-weight: 700;
     color: var(--text-main, #1e293b);
     margin: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    /* Nome do lote inteiro (quebra linha) — antes era cortado com "…". */
+    overflow-wrap: anywhere;
 }
 
 .ca-subtitle {
     font-size: 0.75rem;
     color: var(--text-muted, #64748b);
     margin-top: 2px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    overflow-wrap: anywhere;
 }
 
 .ca-header .status-badge {
@@ -309,7 +252,7 @@
 
 /* Setas de variação dos cards de Conversão Alimentar (partials/conversao-
    alimentar-cards.blade.php) — mesma cor usada no Relatório Avançado. */
-.trend-up { color: #16a34a; }
+.trend-up { color: var(--verde-texto, #0e4a27); }
 .trend-down { color: #dc2626; }
 .trend-neutral { color: #94a3b8; }
 
@@ -348,7 +291,7 @@ body.high-contrast .trend-neutral {
 
 .stat-card:hover { transform: translateY(-2px); box-shadow: 0 10px 22px -8px rgba(15, 23, 42, 0.16); }
 
-.stat-card--verde { background: linear-gradient(160deg, rgba(16, 185, 129, 0.12), transparent 60%), var(--card-bg); }
+.stat-card--verde { background: linear-gradient(160deg, color-mix(in srgb, var(--verde-principal, #0e4a27) 12%, transparent), transparent 60%), var(--card-bg); }
 .stat-card--ambar { background: linear-gradient(160deg, rgba(249, 115, 22, 0.12), transparent 60%), var(--card-bg); }
 .stat-card--azul  { background: linear-gradient(160deg, rgba(37, 99, 235, 0.12), transparent 60%), var(--card-bg); }
 .stat-card--ciano { background: linear-gradient(160deg, rgba(8, 145, 178, 0.12), transparent 60%), var(--card-bg); }
@@ -393,8 +336,8 @@ body.high-contrast .trend-neutral {
 }
 
 .icone-verde {
-    background: linear-gradient(145deg, #4ade80, #059669);
-    box-shadow: 0 6px 14px -4px rgba(5, 150, 105, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.4), inset 0 -2px 3px rgba(0, 0, 0, 0.16);
+    background: linear-gradient(145deg, var(--verde-secundario, #16a765), var(--verde-principal, #0e4a27));
+    box-shadow: 0 6px 14px -4px color-mix(in srgb, var(--verde-principal, #0e4a27) 50%, transparent), inset 0 1px 1px rgba(255, 255, 255, 0.4), inset 0 -2px 3px rgba(0, 0, 0, 0.16);
 }
 .icone-ambar {
     background: linear-gradient(145deg, #fbbf24, #f97316);
@@ -421,44 +364,9 @@ body.high-contrast .stat-card-icon {
     box-shadow: none !important;
 }
 
-/* Chips de período (7/30/90 dias) da seção de Conversão Alimentar. */
-.periodo-chips {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 18px;
-    flex-wrap: wrap;
-}
-
-.periodo-chip {
-    padding: 8px 16px;
-    border-radius: 20px;
-    border: 1px solid var(--border-color, #e2e8f0);
-    background: var(--card-bg);
-    color: var(--text-muted, #64748b);
-    font-size: 0.813rem;
-    font-weight: 600;
-    cursor: pointer;
-    text-decoration: none;
-    transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
-}
-
-.periodo-chip:hover { border-color: #16a34a; color: #16a34a; }
-
-.periodo-chip.active {
-    background: #16a34a;
-    border-color: #16a34a;
-    color: #ffffff;
-}
-
-body.high-contrast .periodo-chip {
-    background: #000000 !important;
-    border: 2px solid #ffff00 !important;
-    color: #ffff00 !important;
-}
-body.high-contrast .periodo-chip.active {
-    background: #ffff00 !important;
-    color: #000000 !important;
-}
+/* Chips de período (7/15/30/60/90 dias) da Conversão Alimentar — o estilo
+   é o padrão do sistema (partials/paleta-verde); aqui só o espaçamento. */
+.periodo-chips { margin-bottom: 18px; }
 
 @media (max-width: 992px) {
     .stat-cards-row { grid-template-columns: repeat(2, 1fr); }
@@ -470,17 +378,17 @@ body.high-contrast .periodo-chip.active {
 
 /* Paleta de Cores dos Ícones baseada na imagem */
 .bg-green-light {
-    background: linear-gradient(145deg, #4ade80, #059669);
-    box-shadow: 0 5px 12px -3px rgba(5, 150, 105, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.4), inset 0 -2px 3px rgba(0, 0, 0, 0.16);
+    background: linear-gradient(145deg, var(--verde-secundario, #16a765), var(--verde-principal, #0e4a27));
+    box-shadow: 0 5px 12px -3px color-mix(in srgb, var(--verde-principal, #0e4a27) 50%, transparent), inset 0 1px 1px rgba(255, 255, 255, 0.4), inset 0 -2px 3px rgba(0, 0, 0, 0.16);
 }
-.text-green { color: #2e7d32; }
-.text-green-bold { color: #1b5e20; font-weight: 700; }
-.text-green-dark { color: #0a5c20; }
+.text-green { color: var(--verde-texto, #0e4a27); }
+.text-green-bold { color: var(--verde-texto, #0e4a27); font-weight: 700; }
+.text-green-dark { color: var(--verde-texto, #0e4a27); }
 .bg-transparent { background-color: transparent; }
 
 .bg-green-circle {
-    background: linear-gradient(145deg, #4ade80, #059669);
-    box-shadow: 0 5px 12px -3px rgba(5, 150, 105, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.4), inset 0 -2px 3px rgba(0, 0, 0, 0.16);
+    background: linear-gradient(145deg, var(--verde-secundario, #16a765), var(--verde-principal, #0e4a27));
+    box-shadow: 0 5px 12px -3px color-mix(in srgb, var(--verde-principal, #0e4a27) 50%, transparent), inset 0 1px 1px rgba(255, 255, 255, 0.4), inset 0 -2px 3px rgba(0, 0, 0, 0.16);
     border-radius: 50%;
     width: 36px;
     height: 36px;
@@ -527,7 +435,7 @@ body.high-contrast .periodo-chip.active {
     display: flex;
     align-items: center;
     gap: 12px;
-    background: var(--success-bg, #e8f5e9);
+    background: var(--success-bg, var(--verde-claro, #e8f5ee));
     border-radius: 12px;
     padding: 12px 16px;
     min-width: 0;
@@ -542,7 +450,7 @@ body.high-contrast .periodo-chip.active {
     align-items: center;
     justify-content: center;
     font-size: 1rem;
-    color: var(--success-text, #15803d);
+    color: var(--success-text, var(--verde-texto, #0e4a27));
     flex-shrink: 0;
 }
 
@@ -561,14 +469,14 @@ body.high-contrast .periodo-chip.active {
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.03em;
-    color: var(--success-text, #15803d);
+    color: var(--success-text, var(--verde-texto, #0e4a27));
     opacity: 0.85;
 }
 
 .ca-hero-value {
     font-size: 1.1875rem;
     font-weight: 800;
-    color: var(--success-text, #15803d);
+    color: var(--success-text, var(--verde-texto, #0e4a27));
     margin-top: 2px;
     display: inline-flex;
     flex-wrap: wrap;
@@ -602,6 +510,28 @@ body.high-contrast .periodo-chip.active {
 .ca-hero-vazio .ca-hero-label,
 .ca-hero-vazio .ca-hero-value,
 .ca-hero-vazio .ca-hero-sub { color: var(--text-muted, #64748b); }
+
+/* Origem do consumo da conversão: ícone + texto (medido / aproximado /
+   estimado) — o produtor sabe se o número é da fazenda ou do plano. */
+.ca-fonte {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    width: fit-content;
+    margin-top: 4px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    line-height: 1.35;
+}
+.ca-fonte-sensor { background: #dcfce7; color: #166534; }
+.ca-fonte-fornecido { background: #fef3c7; color: #92400e; }
+.ca-fonte-plano { background: #e2e8f0; color: #334155; }
+body.dark-theme .ca-fonte-sensor { background: rgba(74, 222, 128, 0.15); color: #86efac; }
+body.dark-theme .ca-fonte-fornecido { background: rgba(251, 191, 36, 0.15); color: #fcd34d; }
+body.dark-theme .ca-fonte-plano { background: rgba(148, 163, 184, 0.18); color: #cbd5e1; }
+body.high-contrast .ca-fonte { background: #000 !important; color: #ffff00 !important; border: 1px solid #ffff00; }
 
 .ca-btn-pesagem {
     display: flex;
@@ -646,7 +576,7 @@ body.high-contrast .periodo-chip.active {
 }
 
 .tooltip-icon:focus-visible {
-    outline: 2px solid #16a34a;
+    outline: 2px solid var(--verde-ativo, #087a47);
     outline-offset: 2px;
     border-radius: 4px;
 }
@@ -703,9 +633,9 @@ body.high-contrast .tooltip-popover {
 
 .ca-ver-todas-card:hover,
 .ca-ver-todas-card:focus-visible {
-    border-color: #16a34a;
-    background: var(--success-bg, #e8f5e9);
-    color: #15803d;
+    border-color: var(--verde-ativo, #087a47);
+    background: var(--success-bg, var(--verde-claro, #e8f5ee));
+    color: var(--verde-texto, #0e4a27);
     outline: none;
 }
 
@@ -713,8 +643,8 @@ body.high-contrast .tooltip-popover {
     width: 40px;
     height: 40px;
     border-radius: 50%;
-    background: var(--success-bg, #e8f5e9);
-    color: #15803d;
+    background: var(--success-bg, var(--verde-claro, #e8f5ee));
+    color: var(--verde-texto, #0e4a27);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -734,31 +664,11 @@ body.high-contrast .tooltip-popover {
         /* ==========================================================================
            NAVBAR SUPERIOR (FIXA)
            ========================================================================== */
-        .navbar {
-            height: 70px;
-            background: var(--navbar-bg);
-            border-bottom: 1px solid var(--surface-border);
-            box-shadow: 0 2px 12px rgba(15, 23, 42, 0.04);
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 32px;
-            z-index: 999;
-        }
 
-        .navbar-left {
-            display: flex;
-            align-items: center;
-            gap: 22px;
-            min-width: 0;
-        }
+
 
         .toggle-menu-btn {
-            background: rgba(255, 255, 255, 0.1);
+            background: #f1f5f9;
             border: 1px solid var(--surface-border);
             color: var(--brand-green-light);
             font-size: 1.063rem;
@@ -772,45 +682,17 @@ body.high-contrast .tooltip-popover {
         }
 
         .toggle-menu-btn:hover {
-            background: rgba(255, 255, 255, 0.18);
-            border-color: rgba(255, 255, 255, 0.25);
-            color: #ffffff;
+            background: #e2e8f0;
+            border-color: #cbd5e1;
+            color: #0f172a;
             transform: translateY(-1px);
         }
 
         /* Logo diretamente sobre o fundo escuro da navbar, sem caixa/quadrado
            atrás — igual ao Dashboard. */
-        .navbar-logo {
-            display: flex;
-            align-items: center;
-            min-width: 0;
-        }
 
-        .navbar-logo img {
-            height: 44px;
-            width: auto;
-            max-width: 220px;
-            object-fit: contain;
-            display: block;
-            image-rendering: -webkit-optimize-contrast;
-        }
 
-        .navbar-right {
-            display: flex;
-            align-items: center;
-            gap: 18px;
-        }
 
-        .user-profile {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            text-decoration: none;
-            padding: 6px 10px;
-            margin: -6px -10px;
-            border-radius: 12px;
-            cursor: pointer;
-        }
 
         .user-profile:hover {
             background: rgba(255, 255, 255, 0.08);
@@ -819,7 +701,7 @@ body.high-contrast .tooltip-popover {
         .user-avatar {
             width: 40px;
             height: 40px;
-            background: rgba(255, 255, 255, 0.1);
+            background: #f1f5f9;
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -830,10 +712,6 @@ body.high-contrast .tooltip-popover {
             flex-shrink: 0;
         }
 
-        .user-info {
-            display: flex;
-            flex-direction: column;
-        }
 
         .user-name {
             color: #ffffff;
@@ -847,15 +725,10 @@ body.high-contrast .tooltip-popover {
             font-weight: 500;
         }
 
-        .navbar-divider {
-            width: 1px;
-            height: 28px;
-            background: var(--surface-border);
-        }
 
         .navbar-logout {
             text-decoration: none;
-            color: #fca5a5;
+            color: #dc2626;
             font-weight: 600;
             font-size: 0.875rem;
             display: flex;
@@ -868,82 +741,26 @@ body.high-contrast .tooltip-popover {
             transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
         }
 
-        .navbar-logout:hover {
-            background: linear-gradient(135deg, #f87171, #dc2626);
-            border-color: transparent;
-            color: #ffffff;
-            transform: translateY(-1px);
-            box-shadow: 0 8px 18px -6px rgba(220, 38, 38, 0.55);
-        }
 
-        .navbar-logout:active { transform: translateY(0); box-shadow: none; }
 
         /* Botão de acessibilidade inserido dentro da navbar (ver partials/acessibilidade). */
         .navbar-right .accessibility-trigger {
-            background: rgba(255, 255, 255, 0.1);
+            background: #f1f5f9;
             color: var(--brand-green-light);
             border: 1px solid var(--surface-border);
         }
         .navbar-right .accessibility-trigger:hover {
-            background: rgba(255, 255, 255, 0.2);
-            color: #ffffff;
+            background: #e2e8f0;
+            color: #0f172a;
         }
 
         /* ==========================================================================
            SIDEBAR LATERAL
            ========================================================================== */
-        .sidebar {
-            width: var(--sidebar-width);
-            background: var(--sidebar-bg);
-            border-right: 1px solid var(--surface-border);
-            box-shadow: 2px 0 12px rgba(15, 23, 42, 0.03);
-            color: var(--menu-text);
-            position: fixed;
-            top: 70px;
-            left: 0;
-            bottom: 0;
-            padding: 0 16px 20px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            z-index: 998;
-        }
 
-        .sidebar.collapsed {
-            left: calc(-1 * var(--sidebar-width));
-        }
 
-        .menu {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            min-height: 100%;
-            padding-top: 20px;
-        }
 
-        .menu a {
-            text-decoration: none;
-            color: var(--menu-text);
-            padding: 12px 14px;
-            /* Cantos arredondados só do lado direito, com a barra de
-               destaque (border-left) saindo como uma linha limpa e
-               contínua — igual ao Dashboard. */
-            border-radius: 0 10px 10px 0;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            font-size: 0.875rem;
-            font-weight: 500;
-            border-left: 4px solid transparent;
-            position: relative;
-            transition: background-color 0.18s ease, color 0.18s ease, border-left-color 0.18s ease, transform 0.18s ease;
-        }
 
-        .menu a:hover {
-            background: var(--menu-hover-bg);
-            color: var(--menu-text-hover);
-            transform: translateX(4px);
-        }
 
         @keyframes menuIconBounce {
             0% { transform: translateY(0) scale(1); }
@@ -953,27 +770,8 @@ body.high-contrast .tooltip-popover {
             100% { transform: translateY(0) scale(1); }
         }
 
-        .menu a:hover i {
-            animation: menuIconBounce 0.55s cubic-bezier(.34,1.56,.64,1);
-        }
 
-        .menu a.active {
-            background: var(--menu-active-bg);
-            color: var(--menu-active-text);
-            font-weight: 700;
-            border-left-color: var(--menu-active-accent);
-            box-shadow: inset 0 0 0 1px rgba(74, 222, 128, 0.12);
-        }
 
-        .menu i {
-            width: 20px;
-            font-size: 1rem;
-            text-align: center;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            transition: transform 0.18s ease;
-        }
 
         @media (prefers-reduced-motion: reduce) {
             .menu a, .menu i { transition: background-color 0.18s ease, color 0.18s ease; }
@@ -998,13 +796,9 @@ body.high-contrast .tooltip-popover {
             margin-left: var(--sidebar-width);
             width: calc(100% - var(--sidebar-width));
             padding: 40px;
-            padding-top: 100px;
+            padding-top: 20px;
         }
 
-        .main.expanded {
-            margin-left: 0;
-            width: 100%;
-        }
 
         .top-bar {
             display: flex;
@@ -1012,6 +806,78 @@ body.high-contrast .tooltip-popover {
             align-items: center;
             margin-bottom: 30px;
             gap: 20px;
+        }
+
+        /* Barra "Unidade Produtiva" — mesmo componente/comportamento do
+           Dashboard (ver dashboard.blade.php .fazenda-selector-bar), só
+           adaptado aos nomes de variável desta página (--card-bg/
+           --text-main/--text-muted/--border-color em vez de --text-
+           principal/--text-secundario/--surface-muted-*). Fica logo no
+           topo do conteúdo, antes de qualquer cartão/tabela/gráfico —
+           tudo abaixo dela passa a refletir só a fazenda escolhida aqui. */
+        .fazenda-selector-bar {
+            background: var(--card-bg);
+            padding: 16px 24px;
+            border-radius: 16px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--border-color, #e2e8f0);
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-bottom: 24px;
+        }
+
+        .fazenda-selector-bar-label {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .select-fazenda {
+            flex: 1;
+            min-width: 200px;
+            max-width: 400px;
+            padding: 11px 16px;
+            border-radius: 10px;
+            border: 1px solid var(--border-color, #e2e8f0);
+            outline: none;
+            background: var(--card-bg);
+            color: var(--text-main);
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        .select-fazenda:focus {
+            border-color: var(--verde-ativo, #087a47);
+            box-shadow: 0 0 0 3px color-mix(in srgb, var(--verde-principal, #0e4a27) 10%, transparent);
+        }
+
+        .selector-hint {
+            font-size: 0.781rem;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--bg-global);
+            border: 1px dashed var(--border-color, #e2e8f0);
+            padding: 8px 14px;
+            border-radius: 10px;
+        }
+
+        .selector-hint i { color: #f59e0b; }
+
+        @media (max-width: 576px) {
+            .fazenda-selector-bar { flex-direction: column; align-items: stretch; padding: 16px; }
+            .select-fazenda { max-width: 100%; }
+            .selector-hint { width: 100%; }
         }
 
         .header h1 {
@@ -1027,7 +893,7 @@ body.high-contrast .tooltip-popover {
         }
 
         .btn-add {
-            background: #0f602e;
+            background: var(--verde-principal, #0e4a27);
             color: white;
             border: none;
             padding: 12px 24px;
@@ -1039,13 +905,13 @@ body.high-contrast .tooltip-popover {
             align-items: center;
             gap: 8px;
             transition: all 0.3s ease;
-            box-shadow: 0 4px 12px rgba(15, 96, 46, 0.2);
+            box-shadow: 0 4px 12px color-mix(in srgb, var(--verde-principal, #0e4a27) 20%, transparent);
         }
 
         .btn-add:hover {
-            background: #14753a;
+            background: var(--verde-hover, #0b3d21);
             transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(15, 96, 46, 0.3);
+            box-shadow: 0 8px 20px color-mix(in srgb, var(--verde-principal, #0e4a27) 30%, transparent);
         }
 
         .alerta-flash {
@@ -1069,9 +935,9 @@ body.high-contrast .tooltip-popover {
         }
 
         .alerta-sucesso {
-            background: #f0fdf4;
-            border: 1px solid #bbf7d0;
-            color: #15803d;
+            background: var(--verde-claro, #e8f5ee);
+            border: 1px solid var(--verde-borda, rgba(14, 74, 39, 0.28));
+            color: var(--verde-texto, #0e4a27);
         }
 
         /* Antes só a navbar/sidebar/menu escureciam no tema escuro (e só 2
@@ -1088,28 +954,11 @@ body.high-contrast .tooltip-popover {
             --card-bg: #12251a;
             --chart-grid: rgba(74, 222, 128, 0.10);
             --chart-tick: #9db8a8;
-            --title-rico: #4ade80;
-
-            --navbar-bg: #0c1b12;
-            --sidebar-bg: #0c1b12;
-            --surface-border: rgba(74, 222, 128, 0.14);
-            --menu-text: #9db8a8;
-            --menu-text-hover: #4ade80;
-            --menu-hover-bg: rgba(74, 222, 128, 0.08);
-            --menu-active-bg: rgba(74, 222, 128, 0.12);
-            --menu-active-text: #4ade80;
-            --menu-active-accent: #4ade80;
-
-            --panel-bg: #12251a;
-            --panel-text: #f1f9f4;
-            --panel-item-bg: #0a1810;
-            --panel-btn-bg: #1e3a2a;
-            --panel-btn-text: #d9ede1;
-            --panel-btn-hover: #2a4d38;
+            --title-rico: var(--verde-secundario, #16a765);
         }
 
         body.dark-theme .alerta-erro { background: rgba(239, 68, 68, 0.12); border-color: rgba(239, 68, 68, 0.3); color: #fca5a5; }
-        body.dark-theme .alerta-sucesso { background: rgba(74, 222, 128, 0.12); border-color: rgba(74, 222, 128, 0.3); color: #4ade80; }
+        body.dark-theme .alerta-sucesso { background: color-mix(in srgb, var(--verde-secundario, #16a765) 12%, transparent); border-color: color-mix(in srgb, var(--verde-secundario, #16a765) 30%, transparent); color: var(--verde-texto, #0e4a27); }
 
         /* Textos com cor fixa (não usavam var(--text-main)) — sem isso,
            ficavam escuros demais para ler sobre o fundo escuro. */
@@ -1163,7 +1012,7 @@ body.high-contrast .tooltip-popover {
         body.dark-theme .input-box input:focus,
         body.dark-theme .input-box select:focus {
             background: #16281c;
-            border-color: #4ade80;
+            border-color: var(--verde-ativo, #087a47);
         }
 
         body.dark-theme .select-filter,
@@ -1226,7 +1075,15 @@ body.high-contrast .tooltip-popover {
         body.high-contrast .dashboard-card,
         body.high-contrast .ca-container-card,
         body.high-contrast .smart-analysis-container,
-        body.high-contrast .modal-card {
+        body.high-contrast .modal-card,
+        body.high-contrast .fazenda-selector-bar,
+        body.high-contrast .selector-hint {
+            background: var(--card-bg) !important;
+            border: 2px solid var(--border-color) !important;
+            color: var(--text-main) !important;
+        }
+
+        body.high-contrast .select-fazenda {
             background: var(--card-bg) !important;
             border: 2px solid var(--border-color) !important;
             color: var(--text-main) !important;
@@ -1384,7 +1241,7 @@ body.high-contrast .tooltip-popover {
         body.dark-theme .donut-center-total .valor {
             background: none;
             -webkit-text-fill-color: unset;
-            color: #4ade80;
+            color: var(--verde-texto, #0e4a27);
         }
 
         body.high-contrast .donut-center-total .valor {
@@ -1394,7 +1251,7 @@ body.high-contrast .tooltip-popover {
         }
 
         .donut-center-total .rotulo {
-            font-size: 0.625rem;
+            font-size: 0.6875rem;
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.06em;
@@ -1423,7 +1280,8 @@ body.high-contrast .tooltip-popover {
             min-width: 0;
         }
 
-        .legend-label span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        /* Nome inteiro (quebra linha se precisar) em vez de cortar com "…". */
+        .legend-label span { white-space: normal; overflow-wrap: anywhere; line-height: 1.25; }
 
         .legend-swatch {
             width: 18px;
@@ -1587,7 +1445,7 @@ body.high-contrast .tooltip-popover {
         .status-success {
             background: linear-gradient(135deg, var(--viz-lima), var(--viz-esmeralda-forte));
             color: #ffffff;
-            box-shadow: 0 3px 8px -2px rgba(5, 150, 105, 0.45);
+            box-shadow: 0 3px 8px -2px color-mix(in srgb, var(--verde-principal, #0e4a27) 45%, transparent);
         }
         .status-warning {
             background: linear-gradient(135deg, #fbbf24, var(--viz-laranja));
@@ -1612,7 +1470,7 @@ body.high-contrast .tooltip-popover {
         }
 
         .status-badge-btn:hover { transform: translateY(-1px); box-shadow: 0 2px 8px rgba(15, 23, 42, 0.12); }
-        .status-badge-btn:focus-visible { outline: 2px solid #16a34a; outline-offset: 2px; }
+        .status-badge-btn:focus-visible { outline: 2px solid var(--verde-ativo, #087a47); outline-offset: 2px; }
 
         body.high-contrast .status-badge-btn:focus-visible { outline-color: #ffff00; }
 
@@ -1690,7 +1548,7 @@ body.high-contrast .tooltip-popover {
         body.dark-theme .metric-value--destaque {
             background: none;
             -webkit-text-fill-color: unset;
-            color: #4ade80;
+            color: var(--verde-texto, #0e4a27);
         }
 
         body.high-contrast .metric-value--destaque {
@@ -1700,29 +1558,31 @@ body.high-contrast .tooltip-popover {
         }
 
         .metric-value.highlight-up {
-            color: var(--viz-esmeralda-forte, #059669);
+            color: #047857; /* 5,5:1 no branco */
             display: flex;
             align-items: center;
             gap: 4px;
         }
 
-        .metric-value.highlight-up i { filter: drop-shadow(0 0 5px rgba(5, 150, 105, 0.55)); }
+        .metric-value.highlight-up i { filter: drop-shadow(0 0 5px color-mix(in srgb, var(--verde-principal, #0e4a27) 55%, transparent)); }
 
         .metric-value.highlight-down {
-            color: #f0653e;
+            color: #c2410c; /* 5,2:1 no branco */
             display: flex;
             align-items: center;
             gap: 4px;
         }
 
         .metric-value.highlight-down i { filter: drop-shadow(0 0 5px rgba(240, 101, 62, 0.5)); }
+        body.dark-theme .metric-value.highlight-up { color: #34d399; }
+        body.dark-theme .metric-value.highlight-down { color: #fb8a63; }
 
         /* ==========================================================================
            ANÁLISE INTELIGENTE (CARD DA IMAGEM)
            ========================================================================== */
         .smart-analysis-container {
-            background: #f4f9f5;
-            border: 1px solid #d1e7dd;
+            background: var(--verde-claro, #e8f5ee);
+            border: 1px solid var(--verde-borda, rgba(14, 74, 39, 0.28));
         }
 
         .smart-list {
@@ -1751,7 +1611,7 @@ body.high-contrast .tooltip-popover {
            suporte a :has() (o card só fica sem o tingimento, mantém tudo
            legível). */
         .smart-item:has(.smart-icon.info) { background: linear-gradient(160deg, rgba(14, 165, 233, 0.09), var(--card-bg) 65%); }
-        .smart-item:has(.smart-icon.success) { background: linear-gradient(160deg, rgba(16, 185, 129, 0.09), var(--card-bg) 65%); }
+        .smart-item:has(.smart-icon.success) { background: linear-gradient(160deg, color-mix(in srgb, var(--verde-principal, #0e4a27) 9%, transparent), var(--card-bg) 65%); }
         .smart-item:has(.smart-icon.warning) { background: linear-gradient(160deg, rgba(249, 115, 22, 0.09), var(--card-bg) 65%); }
         .smart-item:has(.smart-icon.danger) { background: linear-gradient(160deg, rgba(225, 29, 72, 0.09), var(--card-bg) 65%); }
 
@@ -1768,7 +1628,13 @@ body.high-contrast .tooltip-popover {
             align-items: flex-start;
             gap: 12px;
             min-width: 0;
+            /* Encolhe primeiro; só quando sobram < 180px o "Ver detalhes"
+               desce pra linha de baixo (antes saía do card com texto
+               ampliado/zoom). */
+            flex: 1 1 180px;
         }
+
+        .smart-item { flex-wrap: wrap; }
 
         .smart-ver-detalhes {
             flex-shrink: 0;
@@ -1792,7 +1658,7 @@ body.high-contrast .tooltip-popover {
             border-color: transparent;
             color: #ffffff;
             transform: translateY(-1px);
-            box-shadow: 0 8px 16px -6px rgba(5, 150, 105, 0.5);
+            box-shadow: 0 8px 16px -6px color-mix(in srgb, var(--verde-principal, #0e4a27) 50%, transparent);
         }
 
         /* Selos "3D": caixa com gradiente diagonal + brilho interno + glow
@@ -1810,7 +1676,7 @@ body.high-contrast .tooltip-popover {
             box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.45), inset 0 -2px 3px rgba(0, 0, 0, 0.16);
         }
 
-        .smart-icon.success { background: linear-gradient(145deg, var(--viz-lima), var(--viz-esmeralda-forte)); box-shadow: 0 6px 14px -4px rgba(5, 150, 105, 0.55), inset 0 1px 1px rgba(255, 255, 255, 0.45), inset 0 -2px 3px rgba(0, 0, 0, 0.16); }
+        .smart-icon.success { background: linear-gradient(145deg, var(--viz-lima), var(--viz-esmeralda-forte)); box-shadow: 0 6px 14px -4px color-mix(in srgb, var(--verde-principal, #0e4a27) 55%, transparent), inset 0 1px 1px rgba(255, 255, 255, 0.45), inset 0 -2px 3px rgba(0, 0, 0, 0.16); }
         .smart-icon.info { background: linear-gradient(145deg, #38bdf8, var(--viz-ceu)); box-shadow: 0 6px 14px -4px rgba(2, 132, 199, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.45), inset 0 -2px 3px rgba(0, 0, 0, 0.16); }
         .smart-icon.warning { background: linear-gradient(145deg, #fb923c, #ea580c); box-shadow: 0 6px 14px -4px rgba(234, 88, 12, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.45), inset 0 -2px 3px rgba(0, 0, 0, 0.16); }
         .smart-icon.danger { background: linear-gradient(145deg, #fb7185, var(--viz-vermelho)); box-shadow: 0 6px 14px -4px rgba(225, 29, 72, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.45), inset 0 -2px 3px rgba(0, 0, 0, 0.16); }
@@ -1840,7 +1706,7 @@ body.high-contrast .tooltip-popover {
         }
 
         .green-action-btn {
-            background: linear-gradient(135deg, var(--viz-lima), var(--viz-esmeralda-forte) 60%, #047857);
+            background: linear-gradient(135deg, var(--viz-lima), var(--viz-esmeralda-forte) 60%, var(--verde-principal, #0e4a27));
             color: white;
             border: none;
             width: 100%;
@@ -1850,14 +1716,14 @@ body.high-contrast .tooltip-popover {
             font-weight: 600;
             cursor: pointer;
             text-align: center;
-            box-shadow: 0 8px 20px -8px rgba(5, 150, 105, 0.55);
+            box-shadow: 0 8px 20px -8px color-mix(in srgb, var(--verde-principal, #0e4a27) 55%, transparent);
             transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
         }
 
         .green-action-btn:hover {
             filter: brightness(1.06);
             transform: translateY(-1px);
-            box-shadow: 0 10px 24px -6px rgba(5, 150, 105, 0.6);
+            box-shadow: 0 10px 24px -6px color-mix(in srgb, var(--verde-principal, #0e4a27) 60%, transparent);
         }
 
         body.high-contrast .green-action-btn {
@@ -1885,16 +1751,16 @@ body.high-contrast .tooltip-popover {
         }
 
         .table-premium thead {
-            background: #e8f5e9;
+            background: var(--verde-claro, #e8f5ee);
         }
 
         .table-premium th {
             padding: 18px 24px;
             text-align: left;
-            color: #166534;
+            color: var(--verde-texto, #0e4a27);
             font-size: 0.8125rem;
             font-weight: 600;
-            border-bottom: 2px solid #bbf7d0;
+            border-bottom: 2px solid var(--verde-borda, rgba(14, 74, 39, 0.28));
         }
 
         .table-premium td {
@@ -1911,8 +1777,8 @@ body.high-contrast .tooltip-popover {
 
         .crud-badge {
             display: inline-flex;
-            background: #e8f5e9;
-            color: #166534;
+            background: var(--verde-claro, #e8f5ee);
+            color: var(--verde-texto, #0e4a27);
             padding: 6px 14px;
             border-radius: 20px;
             font-weight: 600;
@@ -1993,7 +1859,7 @@ body.high-contrast .tooltip-popover {
         }
 
         .modal-top img {
-            width: 70px;
+            width: 100px;
             margin-bottom: 10px;
         }
 
@@ -2070,7 +1936,7 @@ body.high-contrast .tooltip-popover {
 
         .input-box input:focus, 
         .input-box select:focus {
-            border-color: #16a34a;
+            border-color: var(--verde-ativo, #087a47);
             background: white;
         }
 
@@ -2098,7 +1964,7 @@ body.high-contrast .tooltip-popover {
         }
 
         .submit-btn:hover {
-            background: #1d4d2f;
+            background: var(--verde-hover, #0b3d21);
         }
 
         /* ==========================================================================
@@ -2185,6 +2051,15 @@ body.high-contrast .tooltip-popover {
 
         .detalhes-lote-aviso a { color: inherit; font-weight: 700; text-decoration: underline; }
 
+        .vincular-quantidade-total {
+            margin: -6px 0 14px;
+            font-size: 0.8125rem;
+            font-weight: 600;
+            color: var(--verde-texto, #0e4a27);
+            min-height: 1.2em;
+        }
+        body.high-contrast .vincular-quantidade-total { color: #ffff00 !important; }
+
         body.dark-theme .detalhes-lote-item { background: #16281c; }
         body.dark-theme .detalhes-lote-distribuicao td { border-bottom-color: #1e3a2a; }
         body.dark-theme .detalhes-lote-aviso { background: rgba(59, 130, 246, 0.12); border-color: rgba(59, 130, 246, 0.3); color: #93c5fd; }
@@ -2212,17 +2087,14 @@ body.high-contrast .tooltip-popover {
         }
 
         @media (max-width: 992px) {
-            .main { margin-left: 0; width: 100%; padding: 24px; padding-top: 90px; }
-            .sidebar { left: -260px; }
-            .sidebar.active-mobile { left: 0; box-shadow: 10px 0 30px rgba(0, 0, 0, 0.18); }
-            .user-info { display: none; }
+            .main { margin-left: 0; width: 100%; padding: 24px; padding-top: 20px; }
             .smart-list { grid-template-columns: 1fr; }
         }
 
         @media (max-width: 768px) {
             .navbar { padding: 0 20px; }
             .navbar-logo img { height: 36px; }
-            .main { padding: 18px; padding-top: 86px; }
+            .main { padding: 18px; padding-top: 20px; }
             .header h1 { font-size: 1.5rem; }
 
             .top-bar { flex-direction: column; gap: 20px; align-items: flex-start; }
@@ -2264,11 +2136,11 @@ body.high-contrast .tooltip-popover {
             position: relative;
             transition: background 0.2s, border-color 0.2s;
         }
-        .btn-abrir-filtros:hover { border-color: #16a34a; color: #16a34a; }
+        .btn-abrir-filtros:hover { border-color: var(--verde-hover, #0b3d21); color: var(--verde-texto, #0e4a27); }
 
         .filtros-badge {
             background: #123f22;
-            color: #4ade80;
+            color: var(--verde-texto, #0e4a27);
             font-size: 11px;
             font-weight: 800;
             min-width: 18px;
@@ -2333,7 +2205,7 @@ body.high-contrast .tooltip-popover {
             gap: 8px;
             margin-top: 10px;
             background: var(--card-bg);
-            color: #117943;
+            color: var(--verde-texto, #0e4a27);
             border: 1px solid var(--border-color);
             padding: 12px;
             border-radius: 10px;
@@ -2351,99 +2223,46 @@ body.high-contrast .tooltip-popover {
             color: var(--text-main) !important;
         }
     </style>
-</head>
+@endpush
 
-<body>
-    <a href="#conteudo-principal" class="skip-link">Pular para o conteúdo principal</a>
-
-    <!-- Fundo escurecido do menu mobile (fecha a sidebar ao clicar fora) -->
-    <div class="sidebar-overlay" id="sidebarOverlay"></div>
-
-    <!-- SIDEBAR LATERAL -->
-    <div class="sidebar" id="sidebar">
-        <div class="menu">
-            <a href="{{ route('cadastro.index') }}">
-                <i class="fa-solid fa-chart-line"></i>
-                <span>Dashboard</span>
-            </a>
-            <a href="{{ route('fazenda.listar') }}">
-                <i class="fa-solid fa-location-dot"></i>
-                <span>Gestão de Fazendas</span>
-            </a>
-            <a href="{{ route('lote.listar') }}">
-                <i class="fa-solid fa-layer-group"></i>
-                <span>Gestão de Lotes</span>
-            </a>
-            <a href="{{ route('ordenha.listar') }}">
-                <i class="fa-solid fa-droplet"></i>
-                <span>Ordenha e Leite</span>
-            </a>
-            <a href="{{ route('cocho.listar') }}">
-                <i class="fa-solid fa-cube"></i>
-                <span>Gestão de Cochos</span>
-            </a>
-            <a href="{{ route('racao.listar') }}">
-                <i class="fa-solid fa-wheat-awn"></i>
-                <span>Gestão de Rações</span>
-            </a>
-            <a href="{{ route('estoque.listar') }}">
-                <i class="fa-solid fa-box"></i>
-                <span>Nível de Estoque</span>
-            </a>
-            <a href="{{ route('plano.listar') }}" class="active">
-                <i class="fa-solid fa-clipboard-list"></i>
-                <span>Plano Alimentar</span>
-            </a>
-            <a href="{{ route('relatorio.listar') }}">
-                <i class="fa-regular fa-file-lines"></i>
-                <span>Relatório Avançado</span>
-            </a>
-            <a href="{{ route('perfil') }}">
-                <i class="fa-solid fa-user-gear"></i>
-                <span>Meu Perfil</span>
-            </a>
-            <div class="footer-right">© 2026 AgriFarm</div>
-        </div>
-    </div>
-
-    <!-- NAVBAR SUPERIOR -->
-    <div class="navbar" id="navbar">
-        <div class="navbar-left">
-            <button class="toggle-menu-btn" id="toggleMenuBtn" title="Menu Lateral"><i class="fa-solid fa-bars"></i></button>
-            <div class="navbar-logo">
-                <img src="{{ asset('agrifarm-removebg-preview.png') }}" alt="Logo">
-            </div>
-        </div>
-        <div class="navbar-right">
-            <a href="<?= route('perfil') ?>" class="user-profile" title="Meu perfil">
-                <div class="user-avatar">
-                    @if ($cadastroLogado->foto ?? false)
-                        <img src="{{ asset('storage/' . $cadastroLogado->foto) }}" alt="Foto de perfil" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">
-                    @else
-                        <i class="fa-solid fa-user-gear"></i>
-                    @endif
-                </div>
-                <div class="user-info">
-                    <span class="user-name">Olá, <?= session('usuario_nome') ?></span>
-                    <span class="user-role">Administrador</span>
-                </div>
-            </a>
-            <div class="navbar-divider"></div>
-            <a href="{{ route('logout') }}" class="navbar-logout"><i class="fa-solid fa-right-from-bracket"></i> <span>Sair</span></a>
-        </div>
-    </div>
+@section('content')
+    {{-- "Pular para o conteúdo" vem do partials/a11y-global (1º item do
+         Tab, antes da sidebar) — o daqui ficava depois do menu e abria
+         fora da tela. --}}
 
     <!-- CONTEÚDO PRINCIPAL -->
     <div class="main" id="conteudo-principal" role="main">
         <div class="top-bar">
             <div class="header">
-                <h1>Plano Alimentar</h1>
+                <h1><i class="fa-solid fa-clipboard-list titulo-icone" aria-hidden="true"></i> Plano Alimentar</h1>
                 <p>Acompanhe o plano alimentar de cada lote, calculado automaticamente a partir da ração vinculada.</p>
             </div>
             <button type="button" class="btn-abrir-filtros" id="openFiltrosBtn">
                 <i class="fa-solid fa-sliders"></i> Filtros Avançados
                 <span class="filtros-badge {{ count($filtrosAplicados ?? []) ? 'visivel' : '' }}">{{ count($filtrosAplicados ?? []) }}</span>
             </button>
+        </div>
+
+        <!-- Barra "Unidade Produtiva" — mesma lógica/aparência/comportamento
+             do Dashboard: escolher a fazenda aqui é o que decide quais
+             lotes, rações, consumo e planos alimentares o resto da tela
+             mostra. -->
+        <div class="fazenda-selector-bar">
+            <div class="fazenda-selector-bar-label"><i class="fa-solid fa-tractor"></i> Unidade Produtiva:</div>
+            <select class="select-fazenda" aria-label="Selecionar fazenda" onchange="window.location.href='{{ route('plano.listar') }}?fazenda_id=' + this.value" aria-label="Selecionar Unidade Produtiva">
+                <option value="">Escolha uma fazenda</option>
+                @foreach ($fazendas as $fazenda)
+                    <option value="{{ $fazenda->id }}" {{ $fazenda->id == ($fazendaSelecionadaId ?? null) ? 'selected' : '' }}>
+                        {{ $fazenda->nome_fazenda }}
+                    </option>
+                @endforeach
+            </select>
+            @if (empty($fazendaSelecionadaId))
+                <div class="selector-hint">
+                    <i class="fa-solid fa-circle-info"></i>
+                    Selecione uma Unidade Produtiva para carregar o plano alimentar, o consumo e a conversão alimentar reais.
+                </div>
+            @endif
         </div>
 
         <div class="filtros-ativos {{ count($filtrosAplicados ?? []) ? 'visivel' : '' }}" id="filtrosAtivos">
@@ -2517,7 +2336,9 @@ body.high-contrast .tooltip-popover {
                     <div class="stat-card-icon icone-roxo"><i class="fa-solid fa-gauge-high" aria-hidden="true"></i></div>
                 </div>
                 <div>
-                    <div class="stat-card-label">Eficiência Média Hoje</div>
+                    {{-- Era "Eficiência Média Hoje", mas o número é a parte dos
+                         lotes que estão com ração vinculada (plano em dia). --}}
+                    <div class="stat-card-label">Lotes com Plano em Dia</div>
                     <div class="stat-card-valor">{{ $statCardsTopo['eficienciaMedia']['valor'] ?? 0 }}%</div>
                 </div>
                 <div class="stat-card-trend {{ $trendClasse($statCardsTopo['eficienciaMedia']['variacao'] ?? null) }}">
@@ -2535,24 +2356,18 @@ body.high-contrast .tooltip-popover {
             <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="tituloModalFiltros">
                 <button class="close" id="closeFiltrosBtn" aria-label="Fechar"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
                 <div class="modal-top">
-                    <img src="{{ asset('Logo.png') }}" alt="Logo">
+                    <img src="{{ asset('logo.png') }}" alt="Logo">
                     <h2 id="tituloModalFiltros">Filtros Avançados</h2>
                     <p>Escolha o que exibir no painel do Plano Alimentar</p>
                 </div>
 
                 <form action="{{ route('plano.listar') }}" method="GET">
-                    <div class="campo">
-                        <label for="filtro_fazenda_id">Fazenda</label>
-                        <div class="input-box">
-                            <i class="fa-solid fa-location-dot" aria-hidden="true"></i>
-                            <select name="fazenda_id" id="filtro_fazenda_id">
-                                <option value="">Todas as fazendas</option>
-                                @foreach ($fazendas as $fazenda)
-                                    <option value="{{ $fazenda->id }}" {{ ($filtros['fazenda_id'] ?? null) == $fazenda->id ? 'selected' : '' }}>{{ $fazenda->nome_fazenda }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                    </div>
+                    <!-- A Fazenda não é mais escolhida aqui — é a Unidade
+                         Produtiva selecionada na barra do topo. Este campo
+                         oculto só garante que aplicar Lote/Ração não perca
+                         a unidade atual (um <form method="GET"> só manda os
+                         campos que ele mesmo tem). -->
+                    <input type="hidden" name="fazenda_id" value="{{ $fazendaSelecionadaId }}">
 
                     <div class="campo">
                         <label for="filtro_lote_id">Lote</label>
@@ -2581,7 +2396,7 @@ body.high-contrast .tooltip-popover {
                     </div>
 
                     <button type="submit" class="submit-btn"><i class="fa-solid fa-check"></i> Aplicar Filtros</button>
-                    <a href="{{ route('plano.listar') }}" class="btn-limpar-filtros"><i class="fa-solid fa-eraser"></i> Limpar Filtros</a>
+                    <a href="{{ route('plano.listar', ['fazenda_id' => $fazendaSelecionadaId]) }}" class="btn-limpar-filtros"><i class="fa-solid fa-eraser"></i> Limpar Filtros</a>
                 </form>
             </div>
         </div>
@@ -2612,7 +2427,7 @@ body.high-contrast .tooltip-popover {
 
           <div class="dashboard-card" id="tabelaConsumoLotes">
     <div class="card-header-flex">
-        <span class="card-title">Consumo por Lote - Plano Diário</span>
+        <span class="card-title" id="sec-plano-diario">Consumo por Lote - Plano Diário</span>
     </div>
     @php $totalLotesConsumo = $lotesDashboardTotal ?? $lotesDashboard->count(); @endphp
     @if ($totalLotesConsumo > 0)
@@ -2648,13 +2463,13 @@ body.high-contrast .tooltip-popover {
 
 <div class="dashboard-card">
     <div class="card-header-flex">
-        <span class="card-title">Consumo dos Últimos 7 Dias</span>
+        <span class="card-title" id="sec-consumo-7dias">Consumo dos Últimos 7 Dias</span>
     </div>
     <div style="flex-grow: 1; height: 220px; position: relative;">
         <canvas id="chart7Dias" role="img" aria-label="Gráfico de barras: consumo de ração nos últimos 7 dias, em quilogramas. Total da semana: {{ $totalSemana }} kg."></canvas>
     </div>
     <div class="card-header-flex" style="margin-bottom: 0; margin-top: 15px; flex-wrap: wrap; gap: 8px;">
-        <span style="font-size: 0.875rem; font-weight: 700;">Total da Semana: <span style="color:#0f172a;">{{ $totalSemana }} kg</span></span>
+        <span style="font-size: 0.875rem; font-weight: 700;">Total da Semana: <span style="color: var(--text-principal, #0f172a);">{{ $totalSemana }} kg</span></span>
         <span style="font-size: 0.75rem; color: var(--text-muted);"><i class="fa-solid fa-chart-line" aria-hidden="true"></i> Registrado dia a dia a partir de hoje</span>
     </div>
 </div>
@@ -2666,8 +2481,8 @@ body.high-contrast .tooltip-popover {
 
 <div class="dashboard-card" id="resumoMensal">
     <div class="card-header-flex">
-        <span class="card-title">Resumo Mensal - {{ $mesAnoAtual }}</span>
-        <select class="select-filter" id="filtroMesResumo" onchange="mudarMesResumoMensal(this.value)">
+        <span class="card-title" id="sec-resumo-mensal">Resumo Mensal - {{ $mesAnoAtual }}</span>
+        <select class="select-filter" id="filtroMesResumo" aria-label="Mês do resumo mensal" onchange="mudarMesResumoMensal(this.value)">
             @foreach ($mesesDisponiveis ?? [] as $opcaoMes)
                 <option value="{{ $opcaoMes['valor'] }}" {{ ($mesSelecionado ?? '') === $opcaoMes['valor'] ? 'selected' : '' }}>{{ $opcaoMes['label'] }}</option>
             @endforeach
@@ -2707,7 +2522,7 @@ body.high-contrast .tooltip-popover {
 
 <div class="dashboard-card">
     <div class="card-header-flex">
-        <span class="card-title">Distribuição de Ração</span>
+        <span class="card-title" id="sec-distribuicao-racao">Distribuição de Ração</span>
     </div>
     @if (($distribuicaoRacoes ?? collect())->isNotEmpty())
         <div class="donut-layout">
@@ -2735,7 +2550,7 @@ body.high-contrast .tooltip-popover {
         <!-- Análise Inteligente: agora ocupando a largura toda, em grade 2x2 -->
         <div class="dashboard-card smart-analysis-container" style="margin-bottom: 30px;">
             <div class="card-header-flex">
-                <span class="card-title">Análise Inteligente</span>
+                <span class="card-title" id="sec-analise-inteligente">Análise Inteligente</span>
             </div>
             <div class="smart-list">
                 <div class="smart-item">
@@ -2805,7 +2620,7 @@ body.high-contrast .tooltip-popover {
                             <i class="fa-solid fa-trophy smart-icon success"></i>
                             <div class="smart-text-block">
                                 <span class="smart-headline">Maior consumo: {{ $loteMaiorConsumo->nome_lote }}</span>
-                                <span class="smart-desc">{{ $loteMaiorConsumo->total_dia }} kg/dia planejados, segundo a ração vinculada.</span>
+                                <span class="smart-desc">{{ number_format($loteMaiorConsumo->total_dia, 1, ',', '.') }} kg/dia planejados para este lote.</span>
                             </div>
                         @else
                             <i class="fa-solid fa-circle-info smart-icon info"></i>
@@ -2826,14 +2641,14 @@ body.high-contrast .tooltip-popover {
         </div>
 
 <!-- Card Amplo: Conversão Alimentar -->
-<h2 class="ca-section-title">Conversão Alimentar por Lote</h2>
+<h2 class="ca-section-title" id="sec-conversao-lote">Conversão Alimentar por Lote</h2>
 <p class="ca-section-subtitle">Peso médio, consumo e conversão alimentar calculados automaticamente a partir da ração vinculada a cada lote.</p>
 
 <!-- Período usado pelo comparativo "Consumo por Animal"/"Consumo por kg
      Vivo" (variação vs período anterior) dos cards abaixo. -->
 <div class="periodo-chips" role="group" aria-label="Período da Conversão Alimentar">
-    @foreach ([7 => '7 dias', 30 => '30 dias', 90 => '90 dias'] as $dias => $label)
-        <a href="{{ request()->fullUrlWithQuery(['periodo_conversao' => $dias]) }}#tabelaConsumoLotes" class="periodo-chip {{ ($periodoConversao ?? 7) == $dias ? 'active' : '' }}">{{ $label }}</a>
+    @foreach (\App\Http\Controllers\PlanoController::PERIODOS_CONVERSAO as $dias)
+        <a href="{{ request()->fullUrlWithQuery(['periodo_conversao' => $dias]) }}#tabelaConsumoLotes" class="periodo-chip {{ ($periodoConversao ?? 7) == $dias ? 'active' : '' }}">{{ $dias }} dias</a>
     @endforeach
 </div>
 
@@ -2842,7 +2657,7 @@ body.high-contrast .tooltip-popover {
     <div class="stat-card stat-card--verde">
         <div class="stat-card-top"><div class="stat-card-icon icone-verde"><i class="fa-solid fa-trophy" aria-hidden="true"></i></div></div>
         <div>
-            <div class="stat-card-label">Melhor Conversão Real</div>
+            <div class="stat-card-label">Melhor Conversão Alimentar</div>
             <div class="stat-card-valor" title="{{ $comparativoConversao['melhor']->nome_lote }}">{{ $comparativoConversao['melhor']->nome_lote }}</div>
         </div>
         <div class="stat-card-trend trend-up"><i class="fa-solid fa-scale-balanced" aria-hidden="true"></i> {{ number_format($comparativoConversao['melhor']->conversao_real, 2, ',', '.') }} kg/kg</div>
@@ -2851,7 +2666,7 @@ body.high-contrast .tooltip-popover {
     <div class="stat-card stat-card--ambar">
         <div class="stat-card-top"><div class="stat-card-icon icone-ambar"><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i></div></div>
         <div>
-            <div class="stat-card-label">Pior Conversão Real</div>
+            <div class="stat-card-label">Pior Conversão Alimentar</div>
             <div class="stat-card-valor" title="{{ $comparativoConversao['pior']->nome_lote }}">{{ $comparativoConversao['pior']->nome_lote }}</div>
         </div>
         <div class="stat-card-trend trend-down"><i class="fa-solid fa-scale-balanced" aria-hidden="true"></i> {{ number_format($comparativoConversao['pior']->conversao_real, 2, ',', '.') }} kg/kg</div>
@@ -2860,16 +2675,16 @@ body.high-contrast .tooltip-popover {
     <div class="stat-card stat-card--azul">
         <div class="stat-card-top"><div class="stat-card-icon icone-azul"><i class="fa-solid fa-chart-simple" aria-hidden="true"></i></div></div>
         <div>
-            <div class="stat-card-label">Média Geral (FCR)</div>
+            <div class="stat-card-label">Conversão Média</div>
             <div class="stat-card-valor">{{ number_format($comparativoConversao['media'], 2, ',', '.') }} kg/kg</div>
         </div>
-        <div class="stat-card-trend trend-neutral">Entre lotes com pesagem registrada</div>
+        <div class="stat-card-trend trend-neutral">kg de ração por kg ganho, entre lotes com 2+ pesagens</div>
     </div>
 </div>
 
 <div class="dashboard-card" style="margin-bottom: 25px;">
     <div class="card-header-flex">
-        <span class="card-title">Evolução da Conversão Alimentar</span>
+        <span class="card-title" id="sec-evolucao-conversao">Evolução da Conversão Alimentar</span>
     </div>
     <div style="flex-grow: 1; height: 260px; position: relative;">
         <canvas id="chartEvolucaoConversao" role="img" aria-label="Gráfico de linha: evolução da conversão alimentar real, em kg de ração por kg de peso ganho, por lote, ao longo das pesagens registradas."></canvas>
@@ -2910,7 +2725,7 @@ body.high-contrast .tooltip-popover {
         <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="tituloModalDetalhesLote">
             <button class="close" onclick="fecharModalDetalhesLote()" aria-label="Fechar"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
             <div class="modal-top">
-                <img src="{{ asset('Logo.png') }}" alt="Logo">
+                <img src="{{ asset('logo.png') }}" alt="Logo">
                 <h2 id="tituloModalDetalhesLote">Plano Alimentar do Lote</h2>
                 <p id="detalhesLoteSubtitulo"></p>
                 <p id="detalhesLoteInfoAnimal" class="detalhes-lote-info-animal"></p>
@@ -2921,10 +2736,6 @@ body.high-contrast .tooltip-popover {
                     <div class="detalhes-lote-item">
                         <span class="detalhes-lote-label">Ração</span>
                         <strong id="detalhesLoteNomeRacao"></strong>
-                    </div>
-                    <div class="detalhes-lote-item">
-                        <span class="detalhes-lote-label">Fornecedor</span>
-                        <strong id="detalhesLoteFornecedor"></strong>
                     </div>
                     <div class="detalhes-lote-item">
                         <span class="detalhes-lote-label">Quantidade total</span>
@@ -2968,12 +2779,29 @@ body.high-contrast .tooltip-popover {
 
             <form id="formVincularRacao" method="POST">
                 @csrf
+                <!-- Mesmo motivo do campo oculto em #formPesagem: garante
+                     que salvar o vínculo volte pra tela, não pro endpoint
+                     JSON de "Consultar Lotes"/"Consultar mais Conversões". -->
+                <input type="hidden" name="pagina_atual" id="vincularRacaoPaginaAtual" value="">
                 <label for="vincularRacaoSelect">Ração vinculada a este lote</label>
                 <div class="input-box">
                     <i class="fa-solid fa-wheat-awn" aria-hidden="true"></i>
                     <select name="racao_id" id="vincularRacaoSelect"></select>
                 </div>
-                <button type="submit" class="submit-btn">Salvar vínculo</button>
+
+                {{-- Quanto cada animal come: o total do lote acompanha a
+                     quantidade de animais (mesma regra do app). --}}
+                <div id="vincularQuantidadeBloco">
+                    <label for="vincularQuantidadePorAnimal">Quanto cada animal come por dia (kg)</label>
+                    <div class="input-box">
+                        <i class="fa-solid fa-scale-balanced" aria-hidden="true"></i>
+                        <input type="number" step="0.01" min="0.01" max="999" name="quantidade_por_animal" id="vincularQuantidadePorAnimal"
+                            inputmode="decimal" aria-describedby="vincularQuantidadeTotal" placeholder="Ex.: 3,5">
+                    </div>
+                    <p class="vincular-quantidade-total" id="vincularQuantidadeTotal" aria-live="polite"></p>
+                </div>
+
+                <button type="submit" class="submit-btn">Salvar plano</button>
             </form>
         </div>
     </div>
@@ -2985,7 +2813,7 @@ body.high-contrast .tooltip-popover {
         <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="tituloModalPesagem">
             <button class="close" onclick="fecharModalPesagem()" aria-label="Fechar"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
             <div class="modal-top">
-                <img src="{{ asset('Logo.png') }}" alt="Logo">
+                <img src="{{ asset('logo.png') }}" alt="Logo">
                 <h2 id="tituloModalPesagem">Registrar Pesagem</h2>
                 <p id="pesagemSubtitulo"></p>
             </div>
@@ -3000,6 +2828,13 @@ body.high-contrast .tooltip-popover {
             <form id="formPesagem" method="POST">
                 @csrf
                 <input type="hidden" name="lote_id" id="pesagemLoteId" value="{{ old('lote_id') }}">
+                <!-- Pra onde voltar depois de salvar — preenchido em JS com
+                     a URL real da tela no momento em que o modal abriu (ver
+                     abrirModalPesagem). Sem isso, o controller cairia num
+                     back() que, depois de "Consultar Lotes"/"Consultar mais
+                     Conversões" (fetch() sem cabeçalho de AJAX), mandava de
+                     volta pro endpoint JSON puro em vez da tela. -->
+                <input type="hidden" name="pagina_atual" id="pesagemPaginaAtual" value="">
 
                 <label for="pesagemData">Data da pesagem</label>
                 <div class="input-box">
@@ -3018,21 +2853,9 @@ body.high-contrast .tooltip-popover {
         </div>
     </div>
 
-    @include('partials.acessibilidade')
-    @include('partials.assistente-ia')
+@endsection
 
-    <!-- WIDGET VLIBRAS -->
-    <div vw class="enabled">
-        <div vw-access-button class="active"></div>
-        <div vw-plugin-wrapper>
-            <div class="vw-plugin-top-wrapper"></div>
-        </div>
-    </div>
-    <script src="https://vlibras.gov.br/app/vlibras-plugin.js"></script>
-    <script>
-        new window.VLibras.Widget('https://vlibras.gov.br/app');
-    </script>
-
+@push('scripts')
     <!-- LOGIC CONTROLLERS & RENDER CHARTS JS -->
     <script>
         // O "zoom" do <html> (ver partials/acessibilidade) muda o pixel
@@ -3047,45 +2870,22 @@ body.high-contrast .tooltip-popover {
         }
 
         document.addEventListener("DOMContentLoaded", function() {
-            // Sidebar toggle logic
+            // Abrir/fechar a drawer (ver layouts/app.blade.php) muda a
+            // largura do .main numa transição CSS — os gráficos (Chart.js)
+            // não recalculam sozinhos o tamanho do canvas durante isso, daí
+            // o resize manual aqui depois que a transição termina.
             const toggleBtn = document.getElementById('toggleMenuBtn');
-            const sidebar = document.getElementById('sidebar');
-            const mainContent = document.querySelector('.main');
             const sidebarOverlay = document.getElementById('sidebarOverlay');
 
-            toggleBtn.addEventListener('click', function() {
-                if (window.innerWidth > 992) {
-                    sidebar.classList.toggle('collapsed');
-                    mainContent.classList.toggle('expanded');
-                } else {
-                    sidebar.classList.toggle('active-mobile');
-                    if (sidebarOverlay) sidebarOverlay.classList.toggle('active');
-                }
-
-                // Os gráficos (Chart.js) não recalculam sozinhos o tamanho
-                // do canvas durante a transição CSS da sidebar/main (300ms,
-                // ver ".sidebar, .navbar, .main" acima) — sem isso, ficavam
-                // esticados/desalinhados depois de abrir ou fechar o menu.
-                // Espera a transição terminar e força o resize.
-                //
-                // "window.Chart.instances" é da API antiga do Chart.js v2 —
-                // não existe mais no Chart.js v4 (usado neste projeto), então
-                // essa checagem sempre dava falso e o resize nunca rodava de
-                // verdade (era só um "if" morto). Como os dois gráficos desta
-                // página já ficam guardados em chart7/chartMensal (ver mais
-                // abaixo), chama .resize() neles diretamente.
+            function remedirGraficosPlano() {
                 setTimeout(function() {
                     if (chart7) chart7.resize();
                     if (chartMensal) chartMensal.resize();
                 }, 320);
-            });
-
-            if (sidebarOverlay) {
-                sidebarOverlay.addEventListener('click', function() {
-                    sidebar.classList.remove('active-mobile');
-                    sidebarOverlay.classList.remove('active');
-                });
             }
+
+            if (toggleBtn) toggleBtn.addEventListener('click', remedirGraficosPlano);
+            if (sidebarOverlay) sidebarOverlay.addEventListener('click', remedirGraficosPlano);
 
             // ==========================================
             // GRÁFICOS 1 E 2: CONSUMO 7 DIAS / MENSAL — DINÂMICOS E CIENTES DE TEMA
@@ -3459,8 +3259,12 @@ body.high-contrast .tooltip-popover {
             closeFiltrosBtn.onclick = () => modalFiltros.classList.remove('active');
         }
 
+        // A Fazenda virou a Unidade Produtiva selecionada no topo da tela
+        // (não mais um filtro dentro deste modal) — o <select> de Lote já
+        // chega do servidor só com os lotes dela, então não existe mais
+        // combinação contraditória de Fazenda+Lote pra validar aqui.
+
         const PARAMS_POR_FILTRO_PLANO = {
-            fazenda_id: ['fazenda_id'],
             lote_id: ['lote_id'],
             racao_id: ['racao_id'],
         };
@@ -3488,7 +3292,9 @@ body.high-contrast .tooltip-popover {
         const limparTudoBtn = document.getElementById('limparTudoBtn');
         if (limparTudoBtn) {
             limparTudoBtn.addEventListener('click', () => {
-                window.location.href = '{{ route('plano.listar') }}';
+                // "Limpar todos" só zera Lote/Ração — a Unidade Produtiva
+                // continua selecionada (ver Filtros Avançados acima).
+                window.location.href = '{{ route('plano.listar') }}?fazenda_id={{ $fazendaSelecionadaId }}';
             });
         }
 
@@ -3518,10 +3324,11 @@ body.high-contrast .tooltip-popover {
                 avisoSemRacao.hidden = true;
 
                 document.getElementById('detalhesLoteNomeRacao').textContent = dados.racao.nome_racao;
-                document.getElementById('detalhesLoteFornecedor').textContent = dados.racao.fornecedor || '—';
-                document.getElementById('detalhesLoteQuantidadeTotal').textContent = dados.racao.consumo_total_dia + ' kg/dia';
+                document.getElementById('detalhesLoteQuantidadeTotal').textContent = Number(dados.racao.consumo_total_dia).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + ' kg/dia';
                 document.getElementById('detalhesLoteQuantidadePorAnimal').textContent =
-                    dados.racao.consumo_por_animal !== null ? dados.racao.consumo_por_animal + ' kg/dia' : '—';
+                    dados.racao.consumo_por_animal !== null
+                        ? Number(dados.racao.consumo_por_animal).toLocaleString('pt-BR', { maximumFractionDigits: 2 }) + ' kg por animal/dia' + (dados.racao.fonte_consumo === 'racao' ? ' (do cadastro da ração — defina abaixo)' : '')
+                        : '—';
                 document.getElementById('detalhesLoteValorKg').textContent = dados.racao.valor_kg ? `R$ ${dados.racao.valor_kg}/kg` : '—';
                 document.getElementById('detalhesLoteEstoque').textContent = dados.racao.estoque_disponivel + ' kg' +
                     (dados.racao.dias_restantes_estoque !== null ? ` (~${dados.racao.dias_restantes_estoque} dias restantes)` : '');
@@ -3586,6 +3393,33 @@ body.high-contrast .tooltip-popover {
             }
 
             formVincular.action = `{{ url('/plano/lotes') }}/${dados.lote_id}/vincular-racao`;
+            document.getElementById('vincularRacaoPaginaAtual').value = window.location.href;
+
+            // Quantidade por animal: vem do plano atual; vínculo antigo (sem
+            // quantidade por animal) começa com o consumo da ração ÷ animais.
+            const campoQtd = document.getElementById('vincularQuantidadePorAnimal');
+            const textoTotal = document.getElementById('vincularQuantidadeTotal');
+            const blocoQtd = document.getElementById('vincularQuantidadeBloco');
+            const animais = Number(dados.quantidade_animais) || 0;
+            campoQtd.value = dados.vinculada && dados.racao.consumo_por_animal ? dados.racao.consumo_por_animal : '';
+            const atualizarTotal = function () {
+                const porAnimal = parseFloat(String(campoQtd.value).replace(',', '.'));
+                blocoQtd.hidden = !select.value;
+                if (!select.value) { textoTotal.textContent = ''; return; }
+                textoTotal.textContent = porAnimal > 0
+                    ? `= ${(porAnimal * animais).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} kg de ração por dia para ${animais} ${animais === 1 ? 'animal' : 'animais'}`
+                    : 'Deixe em branco para usar o consumo cadastrado na ração.';
+            };
+            campoQtd.oninput = atualizarTotal;
+            select.onchange = function () {
+                // Trocar de ração: sugere o consumo da nova ração ÷ animais.
+                const escolhida = dados.racoes_compativeis.find(function (r) { return String(r.id) === select.value; });
+                if (escolhida && !(dados.vinculada && dados.racao.id === escolhida.id) && animais > 0 && escolhida.consumo > 0) {
+                    campoQtd.value = (escolhida.consumo / animais).toFixed(2);
+                }
+                atualizarTotal();
+            };
+            atualizarTotal();
 
             elementoComFocoAntesDoModalDetalhes = document.activeElement;
             const modal = document.getElementById('modalDetalhesLote');
@@ -3612,6 +3446,7 @@ body.high-contrast .tooltip-popover {
             document.getElementById('pesagemPeso').value = pesoAtual > 0 ? pesoAtual : '';
             document.getElementById('pesagemData').value = new Date().toISOString().slice(0, 10);
             document.getElementById('pesagemLoteId').value = loteId;
+            document.getElementById('pesagemPaginaAtual').value = window.location.href;
             document.getElementById('formPesagem').action = `{{ url('/plano/lotes') }}/${loteId}/pesagem`;
 
             elementoComFocoAntesDoModalPesagem = document.activeElement;
@@ -3676,7 +3511,15 @@ body.high-contrast .tooltip-popover {
             botao.textContent = 'Carregando...';
 
             try {
-                const resposta = await fetch('{{ route('plano.lotesConsumoJson') }}' + window.location.search);
+                const resposta = await fetch('{{ route('plano.lotesConsumoJson') }}' + window.location.search, {
+                    headers: { 'Accept': 'application/json' },
+                });
+
+                if (resposta.status === 401) {
+                    window.location.href = '{{ route('login.index') }}';
+                    return;
+                }
+
                 const dados = await resposta.json();
 
                 if (dados.success) {
@@ -3722,7 +3565,15 @@ body.high-contrast .tooltip-popover {
             texto.textContent = 'Carregando...';
 
             try {
-                const resposta = await fetch('{{ route('plano.conversoesJson') }}' + window.location.search);
+                const resposta = await fetch('{{ route('plano.conversoesJson') }}' + window.location.search, {
+                    headers: { 'Accept': 'application/json' },
+                });
+
+                if (resposta.status === 401) {
+                    window.location.href = '{{ route('login.index') }}';
+                    return;
+                }
+
                 const dados = await resposta.json();
 
                 if (dados.success) {
@@ -3799,5 +3650,4 @@ body.high-contrast .tooltip-popover {
             });
         })();
     </script>
-</body>
-</html>
+@endpush

@@ -19,7 +19,7 @@
     <section id="beneficios">
         <div class="container">
             <span class="section-tag reveal-tag">Por que AgriFarm?</span>
-            <h2 class="section-title reveal-title">Principais benefícios do <span class="accent">AgriFarm</span></h2>
+            <h1 class="section-title reveal-title"><i class="fa-solid fa-star accent titulo-icone" aria-hidden="true"></i> Principais benefícios do <span class="accent">AgriFarm</span></h1>
             <div class="cards-grid">
                 <!-- Foto: fazenda com cochos de gado, fotografia real -->
                 <div class="benefit-card">

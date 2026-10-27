@@ -65,7 +65,10 @@ return [
     |
     */
 
-    'timezone' => 'UTC',
+    // Horário de Brasília (UTC-3): máquina, MariaDB e usuários estão nele.
+    // Em UTC, tudo que o servidor gravava saía 3 h adiantado e o "hoje"
+    // dos gráficos virava amanhã depois das 21 h.
+    'timezone' => env('APP_TIMEZONE', 'America/Sao_Paulo'),
 
     /*
     |--------------------------------------------------------------------------

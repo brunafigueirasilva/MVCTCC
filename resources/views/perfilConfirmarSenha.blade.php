@@ -9,7 +9,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
 </head>
-<style>
+@include('partials.paleta-verde')
+    <style>
     :root {
         --bg-body-overlay: rgba(2, 31, 15, 0.75);
         --bg-container: white;
@@ -101,7 +102,7 @@
 
     .left-side {
         width: 50%;
-        background: linear-gradient(rgba(7, 48, 25, 0.75), rgba(8, 26, 16, 0.95)),
+        background: linear-gradient(color-mix(in srgb, var(--verde-principal, #0e4a27) 75%, transparent), rgba(8, 26, 16, 0.95)),
             url('https://images.unsplash.com/photo-1516467508483-a7212febe31a?q=80&w=1400&auto=format&fit=crop');
         background-size: cover;
         background-position: center;
@@ -113,7 +114,7 @@
     }
 
     .logo-icon img {
-        width: 110px;
+        width: 150px;
         height: auto;
         margin-bottom: 30px;
     }
@@ -143,7 +144,7 @@
         margin-bottom: 25px;
     }
 
-    .top-text h2 {
+    .top-text h1 {
         font-size: 2rem;
         color: var(--text-primary);
         margin-bottom: 8px;
@@ -192,8 +193,8 @@
 
     .input-box input:focus {
         outline: none;
-        border-color: #15803d;
-        box-shadow: 0 0 0 4px rgba(21, 128, 61, 0.15);
+        border-color: var(--verde-ativo, #087a47);
+        box-shadow: 0 0 0 4px color-mix(in srgb, var(--verde-principal, #0e4a27) 15%, transparent);
     }
 
     .erro {
@@ -207,9 +208,9 @@
     }
 
     .success {
-        background: #f0fdf4;
-        color: #15803d;
-        border: 1px solid #86efac;
+        background: var(--verde-claro, #e8f5ee);
+        color: var(--verde-texto, #0e4a27);
+        border: 1px solid var(--verde-secundario, #16a765);
         padding: 12px 16px;
         border-radius: 12px;
         margin-bottom: 18px;
@@ -219,7 +220,7 @@
     .btn-login {
         width: 100%;
         border: none;
-        background: linear-gradient(90deg, #14532d, #166534);
+        background: linear-gradient(90deg, var(--verde-principal, #0e4a27), var(--verde-principal, #0e4a27));
         color: white;
         padding: 15px;
         border-radius: 12px;
@@ -232,7 +233,7 @@
 
     .btn-login:hover {
         transform: translateY(-2px);
-        box-shadow: 0 10px 20px rgba(22, 101, 52, 0.3);
+        box-shadow: 0 10px 20px color-mix(in srgb, var(--verde-principal, #0e4a27) 30%, transparent);
     }
 
     .footer {
@@ -243,7 +244,7 @@
     }
 
     .footer a {
-        color: #14532d;
+        color: var(--verde-texto, #0e4a27);
         font-weight: 600;
         text-decoration: none;
     }
@@ -273,7 +274,7 @@
     <div class="login-container">
         <div class="left-side">
             <div class="logo-icon">
-                <img src="{{ asset('Logo.png') }}" alt="Logo Agrifarm">
+                <img src="{{ asset('logo.png') }}" alt="Logo Agrifarm">
             </div>
 
             <div class="left-content">
@@ -287,11 +288,11 @@
 
         <div class="right-side">
             @if(session('perfil_success'))
-                <div class="success">{{ session('perfil_success') }}</div>
+                <div class="success" role="status">{{ session('perfil_success') }}</div>
             @endif
 
             @if($errors->any())
-                <div class="erro">
+                <div class="erro" role="alert">
                     @foreach($errors->all() as $erro)
                         <p>{{ $erro }}</p>
                     @endforeach
@@ -299,18 +300,18 @@
             @endif
 
             <div class="top-text">
-                <h2>Confirmar Senha</h2>
-                <p>Digite o código de 6 dígitos enviado para o seu e-mail.</p>
+                <h1><i class="fa-solid fa-lock titulo-icone titulo-icone-verde" aria-hidden="true"></i> Confirmar Senha</h1>
+                <p id="ajudaCodigo">Digite o código de 6 dígitos enviado para o seu e-mail.</p>
             </div>
 
             <form method="POST" action="{{ route('perfil.confirmarSenha.post') }}">
                 @csrf
 
                 <div class="form-group">
-                    <label>Código de Verificação</label>
+                    <label for="campoCodigo">Código de Verificação</label>
                     <div class="input-box">
-                        <i class="fa-solid fa-key"></i>
-                        <input type="text" name="codigo" value="{{ old('codigo') }}" placeholder="000000" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" required autofocus>
+                        <i class="fa-solid fa-key" aria-hidden="true"></i>
+                        <input type="text" id="campoCodigo" name="codigo" autocomplete="one-time-code" aria-describedby="ajudaCodigo" @error('codigo') aria-invalid="true" @enderror value="{{ old('codigo') }}" placeholder="000000" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" required autofocus>
                     </div>
                 </div>
 
@@ -336,7 +337,7 @@
     </div>
     <script src="https://vlibras.gov.br/app/vlibras-plugin.js"></script>
     <script>
-        new window.VLibras.Widget('https://vlibras.gov.br/app');
+        if (window.VLibras) new window.VLibras.Widget('https://vlibras.gov.br/app'); // CDN do governo fora do ar/bloqueado: segue sem o widget
     </script>
 </body>
 

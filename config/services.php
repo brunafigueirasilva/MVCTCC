@@ -45,4 +45,21 @@ return [
         'key' => env('GEMINI_API_KEY'),
     ],
 
+    // Formulário "Entre em Contato" da landing page: e-mail da equipe que
+    // recebe uma cópia de cada solicitação (vazio = não envia cópia).
+    'contato' => [
+        'email_equipe' => env('CONTATO_EMAIL_EQUIPE'),
+    ],
+
+    // WhatsApp Cloud API (Meta) — opcional. Sem token/phone_id o envio por
+    // WhatsApp simplesmente não acontece (o e-mail continua funcionando).
+    // A Meta só permite iniciar conversa com um template aprovado; o
+    // template deve ter 1 variável no corpo ({{1}} = primeiro nome).
+    'whatsapp' => [
+        'token' => env('WHATSAPP_TOKEN'),
+        'phone_id' => env('WHATSAPP_PHONE_ID'),
+        'template' => env('WHATSAPP_TEMPLATE', 'confirmacao_demonstracao'),
+        'idioma' => env('WHATSAPP_TEMPLATE_IDIOMA', 'pt_BR'),
+    ],
+
 ];

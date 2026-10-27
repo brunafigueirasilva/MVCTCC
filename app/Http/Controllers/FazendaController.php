@@ -23,48 +23,39 @@ class FazendaController extends Controller
         return Fazenda::where('cadastro_id', session('usuario_id'));
     }
 
-    private function exigirLogin()
-    {
-        if (!session()->has('usuario_id')) {
-            return redirect()->route('login.index');
-        }
-
-        return null;
-    }
+    // A autenticação em si (sessão válida) já é garantida pelo middleware
+    // 'auth.cadastro' aplicado ao grupo de rotas (ver routes/web.php) —
+    // este controller só cuida de escopar os dados ao usuário logado.
 
     // LISTAR
     public function listar()
     {
-        if ($redirect = $this->exigirLogin()) {
-            return $redirect;
-        }
-
-        $fazendas = $this->fazendasDoUsuario()->orderBy('nome_fazenda')->get();
-        $cadastroLogado = Cadastro::find(session('usuario_id'));
-
-        return view('cadastrofazenda', compact('fazendas', 'cadastroLogado'));
+        return view('cadastrofazenda', $this->dadosListagem());
     }
 
     // TELA CADASTRAR
     public function cadastrar()
     {
-        if ($redirect = $this->exigirLogin()) {
-            return $redirect;
-        }
+        return view('cadastrofazenda', $this->dadosListagem());
+    }
 
-        $fazendas = $this->fazendasDoUsuario()->orderBy('nome_fazenda')->get();
+    /** Fazendas do usuário com os números do "portfólio" (lotes, animais,
+     *  rações e cochos de cada uma) usados nos cards da tela. */
+    private function dadosListagem(): array
+    {
+        $fazendas = $this->fazendasDoUsuario()
+            ->withCount(['lotes', 'racoes', 'cochos'])
+            ->withSum('lotes as total_animais', 'quantidade_animais')
+            ->orderBy('nome_fazenda')
+            ->get();
         $cadastroLogado = Cadastro::find(session('usuario_id'));
 
-        return view('cadastrofazenda', compact('fazendas', 'cadastroLogado'));
+        return compact('fazendas', 'cadastroLogado');
     }
 
     // ADICIONAR
     public function add(Request $request)
     {
-        if ($redirect = $this->exigirLogin()) {
-            return $redirect;
-        }
-
         $dados = $request->validate([
             'nome_fazenda' => 'required|string|max:255',
             'cep' => 'nullable|string|max:9',
@@ -77,14 +68,17 @@ class FazendaController extends Controller
             'area.gt' => 'A área da fazenda deve ser maior que zero.',
         ]);
 
-        Fazenda::create([
-            // O dono é sempre o usuário da sessão atual — nunca um valor
-            // vindo do formulário, que poderia ser manipulado para
-            // cadastrar a fazenda em nome de outra pessoa. O nome do
-            // proprietário exibido também vem sempre da sessão, pelo mesmo
-            // motivo.
-            'cadastro_id' => session('usuario_id'),
-            'proprietario' => session('usuario_nome'),
+        // O dono é sempre o usuário autenticado: a fazenda é criada pela
+        // relação Cadastro → fazendas(), que preenche cadastro_id sozinha.
+        // cadastro_id não está no $fillable, então nem um campo
+        // "cadastro_id" enviado no request consegue trocar o dono, e nunca
+        // fica sem valor (erro 1364 "doesn't have a default value").
+        $cadastro = Cadastro::findOrFail(session('usuario_id'));
+
+        $cadastro->fazendas()->create([
+            // O nome do proprietário exibido também vem sempre do cadastro
+            // logado, pelo mesmo motivo.
+            'proprietario' => $cadastro->responsavel,
             'nome_fazenda' => $dados['nome_fazenda'],
             'cep' => $dados['cep'] ?? null,
             'cidade' => $dados['cidade'] ?? null,
@@ -106,10 +100,6 @@ class FazendaController extends Controller
     // apenas redirecionamos para lá em vez de renderizar uma página dedicada.
     public function atualizar($id)
     {
-        if ($redirect = $this->exigirLogin()) {
-            return $redirect;
-        }
-
         $this->fazendasDoUsuario()->findOrFail($id);
 
         return redirect()->route('fazenda.listar');
@@ -118,10 +108,6 @@ class FazendaController extends Controller
     // UPDATE
     public function update(Request $request, $id)
     {
-        if ($redirect = $this->exigirLogin()) {
-            return $redirect;
-        }
-
         $dados = $request->validate([
             'nome_fazenda' => 'required|string|max:255',
             'cep' => 'nullable|string|max:9',
@@ -155,11 +141,24 @@ class FazendaController extends Controller
     // DELETE
     public function deletar($id)
     {
-        if ($redirect = $this->exigirLogin()) {
-            return $redirect;
-        }
-
         $fazenda = $this->fazendasDoUsuario()->findOrFail($id);
+
+        // Excluir a fazenda apagaria em cascata lotes, cochos (com a ração
+        // dentro), rações e todo o histórico de estoque, ordenha e consumo.
+        // Só sai uma fazenda vazia; com dados, o produtor resolve antes.
+        $lotes = $fazenda->lotes()->count();
+        $racoes = $fazenda->racoes()->count();
+
+        if ($lotes > 0 || $racoes > 0) {
+            $partes = array_filter([
+                $lotes ? "{$lotes} lote(s)" : null,
+                $racoes ? "{$racoes} ração(ões)" : null,
+            ]);
+
+            return back()->withErrors([
+                'fazenda' => "A fazenda \"{$fazenda->nome_fazenda}\" não pode ser excluída: ainda tem " . implode(' e ', $partes) . ' cadastrados. Exclua (ou encerre) esses registros antes — assim nenhum histórico é apagado sem querer.',
+            ]);
+        }
 
         $fazenda->delete();
 

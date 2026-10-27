@@ -19,7 +19,7 @@
     <section id="solucao">
         <div class="container">
             <span class="section-tag reveal-tag">A Solução</span>
-            <h2 class="section-title reveal-title">A solução: <span class="accent">AgriFarm</span></h2>
+            <h1 class="section-title reveal-title"><i class="fa-solid fa-lightbulb accent titulo-icone" aria-hidden="true"></i> A solução: <span class="accent">AgriFarm</span></h1>
 
             <div class="solucao-card">
                 <div class="sol-icon">

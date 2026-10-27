@@ -9,7 +9,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
 </head>
-<style>
+@include('partials.paleta-verde')
+    <style>
     /* ================= CONFIGURAÇÕES DE VARIÁVEIS (TEMA CLARO DEFAULT) ================= */
     :root {
         --font-scale: 100%;
@@ -97,7 +98,7 @@
         width: 52px;
         height: 52px;
         border-radius: 50%;
-        background: #14532d;
+        background: var(--verde-principal, #0e4a27);
         color: white;
         border: none;
         cursor: pointer;
@@ -112,7 +113,7 @@
 
     .accessibility-trigger:hover {
         transform: scale(1.1) rotate(45deg);
-        background: #166534;
+        background: var(--verde-hover, #0b3d21);
     }
 
     body.high-contrast .accessibility-trigger {
@@ -168,7 +169,7 @@
     }
 
     body.high-contrast .left-content h2,
-    body.high-contrast .top-text h2 {
+    body.high-contrast .top-text :is(h1, h2) {
         color: #ffff00 !important;
     }
 
@@ -182,7 +183,7 @@
     body.high-contrast .feature i {
         background: #000000 !important;
         border: 1px solid #ffff00 !important;
-        color: #ffff00 !important;
+        color: #ffffff !important;
     }
 
     body.high-contrast .feature span {
@@ -376,7 +377,7 @@
     }
 
     input:checked+.slider-switch {
-        background-color: #22c55e;
+        background-color: var(--verde-secundario, #16a765);
     }
 
     body.high-contrast input:checked+.slider-switch {
@@ -472,11 +473,11 @@
     }
 
     .voice-start {
-        background: #14532d;
+        background: var(--verde-principal, #0e4a27);
     }
 
     .voice-start:hover {
-        background: #166534;
+        background: var(--verde-hover, #0b3d21);
     }
 
     .voice-stop {
@@ -582,11 +583,6 @@
             border-radius: 16px;
         }
 
-        .accessibility-trigger {
-            top: auto;
-            bottom: 20px;
-            right: 20px;
-        }
     }
 
     html {
@@ -626,7 +622,7 @@
     /* LADO ESQUERDO */
     .left-side {
         width: 50%;
-        background: linear-gradient(rgba(7, 48, 25, 0.75), rgba(8, 26, 16, 0.95)),
+        background: linear-gradient(color-mix(in srgb, var(--verde-principal, #0e4a27) 75%, transparent), rgba(8, 26, 16, 0.95)),
             url('https://images.unsplash.com/photo-1516467508483-a7212febe31a?q=80&w=1400&auto=format&fit=crop');
         background-size: cover;
         background-position: center;
@@ -653,7 +649,7 @@
     }
 
     .logo-icon img {
-        width: 110px;
+        width: 150px;
         height: auto;
     }
 
@@ -691,7 +687,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        color: #22c55e;
+        color: #ffffff;
     }
 
     /* LADO DIREITO (FORMULÁRIO) */
@@ -707,7 +703,7 @@
         margin-bottom: 25px;
     }
 
-    .top-text h2 {
+    .top-text :is(h1, h2) {
         font-size: 2rem;
         color: var(--text-primary);
         margin-bottom: 8px;
@@ -754,14 +750,14 @@
 
     .input-box input:focus {
         outline: none;
-        border-color: #15803d;
-        box-shadow: 0 0 0 4px rgba(21, 128, 61, 0.15);
+        border-color: var(--verde-ativo, #087a47);
+        box-shadow: 0 0 0 4px color-mix(in srgb, var(--verde-principal, #0e4a27) 15%, transparent);
     }
 
     .success {
-        background: #ecfdf5;
-        color: #065f46;
-        border: 1px solid #34d399;
+        background: var(--verde-claro, #e8f5ee);
+        color: var(--verde-texto, #0e4a27);
+        border: 1px solid var(--verde-secundario, #16a765);
         padding: 12px 16px;
         border-radius: 12px;
         margin-bottom: 18px;
@@ -780,8 +776,8 @@
 
     body.dark-theme .success {
         background: #0d2818;
-        color: #6ee7b7;
-        border-color: #065f46;
+        color: var(--verde-texto, #0e4a27);
+        border-color: var(--verde-principal, #0e4a27);
     }
 
     body.dark-theme .erro {
@@ -793,7 +789,7 @@
     .btn-login {
         width: 100%;
         border: none;
-        background: linear-gradient(90deg, #14532d, #166534);
+        background: linear-gradient(90deg, var(--verde-principal, #0e4a27), var(--verde-principal, #0e4a27));
         color: white;
         padding: 15px;
         border-radius: 12px;
@@ -806,7 +802,7 @@
 
     .btn-login:hover {
         transform: translateY(-2px);
-        box-shadow: 0 10px 20px rgba(22, 101, 52, 0.3);
+        box-shadow: 0 10px 20px color-mix(in srgb, var(--verde-principal, #0e4a27) 30%, transparent);
     }
 
     .footer {
@@ -817,7 +813,7 @@
     }
 
     .footer a {
-        color: #14532d;
+        color: var(--verde-texto, #0e4a27);
         font-weight: 600;
         text-decoration: none;
     }
@@ -852,7 +848,7 @@
     }
 
     @media(max-width: 600px) {
-        .top-text h2 {
+        .top-text :is(h1, h2) {
             font-size: 1.5rem;
         }
 
@@ -860,22 +856,25 @@
             font-size: 1.4rem;
         }
 
+        /* Acima do robô do assistente (mesmo canto): antes os dois ficavam
+           no mesmo lugar e o robô cobria este botão no celular. */
         .accessibility-trigger {
             top: auto;
-            bottom: 20px;
-            right: 20px;
+            bottom: calc(16px + 58px + 14px);
+            right: 16px;
         }
     }
 </style>
 
 <body>
+    @include('partials.a11y-global')
 
     <div class="login-container" id="readableContent">
         <!-- LADO ESQUERDO -->
         <div class="left-side">
             <div class="logo">
                 <div class="logo-icon">
-                    <img src="{{ asset('Logo.png') }}" alt="Logo Agrifarm">
+                    <img src="{{ asset('logo.png') }}" alt="Logo Agrifarm">
                 </div>
             </div>
 
@@ -919,7 +918,7 @@
             @endif
 
             <div class="top-text">
-                <h2>Recuperar Senha</h2>
+                <h1><i class="fa-solid fa-key titulo-icone titulo-icone-verde" aria-hidden="true"></i> Recuperar Senha</h1>
                 <p>Insira o e-mail associado à sua conta para receber um código de verificação.</p>
             </div>
 
@@ -945,12 +944,12 @@
     </div>
 
     <!-- Botão Fixo de Engrenagem (Disparador) -->
-    <button class="accessibility-trigger" id="accTrigger" aria-label="Abrir configurações de acessibilidade">
+    <button type="button" class="accessibility-trigger" id="accTrigger" aria-label="Abrir configurações de acessibilidade" aria-controls="accModal" aria-haspopup="dialog">
         <i class="fa-solid fa-universal-access"></i>
     </button>
 
     <!-- Quadrado Central de Configurações (Modal Box) -->
-    <div class="accessibility-modal" id="accModal">
+    <div class="accessibility-modal" id="accModal" role="dialog" aria-modal="true" aria-label="Painel de Acessibilidade">
         <div class="modal-header">
             <h3><i class="fa-solid fa-universal-access"></i> Painel de Acessibilidade</h3>
             <button class="modal-close" id="accClose" aria-label="Fechar painel">&times;</button>
@@ -962,16 +961,16 @@
                 <h4><i class="fa-solid fa-palette"></i> Preferências de Tema</h4>
                 <div class="control-grid">
                     <div class="control-item">
-                        <span class="control-label"><i class="fa-solid fa-moon"></i> Modo Escuro</span>
+                        <span class="control-label" id="lblDarkMode"><i class="fa-solid fa-moon" aria-hidden="true"></i> Modo Escuro</span>
                         <label class="switch-btn">
-                            <input type="checkbox" id="chkDarkMode">
+                            <input type="checkbox" id="chkDarkMode" role="switch" aria-labelledby="lblDarkMode">
                             <span class="slider-switch"></span>
                         </label>
                     </div>
                     <div class="control-item">
-                        <span class="control-label"><i class="fa-solid fa-circle-half-stroke"></i> Alto Contraste</span>
+                        <span class="control-label" id="lblHighContrast"><i class="fa-solid fa-circle-half-stroke" aria-hidden="true"></i> Alto Contraste</span>
                         <label class="switch-btn">
-                            <input type="checkbox" id="chkHighContrast">
+                            <input type="checkbox" id="chkHighContrast" role="switch" aria-labelledby="lblHighContrast">
                             <span class="slider-switch"></span>
                         </label>
                     </div>
@@ -1039,7 +1038,7 @@
     </div>
     <script src="https://vlibras.gov.br/app/vlibras-plugin.js"></script>
     <script>
-        new window.VLibras.Widget('https://vlibras.gov.br/app');
+        if (window.VLibras) new window.VLibras.Widget('https://vlibras.gov.br/app'); // CDN do governo fora do ar/bloqueado: segue sem o widget
     </script>
 
     <script>
@@ -1134,7 +1133,7 @@
 
                 const mainHeading = document.querySelector('.left-content h2');
                 const mainDesc = document.querySelector('.left-content p');
-                const rightHeading = document.querySelector('.top-text h2');
+                const rightHeading = document.querySelector('.top-text :is(h1, h2)');
                 const rightDesc = document.querySelector('.top-text p');
 
                 if (mainHeading) textToRead += mainHeading.innerText + ". ";

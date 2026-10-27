@@ -13,7 +13,8 @@
 --}}
 <div class="topbar">
     <div class="topbar-inner">
-        <div class="topbar-contact">
+        <div class="topbar-contact" role="region" aria-label="Contato">
+
             <a href="tel:+5519994010744" class="topbar-contact-item">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                     <path d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z" />
@@ -48,7 +49,7 @@
 <nav>
     <div class="nav-inner">
         <a href="{{ route('projeto.index') }}" class="logo">
-            <img src="{{ asset('agrifarm-removebg-preview.png') }}" alt="AgriFarm" />
+            <img src="{{ asset('agrifarm_oficial.png') }}" alt="AgriFarm" />
         </a>
         <ul class="nav-links">
             <li><a href="{{ route('landing.problema') }}" class="{{ $paginaAtiva === 'problema' ? 'active' : '' }}">Problema</a></li>
@@ -60,12 +61,12 @@
             <li><a href="{{ route('comentario.listar') }}" class="{{ $paginaAtiva === 'avaliacoes' ? 'active' : '' }}">Avaliações</a></li>
         </ul>
         <div class="nav-right">
-            <a href="{{ route('login.index') }}" class="btn-nav"><i class="fa-solid fa-right-to-bracket" aria-hidden="true"></i> Acessar Sistema</a>
+            <a href="{{ route('login.index') }}" class="btn-nav" title="Acessar Sistema" aria-label="Acessar Sistema"><i class="fa-solid fa-right-to-bracket" aria-hidden="true"></i> Acessar Sistema</a>
             <!-- O botão de acessibilidade (partials/acessibilidade.blade.php)
                  é movido pra dentro deste slot via JS, ficando na ponta
                  direita da navbar em vez de flutuar no canto da tela. -->
             <div id="navAccessibilitySlot"></div>
-            <button class="hamburger" onclick="toggleMenu()" aria-label="Menu">
+            <button type="button" class="hamburger" onclick="toggleMenu()" aria-label="Abrir menu" aria-controls="mobile-menu" aria-expanded="false">
                 <svg id="menu-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
                 </svg>
@@ -82,3 +83,7 @@
         <a href="{{ route('comentario.listar') }}" onclick="closeMenu()">Avaliações</a>
     </div>
 </nav>
+{{-- Landmark principal de toda página da landing: fecha no começo de
+     partials/landing-footer (o "Pular para o conteúdo" do a11y-global
+     aponta pra cá, e o leitor de tela acha o conteúdo pela região). --}}
+<main id="conteudo-principal" tabindex="-1">

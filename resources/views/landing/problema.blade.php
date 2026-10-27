@@ -23,7 +23,7 @@
             O Problema
         </span>
 
-        <h2 class="section-title reveal-title">O desperdício de ração ainda é um dos <span class="accent">maiores custos</span> da pecuária</h2>
+        <h1 class="section-title reveal-title"><i class="fa-solid fa-triangle-exclamation accent titulo-icone" aria-hidden="true"></i> O desperdício de ração ainda é um dos <span class="accent">maiores custos</span> da pecuária</h1>
 
             <div class="problema-grid">
                 <div>

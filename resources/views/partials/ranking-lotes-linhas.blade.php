@@ -13,7 +13,7 @@
     </td>
     <td><strong>{{ $item->nome_lote }}</strong></td>
     <td><span class="categoria-badge">{{ $item->tipo_animal }}</span></td>
-    <td>{{ number_format($item->consumo_medio_dia, 1, ',', '.') }} kg</td>
+    <td>{{ number_format($item->consumo_medio_dia, 2, ',', '.') }} kg/dia</td>
     <td>R$ {{ number_format($item->custo_medio_dia, 2, ',', '.') }}</td>
     <td><strong>{{ $item->eficiencia }}%</strong></td>
     <td>

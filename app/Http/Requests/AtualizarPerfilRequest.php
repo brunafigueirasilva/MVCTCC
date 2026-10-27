@@ -92,6 +92,9 @@ class AtualizarPerfilRequest extends FormRequest
         return [
             'telefone.digits_between' => 'Informe um telefone válido com DDD (10 ou 11 dígitos).',
             'cpf.digits' => 'O CPF deve conter 11 dígitos.',
+            'cpf.unique' => 'Este CPF já está cadastrado em outra conta.',
+            'email.unique' => 'Este e-mail já está cadastrado em outra conta.',
+            'email.email' => 'Informe um e-mail válido.',
             'data_nascimento.required' => 'Informe a data de nascimento para cadastrar um CPF.',
             'data_nascimento.before' => 'Informe uma data de nascimento válida.',
             'password.confirmed' => 'A confirmação da nova senha não corresponde.',

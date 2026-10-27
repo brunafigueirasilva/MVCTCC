@@ -1,12 +1,8 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
+@extends('layouts.app')
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AgriFarm | Meu Perfil</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+@section('title', 'AgriFarm | Meu Perfil')
 
+@push('styles')
     <style>
         /* ==========================================================================
         1. RESET, VARIÁVEIS DE SISTEMA (mesmo design system do Dashboard)
@@ -27,31 +23,20 @@
             --card-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.04), 0 2px 8px -1px rgba(15, 23, 42, 0.02);
             --card-border: 1px solid rgba(226, 232, 240, 0.8);
 
-            --card-verde-bg: #f0fdf4;
-            --card-verde-border: #dcfce7;
-            --card-verde-texto: #15803d;
+            --card-verde-bg: var(--verde-claro, #e8f5ee);
+            --card-verde-border: var(--verde-claro, #e8f5ee);
+            --card-verde-texto: var(--verde-texto, #0e4a27);
 
             --card-azul-bg: #f0f7ff;
             --card-azul-border: #e0f2fe;
             --card-azul-texto: #0369a1;
 
-            --navbar-bg: #123f22;
-            --sidebar-bg: #123f22;
-            --surface-border: rgba(255, 255, 255, 0.15);
+            --card-ambar-bg: #fffbeb;
+            --card-ambar-border: #fde68a;
+            --card-ambar-texto: #b45309;
 
-            --menu-text: #b2cbb9;
-            --menu-text-hover: #ffffff;
-            --menu-hover-bg: rgba(255, 255, 255, 0.05);
-            --menu-active-bg: rgba(255, 255, 255, 0.08);
-            --menu-active-text: #4ade80;
-            --menu-active-accent: #4ade80;
 
-            --panel-bg: #ffffff;
-            --panel-text: #1f2937;
-            --panel-item-bg: #f9fafb;
-            --panel-btn-bg: #e5e7eb;
-            --panel-btn-text: #374151;
-            --panel-btn-hover: #d1d5db;
+
         }
 
         body {
@@ -65,167 +50,41 @@
             transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, filter 0.25s ease, left 0.3s ease, width 0.3s ease, margin 0.3s ease;
         }
 
-        /* Mesmo mecanismo de desfoque do painel de acessibilidade usado no
-           Dashboard: aplicado direto nos elementos fixos (navbar/sidebar),
-           não só no overlay, para cobrir a tela inteira de forma confiável. */
-        body.acc-modal-open .sidebar,
-        body.acc-modal-open .navbar,
-        body.acc-modal-open .main {
-            filter: blur(6px);
-            pointer-events: none;
-        }
-
         /* ==========================================================================
         2. NAVBAR SUPERIOR
+        (blur do modal de acessibilidade e estrutura de navbar/sidebar/main
+        já vêm de layouts/app.blade.php — fonte única, não duplicar aqui)
         ========================================================================== */
-        .navbar {
-            height: 70px;
-            background: var(--navbar-bg);
-            border-bottom: 1px solid var(--surface-border);
-            box-shadow: 0 2px 12px rgba(15, 23, 42, 0.04);
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 32px;
-            z-index: 999;
-        }
 
-        .navbar-left { display: flex; align-items: center; gap: 22px; min-width: 0; }
 
-        .toggle-menu-btn {
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid var(--surface-border);
-            color: #4ade80;
-            font-size: 17px;
-            padding: 9px 13px;
-            border-radius: 10px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-        }
 
-        .toggle-menu-btn:hover {
-            background: rgba(255, 255, 255, 0.18);
-            border-color: rgba(255, 255, 255, 0.25);
-            color: #ffffff;
-        }
 
-        .navbar-logo { display: flex; align-items: center; min-width: 0; }
 
-        .navbar-logo img {
-            height: 44px;
-            width: auto;
-            max-width: 220px;
-            object-fit: contain;
-            display: block;
-        }
 
-        .navbar-right { display: flex; align-items: center; gap: 18px; }
 
-        .user-profile {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            text-decoration: none;
-            padding: 6px 10px;
-            margin: -6px -10px;
-            border-radius: 12px;
-            cursor: pointer;
-        }
 
-        .user-profile:hover { background: rgba(255, 255, 255, 0.08); }
 
-        .user-avatar {
-            width: 40px;
-            height: 40px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #4ade80;
-            font-size: 16px;
-            border: 1px solid var(--surface-border);
-            flex-shrink: 0;
-        }
 
-        .user-info { display: flex; flex-direction: column; }
-        .user-name { color: #ffffff; font-size: 14px; font-weight: 600; }
-        .user-role { color: #a7f3d0; font-size: 11px; font-weight: 500; }
 
-        .navbar-divider { width: 1px; height: 28px; background: var(--surface-border); }
 
-        .navbar-logout {
-            text-decoration: none;
-            color: #fca5a5;
-            font-weight: 600;
-            font-size: 14px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 10px 16px;
-            border-radius: 10px;
-            background: rgba(239, 68, 68, 0.08);
-            border: 1px solid rgba(239, 68, 68, 0.12);
-            transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
-        }
 
-        .navbar-logout:hover {
-            background: linear-gradient(135deg, #f87171, #dc2626);
-            border-color: transparent;
-            color: #ffffff;
-            transform: translateY(-1px);
-            box-shadow: 0 8px 18px -6px rgba(220, 38, 38, 0.55);
-        }
 
-        .navbar-logout:active { transform: translateY(0); box-shadow: none; }
+
 
         .navbar-right .accessibility-trigger {
-            background: rgba(255, 255, 255, 0.1);
-            color: #4ade80;
+            background: #f1f5f9;
+            color: #0f172a;
             border: 1px solid var(--surface-border);
         }
-        .navbar-right .accessibility-trigger:hover { background: rgba(255, 255, 255, 0.2); color: #ffffff; }
+        .navbar-right .accessibility-trigger:hover { background: #e2e8f0; color: #0f172a; }
 
         /* ==========================================================================
         3. SIDEBAR LATERAL
         ========================================================================== */
-        .sidebar {
-            width: 260px;
-            background: var(--sidebar-bg);
-            border-right: 1px solid var(--surface-border);
-            box-shadow: 2px 0 12px rgba(15, 23, 42, 0.03);
-            color: var(--menu-text);
-            position: fixed;
-            top: 70px;
-            left: 0;
-            bottom: 0;
-            padding: 0 16px 20px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            z-index: 998;
-        }
 
-        .sidebar.collapsed { left: -260px; }
 
         /* Fundo escurecido do menu mobile (fecha a sidebar ao clicar fora),
            igual ao Dashboard. */
-        .sidebar-overlay {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.45);
-            z-index: 997;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
 
         @media (max-width: 992px) {
             .sidebar-overlay.active {
@@ -234,24 +93,8 @@
             }
         }
 
-        .menu { display: flex; flex-direction: column; gap: 10px; min-height: 100%; padding-top: 20px; }
 
-        .menu a {
-            text-decoration: none;
-            color: var(--menu-text);
-            padding: 12px 14px;
-            border-radius: 0 10px 10px 0;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            font-size: 14px;
-            font-weight: 500;
-            border-left: 4px solid transparent;
-            position: relative;
-            transition: background-color 0.18s ease, color 0.18s ease, border-left-color 0.18s ease, transform 0.18s ease;
-        }
 
-        .menu a:hover { background: var(--menu-hover-bg); color: var(--menu-text-hover); transform: translateX(4px); }
         @keyframes menuIconBounce {
             0% { transform: translateY(0) scale(1); }
             30% { transform: translateY(-9px) scale(1.16); }
@@ -260,17 +103,8 @@
             100% { transform: translateY(0) scale(1); }
         }
 
-        .menu a:hover i { animation: menuIconBounce 0.55s cubic-bezier(.34,1.56,.64,1); }
 
-        .menu a.active {
-            background: var(--menu-active-bg);
-            color: var(--menu-active-text);
-            font-weight: 700;
-            border-left-color: var(--menu-active-accent);
-            box-shadow: inset 0 0 0 1px rgba(74, 222, 128, 0.12);
-        }
 
-        .menu i { width: 20px; font-size: 16px; text-align: center; transition: transform 0.18s ease; }
 
         @media (prefers-reduced-motion: reduce) {
             .menu a, .menu i { transition: background-color 0.18s ease, color 0.18s ease; }
@@ -278,15 +112,6 @@
             .menu a:hover i { animation: none; }
         }
 
-        .footer-right {
-            margin-top: auto;
-            padding-top: 20px;
-            border-top: 1px solid var(--surface-border);
-            text-align: center;
-            font-size: 12px;
-            color: rgba(255, 255, 255, 0.35);
-            letter-spacing: 0.5px;
-        }
 
         /* ==========================================================================
         4. ÁREA PRINCIPAL
@@ -295,10 +120,9 @@
             margin-left: 260px;
             width: calc(100% - 260px);
             padding: 40px;
-            padding-top: 90px;
+            padding-top: 20px;
         }
 
-        .main.expanded { margin-left: 0; width: 100%; }
 
         .header { margin-bottom: 28px; }
         .header h2 { font-size: 28px; font-weight: 700; color: var(--text-principal); margin-bottom: 6px; letter-spacing: -0.5px; }
@@ -336,23 +160,26 @@
 
         .avatar-edit-btn {
             position: absolute; bottom: 2px; right: 2px; width: 32px; height: 32px;
-            border-radius: 50%; background: #15803d; color: #fff; border: 3px solid var(--card-bg);
+            border-radius: 50%; background: var(--verde-principal, #0e4a27); color: #fff; border: 3px solid var(--card-bg);
             display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 0.85rem;
         }
-        .avatar-edit-btn:hover { background: #166534; }
+        .avatar-edit-btn:hover { background: var(--verde-hover, #0b3d21); }
 
         .profile-summary-info h1 { font-size: 1.4rem; color: var(--text-principal); margin-bottom: 2px; }
         .profile-summary-info p { color: var(--text-secundario); font-size: 0.9rem; margin-bottom: 10px; }
 
-        .security-badges { display: flex; flex-wrap: wrap; gap: 8px; }
+        .security-badges { display: flex; flex-wrap: wrap; gap: 6px; }
 
         .badge-info {
-            display: inline-flex; align-items: center; gap: 6px;
-            font-size: 0.78rem; font-weight: 600; padding: 5px 12px; border-radius: 20px;
+            display: inline-flex; align-items: center; gap: 5px;
+            font-size: 0.7rem; font-weight: 600; padding: 4px 10px; border-radius: 20px;
             background: var(--card-azul-bg); color: var(--card-azul-texto); border: 1px solid var(--card-azul-border);
         }
 
+        .badge-info i { font-size: 0.72rem; }
+
         .badge-info.ok { background: var(--card-verde-bg); color: var(--card-verde-texto); border-color: var(--card-verde-border); }
+        .badge-info.alerta { background: var(--card-ambar-bg); color: var(--card-ambar-texto); border-color: var(--card-ambar-border); }
 
         /* ==========================================================================
         6. AVISO DE SEGURANÇA + ALERTAS
@@ -382,10 +209,10 @@
         .alerta-flash strong { display: block; }
 
         .alerta-erro { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; }
-        .alerta-sucesso { background: #f0fdf4; border: 1px solid #bbf7d0; color: #15803d; }
+        .alerta-sucesso { background: var(--verde-claro, #e8f5ee); border: 1px solid var(--verde-borda, rgba(14, 74, 39, 0.28)); color: var(--verde-texto, #0e4a27); }
 
         body.dark-theme .alerta-erro { background: rgba(239, 68, 68, 0.12); border-color: rgba(239, 68, 68, 0.3); color: #fca5a5; }
-        body.dark-theme .alerta-sucesso { background: rgba(74, 222, 128, 0.12); border-color: rgba(74, 222, 128, 0.3); color: #4ade80; }
+        body.dark-theme .alerta-sucesso { background: color-mix(in srgb, var(--verde-secundario, #16a765) 12%, transparent); border-color: color-mix(in srgb, var(--verde-secundario, #16a765) 30%, transparent); color: var(--verde-texto, #0e4a27); }
 
         body.high-contrast .alerta-erro,
         body.high-contrast .alerta-sucesso {
@@ -399,11 +226,11 @@
         ========================================================================== */
         .form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; align-items: start; margin-bottom: 22px; }
 
-        .box h3 {
+        .box :is(h2, h3) {
             font-size: 15px; font-weight: 700; color: var(--text-principal);
             margin-bottom: 18px; display: flex; align-items: center; gap: 8px;
         }
-        .box h3 i { color: #16a34a; }
+        .box :is(h2, h3) i { color: var(--verde-texto, #0e4a27); }
 
         .campos-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 
@@ -419,7 +246,7 @@
             border: 1px solid #d1d5db; font-size: 0.92rem;
             background: #fff; color: #1f2937;
         }
-        .campo input:focus { outline: none; border-color: #16a34a; box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.12); }
+        .campo input:focus { outline: none; border-color: var(--verde-ativo, #087a47); box-shadow: 0 0 0 3px color-mix(in srgb, var(--verde-principal, #0e4a27) 12%, transparent); }
 
         .campo input.has-toggle { padding-right: 42px; }
 
@@ -437,7 +264,7 @@
         }
 
         .toggle-password {
-            position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+            position: absolute; right: 6px; min-width: 32px; min-height: 32px; display: inline-flex; align-items: center; justify-content: center; top: 50%; transform: translateY(-50%);
             background: none; border: none; color: var(--text-secundario); cursor: pointer; font-size: 0.9rem;
         }
         .toggle-password:hover { color: var(--text-principal); }
@@ -450,10 +277,10 @@
 
         .btn-salvar {
             width: 100%; padding: 14px; border-radius: 12px; border: none;
-            background: linear-gradient(90deg, #14532d, #166534); color: #fff;
+            background: linear-gradient(90deg, var(--verde-principal, #0e4a27), var(--verde-principal, #0e4a27)); color: #fff;
             font-weight: 700; font-size: 0.95rem; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;
         }
-        .btn-salvar:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(22, 101, 52, 0.3); }
+        .btn-salvar:hover { transform: translateY(-2px); box-shadow: 0 10px 20px color-mix(in srgb, var(--verde-principal, #0e4a27) 30%, transparent); }
 
         /* ==========================================================================
         8. TEMAS (Dark / Alto Contraste) — mesmos tokens do Dashboard
@@ -463,33 +290,20 @@
             --text-principal: #f1f9f4;
             --text-secundario: #9db8a8;
             --card-bg: #12251a;
-            --card-border: 1px solid rgba(74, 222, 128, 0.16);
+            --card-border: 1px solid color-mix(in srgb, var(--verde-secundario, #16a765) 16%, transparent);
             --card-shadow: 0 10px 15px -3px rgba(0,0,0,0.4);
-            --card-verde-bg: rgba(74, 222, 128, 0.1);
-            --card-verde-border: rgba(74, 222, 128, 0.3);
-            --card-verde-texto: #4ade80;
+            --card-verde-bg: color-mix(in srgb, var(--verde-secundario, #16a765) 10%, transparent);
+            --card-verde-border: color-mix(in srgb, var(--verde-secundario, #16a765) 30%, transparent);
+            --card-verde-texto: var(--verde-texto, #0e4a27);
             --card-azul-bg: rgba(56, 189, 248, 0.1);
             --card-azul-border: rgba(56, 189, 248, 0.3);
             --card-azul-texto: #38bdf8;
-            --navbar-bg: #0c1b12;
-            --sidebar-bg: #0c1b12;
-            --surface-border: rgba(74, 222, 128, 0.14);
-            --menu-text: #9db8a8;
-            --menu-text-hover: #4ade80;
-            --menu-hover-bg: rgba(74, 222, 128, 0.08);
-            --menu-active-bg: rgba(74, 222, 128, 0.12);
-            --menu-active-text: #4ade80;
-            --menu-active-accent: #4ade80;
-            --panel-bg: #12251a;
-            --panel-text: #f1f9f4;
-            --panel-item-bg: #0a1810;
-            --panel-btn-bg: #1e3a2a;
-            --panel-btn-text: #d9ede1;
-            --panel-btn-hover: #2a4d38;
+            --card-ambar-bg: rgba(251, 191, 36, 0.1);
+            --card-ambar-border: rgba(251, 191, 36, 0.3);
+            --card-ambar-texto: #fbbf24;
         }
-        body.dark-theme .toggle-menu-btn { background: #16281c; border-color: var(--surface-border); color: #d9ede1; }
-        body.dark-theme .user-avatar { background: rgba(74, 222, 128, 0.12); border-color: rgba(74, 222, 128, 0.2); color: #4ade80; }
-        body.dark-theme .navbar-right .accessibility-trigger { background: rgba(74, 222, 128, 0.12); border-color: rgba(74, 222, 128, 0.2); color: #4ade80; }
+        body.dark-theme .navbar-right .accessibility-trigger:hover { background: rgba(255, 255, 255, 0.16); color: #ffffff; }
+        body.dark-theme .navbar-right .accessibility-trigger { background: rgba(255, 255, 255, 0.08); border-color: rgba(255, 255, 255, 0.16); color: #f1f5f9; }
         body.dark-theme .campo input { background: #0f1712; color: #ededec; border-color: #374151; }
 
         body.high-contrast {
@@ -548,9 +362,13 @@
             color: #ffffff !important;
         }
         body.high-contrast .btn-salvar {
-            background: #ffff00 !important;
-            color: #000000 !important;
+            background: #000000 !important;
+            border: 2px solid #ffff00 !important;
+            color: #ffff00 !important;
+            box-shadow: none !important;
         }
+        body.high-contrast .btn-salvar:hover { background: #1a1a00 !important; }
+        body.high-contrast .btn-salvar:focus-visible,
         body.high-contrast a:focus-visible,
         body.high-contrast button:focus-visible {
             outline: 3px solid #ffff00 !important;
@@ -561,10 +379,7 @@
         9. RESPONSIVIDADE
         ========================================================================== */
         @media (max-width: 992px) {
-            .main { margin-left: 0; width: 100%; padding: 24px; padding-top: 90px; }
-            .sidebar { left: -260px; }
-            .sidebar.active-mobile { left: 0; box-shadow: 10px 0 30px rgba(0, 0, 0, 0.18); }
-            .user-info { display: none; }
+            .main { margin-left: 0; width: 100%; padding: 24px; padding-top: 20px; }
         }
 
         @media (max-width: 768px) {
@@ -578,99 +393,13 @@
             .navbar-logout span { display: none; }
         }
     </style>
-</head>
+@endpush
 
-<body>
-
-    <!-- Fundo escurecido do menu mobile (fecha a sidebar ao clicar fora) -->
-    <div class="sidebar-overlay" id="sidebarOverlay"></div>
-
-    <!-- SIDEBAR LATERAL -->
-    <div class="sidebar" id="sidebar">
-        <div class="menu">
-            <a href="{{ route('cadastro.index') }}">
-                <i class="fa-solid fa-chart-line"></i>
-                <span>Dashboard</span>
-            </a>
-            <a href="{{ route('fazenda.listar') }}">
-                <i class="fa-solid fa-location-dot"></i>
-                <span>Gestão de Fazendas</span>
-            </a>
-            <a href="{{ route('lote.listar') }}">
-                <i class="fa-solid fa-layer-group"></i>
-                <span>Gestão de Lotes</span>
-            </a>
-            <a href="{{ route('ordenha.listar') }}">
-                <i class="fa-solid fa-droplet"></i>
-                <span>Ordenha e Leite</span>
-            </a>
-            <a href="{{ route('cocho.listar') }}">
-                <i class="fa-solid fa-cube"></i>
-                <span>Gestão de Cochos</span>
-            </a>
-            <a href="{{ route('racao.listar') }}">
-                <i class="fa-solid fa-wheat-awn"></i>
-                <span>Gestão de Rações</span>
-            </a>
-            <a href="{{ route('estoque.listar') }}">
-                <i class="fa-solid fa-box"></i>
-                <span>Nível de Estoque</span>
-            </a>
-            <a href="{{ route('plano.listar') }}">
-                <i class="fa-solid fa-clipboard-list"></i>
-                <span>Plano Alimentar</span>
-            </a>
-            <a href="{{ route('relatorio.listar') }}">
-                <i class="fa-regular fa-file-lines"></i>
-                <span>Relatório Avançado</span>
-            </a>
-            <a href="{{ route('perfil') }}" class="active">
-                <i class="fa-solid fa-user-gear"></i>
-                <span>Meu Perfil</span>
-            </a>
-            <div class="footer-right">© 2026 AgriFarm</div>
-        </div>
-    </div>
-
-    <!-- NAVBAR SUPERIOR -->
-    <div class="navbar" id="navbar">
-        <div class="navbar-left">
-            <button class="toggle-menu-btn" id="toggleMenuBtn" title="Menu Lateral">
-                <i class="fa-solid fa-bars"></i>
-            </button>
-            <div class="navbar-logo">
-                <img src="{{ asset('agrifarm-removebg-preview.png') }}" alt="AgriFarm">
-            </div>
-        </div>
-
-        <div class="navbar-right">
-            <a href="{{ route('perfil') }}" class="user-profile" title="Meu perfil">
-                <div class="user-avatar">
-                    @if ($cadastro->foto ?? false)
-                        <img src="{{ asset('storage/' . $cadastro->foto) }}" alt="Foto de perfil" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">
-                    @else
-                        <i class="fa-solid fa-user-gear"></i>
-                    @endif
-                </div>
-                <div class="user-info">
-                    <span class="user-name">Olá, {{ session('usuario_nome') }}</span>
-                    <span class="user-role">Administrador</span>
-                </div>
-            </a>
-
-            <div class="navbar-divider"></div>
-
-            <a href="{{ route('logout') }}" class="navbar-logout">
-                <i class="fa-solid fa-right-from-bracket"></i>
-                <span>Sair</span>
-            </a>
-        </div>
-    </div>
-
+@section('content')
     <!-- ÁREA DE CONTEÚDO PRINCIPAL -->
     <main class="main" id="mainArea">
         <div class="header">
-            <h2>Meu Perfil</h2>
+            <h2><i class="fa-solid fa-user-gear titulo-icone" aria-hidden="true"></i> Meu Perfil</h2>
             <p>Gerencie seus dados pessoais, sua foto e a segurança da sua conta.</p>
         </div>
 
@@ -698,14 +427,14 @@
             <div class="profile-summary">
                 <div class="avatar-wrap">
                     <div class="avatar-box" id="avatarPreviewBox">
-                        @if($cadastro->foto ?? false)
-                            <img id="avatarPreviewImg" src="{{ asset('storage/' . $cadastro->foto) }}" alt="Foto de perfil">
+                        @if($cadastro?->foto_url)
+                            <img id="avatarPreviewImg" src="{{ $cadastro->foto_url }}" alt="Foto de perfil" referrerpolicy="no-referrer">
                         @else
                             <i class="fa-solid fa-user" id="avatarPreviewIcon"></i>
                             <img id="avatarPreviewImg" style="display:none;width:100%;height:100%;object-fit:cover;">
                         @endif
                     </div>
-                    <label class="avatar-edit-btn" for="fotoInput" aria-label="Alterar foto de perfil">
+                    <label class="avatar-edit-btn" for="fotoInput" role="button" tabindex="0" aria-label="Alterar foto de perfil" onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); document.getElementById('fotoInput').click(); }">
                         <i class="fa-solid fa-camera"></i>
                     </label>
                 </div>
@@ -734,8 +463,11 @@
 
         <div class="alerta alerta-info">
             <i class="fa-solid fa-shield-halved"></i>
-            Por segurança, toda alteração de perfil exige sua senha atual e gera um e-mail de confirmação
-            para <strong>{{ $cadastro->email }}</strong> — inclusive para o endereço antigo, se você trocar o e-mail.
+            {{-- Texto num <span> só: solto dentro do .alerta (flex), o
+                 <strong> do e-mail virava um item à parte que não quebrava
+                 linha e saía da tela com texto ampliado. --}}
+            <span style="min-width: 0; overflow-wrap: anywhere;">Por segurança, toda alteração de perfil exige sua senha atual e gera um e-mail de confirmação
+            para <strong>{{ $cadastro->email }}</strong> — inclusive para o endereço antigo, se você trocar o e-mail.</span>
         </div>
 
         <form action="{{ route('perfil.update') }}" method="POST" enctype="multipart/form-data" id="formPerfil">
@@ -745,7 +477,7 @@
 
             <div class="form-grid-2">
                 <div class="box">
-                    <h3><i class="fa-solid fa-id-card"></i> Dados pessoais</h3>
+                    <h2 class="box-titulo"><i class="fa-solid fa-id-card"></i> Dados pessoais</h2>
                     <div class="campos-grid">
                         <div class="campo full">
                             <label for="responsavel">Nome completo</label>
@@ -776,7 +508,7 @@
                 </div>
 
                 <div class="box">
-                    <h3><i class="fa-solid fa-lock"></i> Segurança</h3>
+                    <h2 class="box-titulo"><i class="fa-solid fa-lock"></i> Segurança</h2>
                     <div class="campo">
                         <label for="password">Nova senha</label>
                         <div class="input-wrap">
@@ -802,6 +534,7 @@
                     <div class="metadados-seguranca">
                         <span><i class="fa-solid fa-key"></i> Senha alterada em: {{ $cadastro->senha_alterada_em ? $cadastro->senha_alterada_em->format('d/m/Y \à\s H:i') : 'nunca alterada' }}</span>
                         <span><i class="fa-solid fa-envelope"></i> E-mail alterado em: {{ $cadastro->email_alterado_em ? $cadastro->email_alterado_em->format('d/m/Y \à\s H:i') : 'nunca alterado' }}</span>
+                        <span><i class="fa-solid fa-shield-halved"></i> E-mail verificado em: {{ $cadastro->email_verificado_em ? $cadastro->email_verificado_em->format('d/m/Y \à\s H:i') : 'ainda não verificado' }}</span>
                     </div>
                 </div>
             </div>
@@ -810,48 +543,11 @@
         </form>
     </main>
 
-    @include('partials.acessibilidade')
-    @include('partials.assistente-ia')
+@endsection
 
-    <!-- WIDGET VLIBRAS -->
-    <div vw class="enabled">
-        <div vw-access-button class="active"></div>
-        <div vw-plugin-wrapper>
-            <div class="vw-plugin-top-wrapper"></div>
-        </div>
-    </div>
-    <script src="https://vlibras.gov.br/app/vlibras-plugin.js"></script>
-    <script>
-        new window.VLibras.Widget('https://vlibras.gov.br/app');
-    </script>
-
+@push('scripts')
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            /* --- SIDEBAR RECOLHÍVEL (mesmo comportamento do Dashboard) --- */
-            const toggleBtn = document.getElementById('toggleMenuBtn');
-            const sidebar = document.getElementById('sidebar');
-            const mainContent = document.querySelector('.main');
-            const sidebarOverlay = document.getElementById('sidebarOverlay');
-
-            if (toggleBtn && sidebar && mainContent) {
-                toggleBtn.addEventListener('click', function () {
-                    if (window.innerWidth > 992) {
-                        sidebar.classList.toggle('collapsed');
-                        mainContent.classList.toggle('expanded');
-                    } else {
-                        sidebar.classList.toggle('active-mobile');
-                        if (sidebarOverlay) sidebarOverlay.classList.toggle('active');
-                    }
-                });
-            }
-
-            if (sidebarOverlay) {
-                sidebarOverlay.addEventListener('click', function () {
-                    sidebar.classList.remove('active-mobile');
-                    sidebarOverlay.classList.remove('active');
-                });
-            }
-
             /* --- MÁSCARAS --- */
             function aplicarMascara(input, mascara) {
                 if (!input) return;
@@ -930,5 +626,4 @@
             });
         });
     </script>
-</body>
-</html>
+@endpush

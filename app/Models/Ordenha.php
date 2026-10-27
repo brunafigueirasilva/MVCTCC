@@ -7,8 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class Ordenha extends Model
 {
     protected $fillable = [
-        'animal_id',
-        'lactacao_id',
+        'lote_id',
         'data',
         'horario',
         'turno',
@@ -17,19 +16,16 @@ class Ordenha extends Model
         'observacoes',
     ];
 
+    // "date:Y-m-d" mantém a data como "2026-10-05" no JSON da API (sem o
+    // formato ISO com hora/fuso), igual às demais datas do sistema.
     protected $casts = [
-        'data' => 'date',
+        'data' => 'date:Y-m-d',
         'quantidade_litros' => 'float',
     ];
 
-    public function animal()
+    public function lote()
     {
-        return $this->belongsTo(Animal::class);
-    }
-
-    public function lactacao()
-    {
-        return $this->belongsTo(Lactacao::class);
+        return $this->belongsTo(Lote::class);
     }
 
     public function responsavel()

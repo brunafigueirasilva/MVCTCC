@@ -85,6 +85,7 @@
         font-size: 18px;
         font-weight: bold;
         letter-spacing: 0.3px;
+        margin-bottom: 3px;
     }
 
     .header-bar .meta {
@@ -344,6 +345,104 @@
     table, tr, td, th {
         page-break-inside: avoid;
     }
+
+    /* ==========================================================================
+       DESTAQUES (Melhor Desempenho / Necessita Atenção)
+       ========================================================================== */
+    .destaque-cards { margin-bottom: 20px; }
+    .destaque-cards .card { width: 50%; }
+
+    /* ==========================================================================
+       GRÁFICOS (sem JS — dompdf não roda Chart.js): barras em HTML/CSS puro
+       e linhas em SVG inline, calculados em PHP a partir dos mesmos dados
+       das tabelas ao lado.
+       ========================================================================== */
+    .chart-bar-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 8px;
+    }
+
+    .chart-bar-table td {
+        border: none;
+        padding: 3px 4px;
+        font-size: 9.5px;
+    }
+
+    .chart-bar-table tbody tr:nth-child(even) {
+        background: none;
+    }
+
+    .chart-bar-label {
+        width: 34%;
+        color: #374151;
+    }
+
+    .chart-bar-cell {
+        width: 46%;
+    }
+
+    .chart-bar-valor {
+        width: 20%;
+        font-weight: bold;
+        color: #111827;
+    }
+
+    .chart-bar-track {
+        display: block;
+        width: 100%;
+        height: 9px;
+        background: #e5e7eb;
+        border-radius: 4px;
+        overflow: hidden;
+    }
+
+    .chart-bar-fill {
+        display: block;
+        height: 9px;
+    }
+
+    .chart-linha-wrap {
+        margin-bottom: 10px;
+    }
+
+    /* ==========================================================================
+       ANÁLISES E CONCLUSÕES
+       ========================================================================== */
+    .analise-item {
+        display: table;
+        width: 100%;
+        background: #f9fafb;
+        border: 1px solid #e5e7eb;
+        border-left: 3px solid #16a34a;
+        border-radius: 8px;
+        padding: 9px 12px;
+        margin-bottom: 8px;
+        page-break-inside: avoid;
+    }
+
+    .analise-item .bolinha {
+        display: table-cell;
+        width: 14px;
+        vertical-align: top;
+        padding-top: 3px;
+    }
+
+    .analise-item .bolinha span {
+        display: block;
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: #16a34a;
+    }
+
+    .analise-item .texto {
+        display: table-cell;
+        vertical-align: top;
+        font-size: 10.5px;
+        color: #374151;
+        line-height: 1.5;
+    }
 </style>
 
 <div class="pdf-header">
@@ -355,6 +454,7 @@
         @endif
         <div class="col-left">
             <h1>Relatório de Consumo e Eficiência</h1>
+            <div class="meta">Período analisado: {{ $periodoLabel ?? '—' }}</div>
         </div>
         <div class="col-right meta">
             Emitido em {{ $dataEmissao->format('d/m/Y \à\s H:i') }}<br>
@@ -417,7 +517,7 @@
     </div>
     <div class="card azul">
         <div class="small">Média Diária</div>
-        <div class="big">{{ number_format($statCards['mediaDiaria']['valor'] ?? 0, 1, ',', '.') }} kg/dia</div>
+        <div class="big">{{ number_format($statCards['mediaDiaria']['valor'] ?? 0, 2, ',', '.') }} kg/dia</div>
         <div class="trend {{ $trendClasse($statCards['mediaDiaria']['variacao'] ?? null) }}">{{ $trendTexto($statCards['mediaDiaria']['variacao'] ?? null) }}</div>
     </div>
     <div class="card ciano">
@@ -432,11 +532,40 @@
     </div>
 </div>
 
+<!-- DESTAQUES DO PERÍODO (mesmos cards da tela, só aparecem com 2+ lotes no ranking) -->
+@if (($destaqueMelhor ?? null) || ($destaquePior ?? null))
+    <div class="section-cards destaque-cards">
+        @if ($destaqueMelhor ?? null)
+            <div class="card verde">
+                <div class="small">Melhor Desempenho</div>
+                <div class="big">{{ $destaqueMelhor->nome_lote }}</div>
+                <div class="trend trend-up">{{ $destaqueMelhor->eficiencia }}% de eficiência &middot; {{ number_format($destaqueMelhor->consumo_medio_dia, 2, ',', '.') }} kg/dia</div>
+            </div>
+        @endif
+        @if ($destaquePior ?? null)
+            <div class="card ambar">
+                <div class="small">Necessita Atenção</div>
+                <div class="big">{{ $destaquePior->nome_lote }}</div>
+                <div class="trend trend-down">{{ $destaquePior->eficiencia }}% de eficiência &middot; {{ number_format($destaquePior->consumo_medio_dia, 2, ',', '.') }} kg/dia</div>
+            </div>
+        @endif
+    </div>
+@endif
+
 <div class="grid-2">
     <div class="col">
         <!-- CONSUMO AO LONGO DO TEMPO -->
         <div class="section">
             <div class="title azul">Consumo ao Longo do Tempo</div>
+            <div class="chart-linha-wrap">
+                @include('pdf.partials.grafico-linha', [
+                    'labels' => collect($consumoPorDia ?? [])->pluck('data')->all(),
+                    'valores' => collect($consumoPorDia ?? [])->pluck('consumo')->all(),
+                    'cor' => '#3b82f6',
+                    'unidade' => ' kg',
+                    'largura' => 460,
+                ])
+            </div>
             <table>
                 <thead>
                     <tr>
@@ -462,6 +591,11 @@
         <!-- DISTRIBUIÇÃO DE GASTOS -->
         <div class="section">
             <div class="title ambar">Distribuição de Gastos por Ração</div>
+            @include('pdf.partials.grafico-barras', [
+                'itens' => collect($gastos ?? [])->map(fn ($g) => ['label' => $g['nome'], 'valor' => $g['percentual']]),
+                'sufixo' => '%',
+                'casas' => 1,
+            ])
             <table>
                 <thead>
                     <tr>
@@ -484,9 +618,48 @@
     </div>
 </div>
 
+<!-- EVOLUÇÃO HISTÓRICA (6 meses) — sempre a mesma janela, independente do
+     filtro de período ativo (ver RelatorioController::montarEvolucaoHistorica). -->
+@if ($evolucaoHistorica['temDados'] ?? false)
+    <div class="section">
+        <div class="title roxo">Evolução Histórica de Consumo (6 meses)</div>
+        <div class="chart-linha-wrap">
+            @include('pdf.partials.grafico-linha', [
+                'labels' => $evolucaoHistorica['labels'] ?? [],
+                'valores' => $evolucaoHistorica['valores'] ?? [],
+                'cor' => '#7c3aed',
+                'unidade' => ' kg',
+                'largura' => 850,
+                'altura' => 120,
+            ])
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    @foreach ($evolucaoHistorica['labels'] ?? [] as $mes)
+                        <th class="numero">{{ $mes }}</th>
+                    @endforeach
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    @foreach ($evolucaoHistorica['valores'] ?? [] as $valor)
+                        <td class="numero">{{ number_format($valor, 0, ',', '.') }} kg</td>
+                    @endforeach
+                </tr>
+            </tbody>
+        </table>
+    </div>
+@endif
+
 <!-- CONSUMO POR LOTE -->
 <div class="section">
     <div class="title">Consumo e Custo por Lote</div>
+    @include('pdf.partials.grafico-barras', [
+        'itens' => collect($consumoLotes ?? [])->map(fn ($l) => ['label' => $l['nome'], 'valor' => $l['consumo']]),
+        'sufixo' => ' kg',
+        'casas' => 0,
+    ])
     <table>
         <thead>
             <tr>
@@ -593,7 +766,7 @@
                     <td>{{ $item->posicao }}º</td>
                     <td><strong>{{ $item->nome_lote }}</strong></td>
                     <td><span class="categoria-badge">{{ $item->tipo_animal }}</span></td>
-                    <td class="numero">{{ number_format($item->consumo_medio_dia, 1, ',', '.') }}</td>
+                    <td class="numero">{{ number_format($item->consumo_medio_dia, 2, ',', '.') }}</td>
                     <td class="numero">R$ {{ number_format($item->custo_medio_dia, 2, ',', '.') }}</td>
                     <td class="numero">@include('pdf.partials.barra', ['valor' => $item->eficiencia])</td>
                     <td class="numero">
@@ -613,4 +786,17 @@
             @endforelse
         </tbody>
     </table>
+</div>
+
+<!-- ANÁLISES E CONCLUSÕES -->
+<div class="section">
+    <div class="title azul">Análises e Conclusões</div>
+    @forelse ($analises ?? [] as $texto)
+        <div class="analise-item">
+            <div class="bolinha"><span></span></div>
+            <div class="texto">{{ $texto }}</div>
+        </div>
+    @empty
+        <div class="empty-msg">Sem dados suficientes para gerar análises neste período.</div>
+    @endforelse
 </div>

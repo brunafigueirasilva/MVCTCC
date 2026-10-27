@@ -14,17 +14,38 @@ class Lote extends Model
     protected $fillable = [
         'nome_lote',
         'tipo_animal',
+        'raca',
         'finalidade',
         'sexo',
         'idade_media',
         'quantidade_animais',
+        'quantidade_cochos',
         'fazenda_id',
         'lote_origem_id',
         'racao_id',
-        'data_entrada',
         'peso_medio',
+        'data_entrada',
         'status',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'quantidade_animais' => 'integer',
+            'quantidade_cochos' => 'integer',
+            'peso_medio' => 'float',
+            'data_entrada' => 'date:Y-m-d',
+        ];
+    }
+
+    /** Lote de espécie leiteira com fêmeas (sexo "Fêmea" ou "Misto") —
+     *  lote de machos nunca tem ordenha. Enviado ao app nos endpoints de
+     *  lote da API (não em $appends: lote carregado com colunas parciais
+     *  sairia "false" por engano). */
+    public function getAceitaOrdenhaAttribute(): bool
+    {
+        return \App\Support\LoteRegras::loteAceitaOrdenha($this->tipo_animal, $this->sexo);
+    }
 
     // --- Relacionamentos Existentes ---
 
@@ -40,16 +61,29 @@ class Lote extends Model
         return $this->belongsTo(Racao::class, 'racao_id');
     }
 
+    /** Cochos gerados automaticamente a partir de "quantidade_cochos" (ver
+     *  LoteController::sincronizarCochos()), sempre na ordem do "numero". */
     public function cochos()
     {
-        return $this->hasMany(Cocho::class);
+        return $this->hasMany(Cocho::class)->orderBy('numero');
     }
 
-    /** Animais individuais cadastrados neste lote (módulo de
-     *  Parto/Reprodução/Lactação/Ordenha por animal). */
-    public function animais()
+    /** Registros de ordenha deste lote, mais recente primeiro. */
+    public function ordenhas()
     {
-        return $this->hasMany(Animal::class);
+        return $this->hasMany(Ordenha::class)->latest('data')->latest('horario');
+    }
+
+    /** Planos alimentares do lote (o ativo é o vigente). */
+    public function planos()
+    {
+        return $this->hasMany(Plano::class, 'lote_id');
+    }
+
+    /** Saídas de ração usadas nos cochos deste lote. */
+    public function movimentacoesEstoque()
+    {
+        return $this->hasMany(EstoqueMovimentacao::class, 'lote_id');
     }
 
     /** Histórico de ocorrências do lote (óbitos etc.), mais recente primeiro. */

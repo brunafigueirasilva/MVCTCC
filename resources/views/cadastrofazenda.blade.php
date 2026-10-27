@@ -1,13 +1,9 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
+@extends('layouts.app')
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AgriFarm | Gestão de Fazendas</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+@section('title', 'AgriFarm | Gestão de Fazendas')
 
+@push('styles')
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <style>
         /* ==========================================================================
         1. RESET, VARIÁVEIS DE SISTEMA (idêntico ao Dashboard)
@@ -28,30 +24,15 @@
             --card-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.04), 0 2px 8px -1px rgba(15, 23, 42, 0.02);
             --card-border: 1px solid rgba(226, 232, 240, 0.8);
 
-            --card-verde-bg: #f0fdf4;
-            --card-verde-border: #dcfce7;
-            --card-verde-icon-bg: #e2fbe8;
-            --card-verde-texto: #15803d;
+            --card-verde-bg: var(--verde-claro, #e8f5ee);
+            --card-verde-border: var(--verde-claro, #e8f5ee);
+            --card-verde-icon-bg: var(--verde-claro, #e8f5ee);
+            --card-verde-texto: var(--verde-texto, #0e4a27);
 
-            --navbar-bg: #123f22;
-            --sidebar-bg: #123f22;
-            --surface-border: rgba(255, 255, 255, 0.15);
             --surface-muted-bg: #f8fafc;
             --surface-muted-border: #cbd5e1;
 
-            --menu-text: #b2cbb9;
-            --menu-text-hover: #ffffff;
-            --menu-hover-bg: rgba(255, 255, 255, 0.05);
-            --menu-active-bg: rgba(255, 255, 255, 0.08);
-            --menu-active-text: #4ade80;
-            --menu-active-accent: #4ade80;
 
-            --panel-bg: #ffffff;
-            --panel-text: #1f2937;
-            --panel-item-bg: #f9fafb;
-            --panel-btn-bg: #e5e7eb;
-            --panel-btn-text: #374151;
-            --panel-btn-hover: #d1d5db;
         }
 
         body {
@@ -65,185 +46,46 @@
             transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, filter 0.25s ease, left 0.3s ease, width 0.3s ease, margin 0.3s ease;
         }
 
-        body.acc-modal-open .sidebar,
-        body.acc-modal-open .navbar,
-        body.acc-modal-open .main {
-            filter: blur(6px);
-            pointer-events: none;
-        }
-
         /* ==========================================================================
         2. NAVBAR SUPERIOR
+        (blur do modal de acessibilidade e estrutura de navbar/sidebar/main
+        já vêm de layouts/app.blade.php — fonte única, não duplicar aqui)
         ========================================================================== */
-        .navbar {
-            height: 70px;
-            background: var(--navbar-bg);
-            border-bottom: 1px solid var(--surface-border);
-            box-shadow: 0 2px 12px rgba(15, 23, 42, 0.04);
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 32px;
-            z-index: 999;
-        }
 
-        .navbar-left { display: flex; align-items: center; gap: 22px; min-width: 0; }
 
-        .toggle-menu-btn {
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid var(--surface-border);
-            color: #4ade80;
-            font-size: 1.063rem;
-            padding: 9px 13px;
-            border-radius: 10px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-        }
 
-        .toggle-menu-btn:hover {
-            background: rgba(255, 255, 255, 0.18);
-            border-color: rgba(255, 255, 255, 0.25);
-            color: #ffffff;
-        }
 
-        .navbar-logo { display: flex; align-items: center; min-width: 0; }
 
-        .navbar-logo img {
-            height: 44px;
-            width: auto;
-            max-width: 220px;
-            object-fit: contain;
-            display: block;
-        }
 
-        .navbar-right { display: flex; align-items: center; gap: 18px; }
 
-        .user-profile {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            text-decoration: none;
-            padding: 6px 10px;
-            margin: -6px -10px;
-            border-radius: 12px;
-            cursor: pointer;
-        }
 
-        .user-profile:hover { background: rgba(255, 255, 255, 0.08); }
 
-        .user-avatar {
-            width: 40px;
-            height: 40px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #4ade80;
-            font-size: 1rem;
-            border: 1px solid var(--surface-border);
-            flex-shrink: 0;
-        }
 
-        .user-info { display: flex; flex-direction: column; }
-        .user-name { color: #ffffff; font-size: 0.875rem; font-weight: 600; }
-        .user-role { color: #a7f3d0; font-size: 0.6875rem; font-weight: 500; }
 
-        .navbar-divider { width: 1px; height: 28px; background: var(--surface-border); }
 
-        .navbar-logout {
-            text-decoration: none;
-            color: #fca5a5;
-            font-weight: 600;
-            font-size: 0.875rem;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 10px 16px;
-            border-radius: 10px;
-            background: rgba(239, 68, 68, 0.08);
-            border: 1px solid rgba(239, 68, 68, 0.12);
-            transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
-        }
 
-        .navbar-logout:hover {
-            background: linear-gradient(135deg, #f87171, #dc2626);
-            border-color: transparent;
-            color: #ffffff;
-            transform: translateY(-1px);
-            box-shadow: 0 8px 18px -6px rgba(220, 38, 38, 0.55);
-        }
 
-        .navbar-logout:active { transform: translateY(0); box-shadow: none; }
+
 
         .navbar-right .accessibility-trigger {
-            background: rgba(255, 255, 255, 0.1);
-            color: #4ade80;
+            background: #f1f5f9;
+            color: #0f172a;
             border: 1px solid var(--surface-border);
         }
-        .navbar-right .accessibility-trigger:hover { background: rgba(255, 255, 255, 0.2); color: #ffffff; }
+        .navbar-right .accessibility-trigger:hover { background: #e2e8f0; color: #0f172a; }
 
         /* ==========================================================================
         3. SIDEBAR LATERAL
         ========================================================================== */
-        .sidebar {
-            width: 260px;
-            background: var(--sidebar-bg);
-            border-right: 1px solid var(--surface-border);
-            box-shadow: 2px 0 12px rgba(15, 23, 42, 0.03);
-            color: var(--menu-text);
-            position: fixed;
-            top: 70px;
-            left: 0;
-            bottom: 0;
-            padding: 0 16px 20px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            z-index: 998;
-        }
 
-        .sidebar.collapsed { left: -260px; }
 
-        .sidebar-overlay {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.45);
-            z-index: 997;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
 
         @media (max-width: 992px) {
             .sidebar-overlay.active { display: block; opacity: 1; }
         }
 
-        .menu { display: flex; flex-direction: column; gap: 10px; min-height: 100%; padding-top: 20px; }
 
-        .menu a {
-            text-decoration: none;
-            color: var(--menu-text);
-            padding: 12px 14px;
-            border-radius: 0 10px 10px 0;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            font-size: 0.875rem;
-            font-weight: 500;
-            border-left: 4px solid transparent;
-            position: relative;
-            transition: background-color 0.18s ease, color 0.18s ease, border-left-color 0.18s ease, transform 0.18s ease;
-        }
 
-        .menu a:hover { background: var(--menu-hover-bg); color: var(--menu-text-hover); transform: translateX(4px); }
         @keyframes menuIconBounce {
             0% { transform: translateY(0) scale(1); }
             30% { transform: translateY(-9px) scale(1.16); }
@@ -252,17 +94,8 @@
             100% { transform: translateY(0) scale(1); }
         }
 
-        .menu a:hover i { animation: menuIconBounce 0.55s cubic-bezier(.34,1.56,.64,1); }
 
-        .menu a.active {
-            background: var(--menu-active-bg);
-            color: var(--menu-active-text);
-            font-weight: 700;
-            border-left-color: var(--menu-active-accent);
-            box-shadow: inset 0 0 0 1px rgba(74, 222, 128, 0.12);
-        }
 
-        .menu i { width: 20px; font-size: 1rem; text-align: center; transition: transform 0.18s ease; }
 
         @media (prefers-reduced-motion: reduce) {
             .menu a, .menu i { transition: background-color 0.18s ease, color 0.18s ease; }
@@ -270,15 +103,6 @@
             .menu a:hover i { animation: none; }
         }
 
-        .footer-right {
-            margin-top: auto;
-            padding-top: 20px;
-            border-top: 1px solid var(--surface-border);
-            text-align: center;
-            font-size: 0.75rem;
-            color: rgba(255, 255, 255, 0.35);
-            letter-spacing: 0.5px;
-        }
 
         /* ==========================================================================
         4. ÁREA PRINCIPAL
@@ -287,10 +111,9 @@
             margin-left: 260px;
             width: calc(100% - 260px);
             padding: 40px;
-            padding-top: 90px;
+            padding-top: 20px;
         }
 
-        .main.expanded { margin-left: 0; width: 100%; }
 
         .header {
             margin-bottom: 28px;
@@ -301,7 +124,7 @@
             gap: 20px;
         }
 
-        .header-title h2 {
+        .header-title :is(h1, h2) {
             font-size: 1.75rem;
             font-weight: 700;
             color: var(--text-principal);
@@ -312,7 +135,7 @@
         .header-title p { color: var(--text-secundario); font-size: 0.9375rem; }
 
         .btn-add {
-            background: #0f602e;
+            background: var(--verde-principal, #0e4a27);
             color: white;
             border: none;
             padding: 12px 24px;
@@ -324,13 +147,13 @@
             align-items: center;
             gap: 8px;
             transition: all 0.3s ease;
-            box-shadow: 0 4px 12px rgba(15, 96, 46, 0.20);
+            box-shadow: 0 4px 12px color-mix(in srgb, var(--verde-principal, #0e4a27) 20%, transparent);
         }
 
         .btn-add:hover {
-            background: #14753a;
+            background: var(--verde-hover, #0b3d21);
             transform: translateY(-3px);
-            box-shadow: 0 10px 25px rgba(15, 96, 46, 0.35);
+            box-shadow: 0 10px 25px color-mix(in srgb, var(--verde-principal, #0e4a27) 35%, transparent);
         }
 
         .btn-add:hover i { transform: rotate(90deg); }
@@ -338,7 +161,7 @@
 
         .btn-add:active {
             transform: translateY(-1px);
-            box-shadow: 0 5px 15px rgba(15, 96, 46, 0.25);
+            box-shadow: 0 5px 15px color-mix(in srgb, var(--verde-principal, #0e4a27) 25%, transparent);
         }
 
         .alerta-flash {
@@ -362,13 +185,13 @@
         }
 
         .alerta-sucesso {
-            background: #f0fdf4;
-            border: 1px solid #bbf7d0;
-            color: #15803d;
+            background: var(--verde-claro, #e8f5ee);
+            border: 1px solid var(--verde-borda, rgba(14, 74, 39, 0.28));
+            color: var(--verde-texto, #0e4a27);
         }
 
         body.dark-theme .alerta-erro { background: rgba(239, 68, 68, 0.12); border-color: rgba(239, 68, 68, 0.3); color: #fca5a5; }
-        body.dark-theme .alerta-sucesso { background: rgba(74, 222, 128, 0.12); border-color: rgba(74, 222, 128, 0.3); color: #4ade80; }
+        body.dark-theme .alerta-sucesso { background: color-mix(in srgb, var(--verde-secundario, #16a765) 12%, transparent); border-color: color-mix(in srgb, var(--verde-secundario, #16a765) 30%, transparent); color: var(--verde-texto, #0e4a27); }
 
         body.high-contrast .alerta-erro,
         body.high-contrast .alerta-sucesso {
@@ -382,37 +205,48 @@
         ========================================================================== */
         .cards {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
-            gap: 16px;
+            /* Colunas com largura máxima fixa (não usam 1fr) para que, mesmo
+               com poucas fazendas (inclusive só 1), cada card ocupe algo
+               próximo de 1/3 da área de conteúdo em vez de esticar até
+               preencher a linha inteira. auto-fill (e não auto-fit) mantém
+               as "trilhas" vazias reservadas, então o card fica com largura
+               fixa e alinhado à esquerda, e não centralizado/esticado. */
+            grid-template-columns: repeat(auto-fill, minmax(340px, 420px));
+            gap: 24px;
+            align-items: start;
         }
 
         .card {
             background: var(--card-bg);
             border: var(--card-border);
-            border-radius: 16px;
-            padding: 18px;
+            border-radius: 20px;
+            padding: 28px;
             box-shadow: var(--card-shadow);
+            transition: transform 0.25s ease, box-shadow 0.25s ease;
         }
 
-        .card:hover { transform: translateY(-4px); }
+        .card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 16px 32px -8px rgba(15, 23, 42, 0.12), 0 6px 14px -4px rgba(15, 23, 42, 0.06);
+        }
 
-        .card-top { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+        .card-top { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; }
 
         .icon {
-            width: 40px;
-            height: 40px;
-            border-radius: 10px;
-            background: linear-gradient(145deg, #4ade80, #059669);
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            background: linear-gradient(145deg, var(--verde-secundario, #16a765), var(--verde-principal, #0e4a27));
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1rem;
+            font-size: 1.125rem;
             color: #ffffff;
             flex-shrink: 0;
-            box-shadow: 0 6px 14px -4px rgba(5, 150, 105, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.4), inset 0 -2px 3px rgba(0, 0, 0, 0.16);
+            box-shadow: 0 6px 14px -4px color-mix(in srgb, var(--verde-principal, #0e4a27) 50%, transparent), inset 0 1px 1px rgba(255, 255, 255, 0.4), inset 0 -2px 3px rgba(0, 0, 0, 0.16);
         }
 
-        .card-top h4 { color: var(--text-principal); font-size: 1rem; }
+        .card-top :is(h2, h4) { color: var(--text-principal); font-size: 1.125rem; font-weight: 700; }
 
         .card-info { border-top: 1px solid var(--surface-muted-border); padding-top: 12px; }
 
@@ -442,7 +276,7 @@
             text-align: left;
         }
 
-        .card-actions { display: flex; gap: 10px; margin-top: 16px; }
+        .card-actions { display: flex; gap: 12px; margin-top: 20px; }
 
         .btn {
             flex: 1;
@@ -457,10 +291,16 @@
             text-decoration: none;
         }
 
-        .edit { background: var(--surface-muted-bg); color: var(--text-principal); }
-        .delete { background: #fee2e2; color: #dc2626; }
+        /* Editar: o fundo cinza-claro quase sumia sobre o card branco — a
+           borda cinza dá o contorno que faltava (Excluir ganha uma borda
+           transparente só pra os dois botões terem a mesma altura). */
+        .edit { background: var(--surface-muted-bg); color: var(--text-principal); border: 1px solid #cbd5e1; }
+        .edit:hover { border-color: #94a3b8; }
+        .delete { background: #fee2e2; color: #b91c1c; border: 1px solid transparent; }
         .btn:hover { opacity: 0.85; }
 
+        body.dark-theme .edit { border-color: rgba(255, 255, 255, 0.28); }
+        body.dark-theme .edit:hover { border-color: rgba(255, 255, 255, 0.5); }
         body.dark-theme .delete { background: rgba(239, 68, 68, 0.15); color: #fca5a5; }
 
         .cards-empty {
@@ -498,7 +338,7 @@
         .modal-card, .modal-m-card {
             background: var(--card-bg);
             color: var(--text-principal);
-            width: 440px;
+            width: 450px;
             max-width: 95%;
             max-height: 90vh;
             overflow-y: auto;
@@ -515,19 +355,36 @@
             to { transform: translateY(0); opacity: 1; }
         }
 
-        .modal-top, .modal-m-top { display: flex; flex-direction: column; align-items: center; margin-bottom: 20px; }
-        .modal-top img, .modal-m-top img { width: 80px; }
+        .modal-top, .modal-m-top { display: flex; flex-direction: column; align-items: center; margin-bottom: 20px; position: relative; }
+        .modal-top img, .modal-m-top img { width: 110px; }
         .modal-top p, .modal-m-top p { font-size: 0.9375rem; font-weight: 600; color: var(--text-principal); }
+
+        /* Título em destaque (bold, maior) usado pelo modal de Adicionar
+           Fazenda — o modal-m de Atualizar continua só com o <p> acima. */
+        .modal-top h2 { font-size: 1.25rem; font-weight: 700; color: var(--text-principal); text-align: center; }
+        .modal-top h2 + p { font-size: 0.875rem; font-weight: 400; color: var(--text-secundario); margin-top: 4px; text-align: center; }
 
         .close {
             position: absolute;
-            top: 15px;
-            right: 15px;
-            background: none;
+            top: 20px;
+            right: 20px;
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            background: var(--surface-muted-bg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
             border: none;
-            font-size: 1.25rem;
-            color: var(--text-secundario);
+            font-size: 1rem;
             cursor: pointer;
+            color: var(--text-secundario);
+            transition: 0.2s;
+        }
+
+        .close:hover {
+            background: var(--surface-muted-border);
+            color: var(--text-principal);
         }
 
         label {
@@ -569,7 +426,7 @@
         }
 
         .input-box input:focus,
-        .input-box select:focus { border-color: #16a34a; background: var(--card-bg); }
+        .input-box select:focus { border-color: var(--verde-ativo, #087a47); background: var(--card-bg); }
 
         .row { display: flex; gap: 12px; }
         .campo { flex: 1; }
@@ -611,7 +468,7 @@
             transition: background .2s, border-color .2s;
         }
 
-        .btn-geolocalizacao:hover { border-color: #16a34a; color: #16a34a; }
+        .btn-geolocalizacao:hover { border-color: var(--verde-hover, #0b3d21); color: var(--verde-texto, #0e4a27); }
 
         .btn-geolocalizacao:disabled {
             opacity: .6;
@@ -628,10 +485,10 @@
            cada fazenda — é só uma foto de localização, não um mapa navegável. */
         .mapa-card-fixo {
             width: 100%;
-            height: 130px;
-            border-radius: 10px;
+            height: 160px;
+            border-radius: 12px;
             border: 1px solid var(--surface-muted-border);
-            margin-bottom: 14px;
+            margin-bottom: 16px;
             cursor: default;
         }
 
@@ -645,13 +502,13 @@
             color: var(--text-secundario);
         }
         .cep-status.loading { color: var(--text-secundario); }
-        .cep-status.ok { color: #15803d; font-weight: 600; }
+        .cep-status.ok { color: var(--verde-texto, #0e4a27); font-weight: 600; }
         .cep-status.erro { color: #dc2626; }
-        body.dark-theme .cep-status.ok { color: #4ade80; }
+        body.dark-theme .cep-status.ok { color: var(--verde-texto, #0e4a27); }
 
         .submit-btn {
             width: 100%;
-            background: #163a24;
+            background: var(--verde-principal, #0e4a27);
             color: white;
             border: none;
             padding: 14px;
@@ -660,13 +517,13 @@
             font-size: 0.9375rem;
             font-weight: 600;
             transition: all 0.3s ease;
-            box-shadow: 0 4px 12px rgba(22, 58, 36, 0.15);
+            box-shadow: 0 4px 12px color-mix(in srgb, var(--verde-principal, #0e4a27) 15%, transparent);
         }
 
         .submit-btn:hover {
-            background: #1d4d2f;
+            background: var(--verde-hover, #0b3d21);
             transform: translateY(-3px);
-            box-shadow: 0 10px 25px rgba(22, 58, 36, 0.35);
+            box-shadow: 0 10px 25px color-mix(in srgb, var(--verde-principal, #0e4a27) 35%, transparent);
         }
 
         /* ==========================================================================
@@ -677,33 +534,19 @@
             --text-principal: #f1f9f4;
             --text-secundario: #9db8a8;
             --card-bg: #12251a;
-            --card-border: 1px solid rgba(74, 222, 128, 0.16);
+            --card-border: 1px solid color-mix(in srgb, var(--verde-secundario, #16a765) 16%, transparent);
             --card-shadow: 0 10px 15px -3px rgba(0,0,0,0.4);
 
-            --navbar-bg: #0c1b12;
-            --sidebar-bg: #0c1b12;
-            --surface-border: rgba(74, 222, 128, 0.14);
             --surface-muted-bg: #0a1810;
             --surface-muted-border: #2a4d38;
 
-            --menu-text: #9db8a8;
-            --menu-text-hover: #4ade80;
-            --menu-hover-bg: rgba(74, 222, 128, 0.08);
-            --menu-active-bg: rgba(74, 222, 128, 0.12);
-            --menu-active-text: #4ade80;
-            --menu-active-accent: #4ade80;
 
-            --panel-bg: #12251a;
-            --panel-text: #f1f9f4;
-            --panel-item-bg: #0a1810;
-            --panel-btn-bg: #1e3a2a;
-            --panel-btn-text: #d9ede1;
-            --panel-btn-hover: #2a4d38;
         }
+        body.dark-theme .navbar-right .accessibility-trigger:hover { background: rgba(255, 255, 255, 0.16); color: #ffffff; }
 
-        body.dark-theme .toggle-menu-btn { background: #16281c; border-color: var(--surface-border); color: #d9ede1; }
-        body.dark-theme .user-avatar { background: rgba(74, 222, 128, 0.12); border-color: rgba(74, 222, 128, 0.2); color: #4ade80; }
-        body.dark-theme .navbar-right .accessibility-trigger { background: rgba(74, 222, 128, 0.12); border-color: rgba(74, 222, 128, 0.2); color: #4ade80; }
+        body.dark-theme .navbar-right .accessibility-trigger { background: rgba(255, 255, 255, 0.08); border-color: rgba(255, 255, 255, 0.16); color: #f1f5f9; }
+        body.dark-theme .input-box input,
+        body.dark-theme .input-box select { color-scheme: dark; }
 
         body.high-contrast {
             background: #000000 !important;
@@ -779,7 +622,7 @@
             border: 2px solid #ffffff !important;
         }
 
-        body.high-contrast .cep-status.ok { color: #4ade80 !important; }
+        body.high-contrast .cep-status.ok { color: var(--verde-texto, #0e4a27) !important; }
         body.high-contrast .cep-status.erro { color: #ff6b6b !important; }
 
         body.high-contrast a:focus-visible,
@@ -792,24 +635,26 @@
         8. RESPONSIVIDADE
         ========================================================================== */
         @media (max-width: 992px) {
-            .main { margin-left: 0; width: 100%; padding: 24px; padding-top: 90px; }
-            .sidebar { left: -260px; }
-            .sidebar.active-mobile { left: 0; box-shadow: 10px 0 30px rgba(0, 0, 0, 0.18); }
-            .user-info { display: none; }
+            .main { margin-left: 0; width: 100%; padding: 24px; padding-top: 20px; }
+            .cards { grid-template-columns: repeat(auto-fill, minmax(300px, 380px)); gap: 20px; }
         }
 
         @media (max-width: 768px) {
             .navbar { padding: 0 20px; }
             .navbar-logo img { height: 36px; }
-            .main { padding: 18px; padding-top: 86px; }
-            .header-title h2 { font-size: 1.5rem; }
+            .main { padding: 18px; padding-top: 20px; }
+            .header-title :is(h1, h2) { font-size: 1.5rem; }
+            .cards { grid-template-columns: repeat(auto-fill, minmax(min(280px, 100%), 1fr)); gap: 18px; }
         }
 
         @media (max-width: 576px) {
             .navbar { padding: 0 14px; gap: 10px; }
             .navbar-logo img { height: 30px; }
             .header-title p { font-size: 0.844rem; }
-            .cards { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; }
+            /* Em telas bem estreitas, o card ocupa a largura total —
+               reservar 1/3 aqui deixaria o conteúdo espremido demais. */
+            .cards { grid-template-columns: 1fr; gap: 14px; }
+            .card { padding: 22px; }
         }
 
         /* Com o botão de acessibilidade também morando na navbar (ver
@@ -827,99 +672,14 @@
             .modal-card, .modal-m-card { padding: 22px; }
         }
     </style>
-</head>
+@endpush
 
-<body>
-
-    <div class="sidebar-overlay" id="sidebarOverlay"></div>
-
-    <!-- SIDEBAR LATERAL -->
-    <div class="sidebar" id="sidebar">
-        <div class="menu">
-            <a href="{{ route('cadastro.index') }}">
-                <i class="fa-solid fa-chart-line"></i>
-                <span>Dashboard</span>
-            </a>
-            <a href="{{ route('fazenda.listar') }}" class="active">
-                <i class="fa-solid fa-location-dot"></i>
-                <span>Gestão de Fazendas</span>
-            </a>
-            <a href="{{ route('lote.listar') }}">
-                <i class="fa-solid fa-layer-group"></i>
-                <span>Gestão de Lotes</span>
-            </a>
-            <a href="{{ route('ordenha.listar') }}">
-                <i class="fa-solid fa-droplet"></i>
-                <span>Ordenha e Leite</span>
-            </a>
-            <a href="{{ route('cocho.listar') }}">
-                <i class="fa-solid fa-cube"></i>
-                <span>Gestão de Cochos</span>
-            </a>
-            <a href="{{ route('racao.listar') }}">
-                <i class="fa-solid fa-wheat-awn"></i>
-                <span>Gestão de Rações</span>
-            </a>
-            <a href="{{ route('estoque.listar') }}">
-                <i class="fa-solid fa-box"></i>
-                <span>Nível de Estoque</span>
-            </a>
-            <a href="{{ route('plano.listar') }}">
-                <i class="fa-solid fa-clipboard-list"></i>
-                <span>Plano Alimentar</span>
-            </a>
-            <a href="{{ route('relatorio.listar') }}">
-                <i class="fa-regular fa-file-lines"></i>
-                <span>Relatório Avançado</span>
-            </a>
-            <a href="{{ route('perfil') }}">
-                <i class="fa-solid fa-user-gear"></i>
-                <span>Meu Perfil</span>
-            </a>
-            <div class="footer-right">© 2026 AgriFarm</div>
-        </div>
-    </div>
-
-    <!-- NAVBAR SUPERIOR -->
-    <div class="navbar" id="navbar">
-        <div class="navbar-left">
-            <button class="toggle-menu-btn" id="toggleMenuBtn" title="Menu Lateral">
-                <i class="fa-solid fa-bars"></i>
-            </button>
-            <div class="navbar-logo">
-                <img src="{{ asset('agrifarm-removebg-preview.png') }}" alt="AgriFarm">
-            </div>
-        </div>
-
-        <div class="navbar-right">
-            <a href="{{ route('perfil') }}" class="user-profile" title="Meu perfil">
-                <div class="user-avatar">
-                    @if ($cadastroLogado->foto ?? false)
-                        <img src="{{ asset('storage/' . $cadastroLogado->foto) }}" alt="Foto de perfil" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">
-                    @else
-                        <i class="fa-solid fa-user-gear"></i>
-                    @endif
-                </div>
-                <div class="user-info">
-                    <span class="user-name">Olá, {{ session('usuario_nome') }}</span>
-                    <span class="user-role">Administrador</span>
-                </div>
-            </a>
-
-            <div class="navbar-divider"></div>
-
-            <a href="{{ route('logout') }}" class="navbar-logout">
-                <i class="fa-solid fa-right-from-bracket"></i>
-                <span>Sair</span>
-            </a>
-        </div>
-    </div>
-
+@section('content')
     <!-- ÁREA DE CONTEÚDO PRINCIPAL -->
     <main class="main" id="mainArea">
         <div class="header">
             <div class="header-title">
-                <h2>Gestão de Fazendas</h2>
+                <h1><i class="fa-solid fa-location-dot titulo-icone" aria-hidden="true"></i> Gestão de Fazendas</h1>
                 <p>Conheça o ecossistema produtivo e a extensão das suas propriedades.</p>
             </div>
 
@@ -957,7 +717,7 @@
                             <i class="fa-regular fa-building"></i>
                         </div>
                         <div>
-                            <h4>{{ $fazenda->nome_fazenda }}</h4>
+                            <h2 class="card-titulo">{{ $fazenda->nome_fazenda }}</h2>
                         </div>
                     </div>
 
@@ -995,13 +755,13 @@
                         @endif
                         <p>
                             <i class="fa-solid fa-seedling"></i>
-                            <label>Área: </label> {{ $fazenda->area }} hectares
+                            <label>Área: </label> {{ number_format((float) $fazenda->area, 2, ',', '.') }} hectares
                         </p>
                         <p class="card-quote">"Foco no aumento da produtividade e manejo sustentável."</p>
                     </div>
 
                     <div class="card-actions">
-                        <button class="btn edit" onclick="abrirModalEditar('{{ $fazenda->id }}', '{{ $fazenda->nome_fazenda }}', '{{ $fazenda->cep }}', '{{ $fazenda->cidade }}', '{{ $fazenda->estado }}', '{{ $fazenda->latitude }}', '{{ $fazenda->longitude }}', '{{ $fazenda->area }}')">
+                        <button class="btn edit" onclick="abrirModalEditar('{{ $fazenda->id }}', @js($fazenda->nome_fazenda), '{{ $fazenda->cep }}', @js($fazenda->cidade), '{{ $fazenda->estado }}', '{{ $fazenda->latitude }}', '{{ $fazenda->longitude }}', '{{ $fazenda->area }}')">
                             <i class="fa-solid fa-pen"></i>
                             Editar
                         </button>
@@ -1028,28 +788,28 @@
     <!-- MODAL: ADICIONAR FAZENDA -->
     <div class="modal" id="modal">
         <div class="modal-card">
-            <button class="close" onclick="fecharModal()">
-                <i class="fa-solid fa-xmark"></i>
-            </button>
-
             <div class="modal-top">
-                <img src="{{ asset('Logo.png') }}" alt="Logo">
-                <p>Adicionar Fazenda</p>
+                <button type="button" class="close" onclick="fecharModal()">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+                <img src="{{ asset('logo.png') }}" alt="Logo">
+                <h2>Adicionar Fazenda</h2>
+                <p>Cadastre uma nova fazenda e defina localização, área e proprietário.</p>
             </div>
 
             <form action="{{ route('fazenda.add') }}" method="POST">
                 @csrf
 
-                <label>Nome da Fazenda</label>
+                <label for="add_nome_fazenda">Nome da Fazenda</label>
                 <div class="input-box">
                     <i class="fa-regular fa-building"></i>
-                    <input type="text" name="nome_fazenda" placeholder="Fazenda São João" required>
+                    <input type="text" id="add_nome_fazenda" name="nome_fazenda" placeholder="Fazenda São João" required>
                 </div>
 
-                <label>Proprietário</label>
+                <label for="add_proprietario">Proprietário</label>
                 <div class="input-box">
                     <i class="fa-solid fa-user"></i>
-                    <input type="text" value="{{ session('usuario_nome') }}" disabled>
+                    <input type="text" id="add_proprietario" value="{{ session('usuario_nome') }}" disabled>
                 </div>
 
                 <label for="cep">CEP</label>
@@ -1092,10 +852,10 @@
 
                 <div class="row">
                     <div class="campo">
-                        <label>Área</label>
+                        <label for="add_area">Área (hectares)</label>
                         <div class="input-box">
                             <i class="fa-solid fa-ruler-combined"></i>
-                            <input type="number" step="0.01" name="area" placeholder="10.000" required>
+                            <input type="number" step="0.01" id="add_area" name="area" placeholder="10.000" required>
                         </div>
                     </div>
                 </div>
@@ -1115,7 +875,7 @@
             </button>
 
             <div class="modal-m-top">
-                <img src="{{ asset('Logo.png') }}" alt="Logo">
+                <img src="{{ asset('logo.png') }}" alt="Logo">
                 <p>Atualizar Fazenda</p>
             </div>
 
@@ -1123,16 +883,16 @@
                 @csrf
                 @method('PUT')
 
-                <label>Nome da Fazenda</label>
+                <label for="edit_nome_fazenda">Nome da Fazenda</label>
                 <div class="input-box">
                     <i class="fa-regular fa-building"></i>
                     <input type="text" id="edit_nome_fazenda" name="nome_fazenda" required>
                 </div>
 
-                <label>Proprietário</label>
+                <label for="edit_proprietario">Proprietário</label>
                 <div class="input-box">
                     <i class="fa-solid fa-user"></i>
-                    <input type="text" value="{{ session('usuario_nome') }}" disabled>
+                    <input type="text" id="edit_proprietario" value="{{ session('usuario_nome') }}" disabled>
                 </div>
 
                 <label for="edit_cep">CEP</label>
@@ -1175,7 +935,7 @@
 
                 <div class="row">
                     <div class="campo">
-                        <label>Área</label>
+                        <label for="edit_area">Área (hectares)</label>
                         <div class="input-box">
                             <i class="fa-solid fa-ruler-combined"></i>
                             <input type="number" step="0.01" id="edit_area" name="area" required>
@@ -1190,50 +950,13 @@
         </div>
     </div>
 
-    @include('partials.acessibilidade')
-    @include('partials.assistente-ia')
+@endsection
 
-    <!-- WIDGET VLIBRAS -->
-    <div vw class="enabled">
-        <div vw-access-button class="active"></div>
-        <div vw-plugin-wrapper>
-            <div class="vw-plugin-top-wrapper"></div>
-        </div>
-    </div>
-    <script src="https://vlibras.gov.br/app/vlibras-plugin.js"></script>
-    <script>
-        new window.VLibras.Widget('https://vlibras.gov.br/app');
-    </script>
-
+@push('scripts')
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
     <script>
         document.addEventListener("DOMContentLoaded", function() {
-            /* --- SIDEBAR RECOLHÍVEL (mesmo comportamento do Dashboard) --- */
-            const toggleBtn = document.getElementById('toggleMenuBtn');
-            const sidebar = document.getElementById('sidebar');
-            const mainContent = document.querySelector('.main');
-            const sidebarOverlay = document.getElementById('sidebarOverlay');
-
-            if (toggleBtn && sidebar && mainContent) {
-                toggleBtn.addEventListener('click', function() {
-                    if (window.innerWidth > 992) {
-                        sidebar.classList.toggle('collapsed');
-                        mainContent.classList.toggle('expanded');
-                    } else {
-                        sidebar.classList.toggle('active-mobile');
-                        if (sidebarOverlay) sidebarOverlay.classList.toggle('active');
-                    }
-                });
-            }
-
-            if (sidebarOverlay && sidebar) {
-                sidebarOverlay.addEventListener('click', function() {
-                    sidebar.classList.remove('active-mobile');
-                    sidebarOverlay.classList.remove('active');
-                });
-            }
-
             /* --- MINI-MAPAS FIXOS DOS CARDS: só uma prévia visual da
                localização já salva, sem zoom/arraste/clique. --- */
             document.querySelectorAll('.mapa-card-fixo').forEach(function(el) {
@@ -1588,6 +1311,4 @@
         configurarConsultaCep('cep', 'cidade', 'estado', 'cepStatus', function() { return controleMapaAdd; });
         configurarConsultaCep('edit_cep', 'edit_cidade', 'edit_estado', 'edit_cepStatus', function() { return controleMapaEdit; });
     </script>
-
-</body>
-</html>
+@endpush

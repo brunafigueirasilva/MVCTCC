@@ -2,24 +2,17 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
 {
-    use WithoutModelEvents;
-
     /**
-     * Seed the application's database.
+     * php artisan db:seed — dados de demonstração do AgriFarm (usuários,
+     * fazendas, lotes, cochos, rações, estoque, planos, ordenhas...).
+     * O sistema usa a tabela "cadastros" (não a "users" padrão do Laravel).
      */
     public function run(): void
     {
-        // User::factory(10)->create();
-
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
+        $this->call(AgriFarmDemoSeeder::class);
     }
 }

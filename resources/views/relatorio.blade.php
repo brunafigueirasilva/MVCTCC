@@ -1,11 +1,8 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
+@extends('layouts.app')
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AgriFarm | Relatórios Avançados</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+@section('title', 'AgriFarm | Relatórios Avançados')
+
+@push('styles')
     <style>
         /* ==========================================
         1. RESET & CONFIGURAÇÕES GERAIS
@@ -26,18 +23,9 @@
             --card-border: 1px solid #edf2f7;
             --card-shadow: 0 10px 30px rgba(15, 23, 42, .03);
 
-            --navbar-bg: #123f22;
-            --sidebar-bg: #123f22;
-            --surface-border: rgba(255, 255, 255, 0.15);
             --surface-muted-bg: #f9fafb;
             --surface-muted-border: #e5e7eb;
 
-            --menu-text: #b2cbb9;
-            --menu-text-hover: #ffffff;
-            --menu-hover-bg: rgba(255, 255, 255, 0.05);
-            --menu-active-bg: rgba(255, 255, 255, 0.08);
-            --menu-active-text: #4ade80;
-            --menu-active-accent: #4ade80;
 
             /* Paleta dos gráficos (Chart.js). Mesma ordem/lógica do Dashboard,
                lida em JS e reaplicada quando o tema muda. */
@@ -50,13 +38,6 @@
             --chart-grid: #eef2f6;
             --chart-tick: #94a3b8;
 
-            /* Painel de Acessibilidade (componente compartilhado) */
-            --panel-bg: #ffffff;
-            --panel-text: #1f2937;
-            --panel-item-bg: #f9fafb;
-            --panel-btn-bg: #e5e7eb;
-            --panel-btn-text: #374151;
-            --panel-btn-hover: #d1d5db;
         }
 
         body {
@@ -85,7 +66,7 @@
         .sidebar,
         .navbar,
         .main {
-            transition: all 0.3s ease-in-out;
+            transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, filter 0.25s ease, left 0.3s ease, width 0.3s ease, margin 0.3s ease;
         }
 
         /* Quando o painel de acessibilidade está aberto, desfoca navbar,
@@ -99,15 +80,6 @@
 
         /* Fundo escurecido do menu mobile (fecha a sidebar ao clicar fora),
            igual ao Dashboard. */
-        .sidebar-overlay {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.45);
-            z-index: 997;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
 
         @media (max-width: 992px) {
             .sidebar-overlay.active {
@@ -119,92 +91,51 @@
         /* ==========================================
         2. NAVBAR SUPERIOR (VERDE FIXA)
         ========================================== */
-        .navbar {
-            height: 70px;
-            background: var(--navbar-bg);
-            border-bottom: 1px solid var(--surface-border);
-            box-shadow: 0 2px 12px rgba(15, 23, 42, 0.04);
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 32px;
-            z-index: 999;
-        }
 
-        .navbar-left {
-            display: flex;
-            align-items: center;
-            gap: 22px;
-            min-width: 0;
-        }
 
-        .toggle-menu-btn {
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid var(--surface-border);
-            color: #4ade80;
-            font-size: 1.063rem;
-            padding: 9px 13px;
-            border-radius: 10px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-        }
 
-        .toggle-menu-btn:hover {
-            background: rgba(255, 255, 255, 0.18);
-            border-color: rgba(255, 255, 255, 0.25);
-            color: #ffffff;
-            transform: translateY(-1px);
-        }
+
 
         /* Logo diretamente sobre o fundo escuro da navbar, sem caixa/quadrado
            atrás — igual ao Dashboard. */
-        .navbar-logo {
-            display: flex;
-            align-items: center;
-            min-width: 0;
-        }
 
-        .navbar-logo img {
-            height: 44px;
-            width: auto;
-            max-width: 220px;
-            object-fit: contain;
-            display: block;
-            image-rendering: -webkit-optimize-contrast;
-        }
 
         .btn-pdf {
-            color: #4ade80;
+            background: var(--verde-principal, #0e4a27);
+            color: #ffffff;
             text-decoration: none;
             font-weight: 600;
-            font-size: 14px;
+            font-size: 0.875rem;
             display: flex;
             align-items: center;
             gap: 8px;
-            padding: 8px 14px;
-            border-radius: 8px;
-            transition: background 0.2s;
-            margin-left: auto;
-            margin-right: 20px;
+            padding: 12px 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px color-mix(in srgb, var(--verde-principal, #0e4a27) 20%, transparent);
+            transition: all 0.3s ease;
+        }
+
+        .btn-pdf i {
+            transition: transform 0.3s ease;
         }
 
         .btn-pdf:hover {
-            background: rgba(74, 222, 128, 0.1);
-            text-decoration: underline;
+            background: var(--verde-hover, #0b3d21);
+            color: #ffffff;
+            text-decoration: none;
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px color-mix(in srgb, var(--verde-principal, #0e4a27) 35%, transparent);
         }
 
-        .navbar-right {
-            display: flex;
-            align-items: center;
-            gap: 18px;
+        .btn-pdf:hover i {
+            transform: translateY(2px);
         }
+
+        .btn-pdf:active {
+            transform: translateY(-1px);
+            box-shadow: 0 5px 15px color-mix(in srgb, var(--verde-principal, #0e4a27) 25%, transparent);
+        }
+
 
         .btn-abrir-filtros {
             background: var(--card-bg);
@@ -223,15 +154,15 @@
         }
 
         .btn-abrir-filtros:hover {
-            border-color: #16a34a;
-            color: #16a34a;
+            border-color: var(--verde-hover, #0b3d21);
+            color: var(--verde-texto, #0e4a27);
         }
 
         /* Badge com o número de filtros ativos, para o usuário ver de
            relance que o relatório está filtrado sem precisar abrir o modal. */
         .filtros-badge {
             background: #123f22;
-            color: #4ade80;
+            color: var(--verde-texto, #0e4a27);
             font-size: 11px;
             font-weight: 800;
             min-width: 18px;
@@ -245,6 +176,75 @@
 
         .filtros-badge.visivel {
             display: flex;
+        }
+
+        /* Barra "Unidade Produtiva" — mesmo componente, aparência e
+           comportamento do Dashboard (ver dashboard.blade.php
+           .fazenda-selector-bar). Fica antes de qualquer chip/card/gráfico:
+           tudo abaixo dela passa a refletir só a fazenda escolhida aqui. */
+        .fazenda-selector-bar {
+            background: var(--card-bg);
+            padding: 16px 24px;
+            border-radius: 16px;
+            box-shadow: var(--card-shadow);
+            border: var(--card-border);
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        .fazenda-selector-bar-label {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-secundario);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .select-fazenda {
+            flex: 1;
+            min-width: 200px;
+            max-width: 400px;
+            padding: 11px 16px;
+            border-radius: 10px;
+            border: 1px solid var(--surface-muted-border);
+            outline: none;
+            background: var(--card-bg);
+            color: var(--text-principal);
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        .select-fazenda:focus {
+            border-color: var(--verde-ativo, #087a47);
+            box-shadow: 0 0 0 3px color-mix(in srgb, var(--verde-principal, #0e4a27) 10%, transparent);
+        }
+
+        .selector-hint {
+            font-size: 0.781rem;
+            color: var(--text-secundario);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--surface-muted-bg);
+            border: 1px dashed var(--surface-muted-border);
+            padding: 8px 14px;
+            border-radius: 10px;
+        }
+
+        .selector-hint i { color: #f59e0b; }
+
+        @media (max-width: 576px) {
+            .fazenda-selector-bar { flex-direction: column; align-items: stretch; padding: 16px; }
+            .select-fazenda { max-width: 100%; }
+            .selector-hint { width: 100%; }
         }
 
         /* Linha de "chips" no topo do conteúdo, resumindo os filtros
@@ -304,149 +304,34 @@
             text-decoration: underline;
         }
 
-        .user-profile {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            text-decoration: none;
-            padding: 6px 10px;
-            margin: -6px -10px;
-            border-radius: 12px;
-            cursor: pointer;
-        }
 
-        .user-profile:hover {
-            background: rgba(255, 255, 255, 0.08);
-        }
 
-        .user-avatar {
-            width: 40px;
-            height: 40px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #4ade80;
-            font-size: 1rem;
-            border: 1px solid var(--surface-border);
-            flex-shrink: 0;
-        }
 
-        .user-info {
-            display: flex;
-            flex-direction: column;
-        }
 
-        .user-name {
-            color: #ffffff;
-            font-size: 0.875rem;
-            font-weight: 600;
-        }
 
-        .user-role {
-            color: #a7f3d0;
-            font-size: 0.6875rem;
-            font-weight: 500;
-        }
 
-        .navbar-divider {
-            width: 1px;
-            height: 28px;
-            background: var(--surface-border);
-        }
 
-        .navbar-logout {
-            text-decoration: none;
-            color: #fca5a5;
-            font-weight: 600;
-            font-size: 0.875rem;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 10px 16px;
-            border-radius: 10px;
-            background: rgba(239, 68, 68, 0.08);
-            border: 1px solid rgba(239, 68, 68, 0.12);
-            transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
-        }
 
-        .navbar-logout:hover {
-            background: linear-gradient(135deg, #f87171, #dc2626);
-            border-color: transparent;
-            color: #ffffff;
-            transform: translateY(-1px);
-            box-shadow: 0 8px 18px -6px rgba(220, 38, 38, 0.55);
-        }
 
-        .navbar-logout:active { transform: translateY(0); box-shadow: none; }
 
         /* Botão de acessibilidade inserido dentro da navbar (ver partials/acessibilidade). */
         .navbar-right .accessibility-trigger {
-            background: rgba(255, 255, 255, 0.1);
-            color: #4ade80;
+            background: #f1f5f9;
+            color: #0f172a;
             border: 1px solid var(--surface-border);
         }
         .navbar-right .accessibility-trigger:hover {
-            background: rgba(255, 255, 255, 0.2);
-            color: #ffffff;
+            background: #e2e8f0;
+            color: #0f172a;
         }
 
         /* ==========================================
         3. SIDEBAR LATERAL
         ========================================== */
-        .sidebar {
-            width: 260px;
-            background: var(--sidebar-bg);
-            border-right: 1px solid var(--surface-border);
-            box-shadow: 2px 0 12px rgba(15, 23, 42, 0.03);
-            color: var(--menu-text);
-            position: fixed;
-            top: 70px;
-            left: 0;
-            bottom: 0;
-            padding: 0 16px 20px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            z-index: 998;
-        }
 
-        .sidebar.collapsed {
-            left: -260px;
-        }
 
-        .menu {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            min-height: 100%;
-            padding-top: 20px;
-        }
 
-        .menu a {
-            text-decoration: none;
-            color: var(--menu-text);
-            padding: 12px 14px;
-            /* Cantos arredondados só do lado direito, com a barra de
-               destaque (border-left) saindo como uma linha limpa e
-               contínua — igual ao Dashboard. */
-            border-radius: 0 10px 10px 0;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            font-size: 0.875rem;
-            font-weight: 500;
-            border-left: 4px solid transparent;
-            position: relative;
-            transition: background-color 0.18s ease, color 0.18s ease, border-left-color 0.18s ease, transform 0.18s ease;
-        }
 
-        .menu a:hover {
-            background: var(--menu-hover-bg);
-            color: var(--menu-text-hover);
-            transform: translateX(4px);
-        }
 
         @keyframes menuIconBounce {
             0% { transform: translateY(0) scale(1); }
@@ -456,24 +341,8 @@
             100% { transform: translateY(0) scale(1); }
         }
 
-        .menu a:hover i {
-            animation: menuIconBounce 0.55s cubic-bezier(.34,1.56,.64,1);
-        }
 
-        .menu a.active {
-            background: var(--menu-active-bg);
-            color: var(--menu-active-text);
-            font-weight: 700;
-            border-left-color: var(--menu-active-accent);
-            box-shadow: inset 0 0 0 1px rgba(74, 222, 128, 0.12);
-        }
 
-        .menu i {
-            width: 20px;
-            font-size: 1rem;
-            text-align: center;
-            transition: transform 0.18s ease;
-        }
 
         @media (prefers-reduced-motion: reduce) {
             .menu a, .menu i { transition: background-color 0.18s ease, color 0.18s ease; }
@@ -481,15 +350,6 @@
             .menu a:hover i { animation: none; }
         }
 
-        .footer-right {
-            margin-top: auto;
-            padding-top: 20px;
-            border-top: 1px solid var(--surface-border);
-            text-align: center;
-            font-size: 0.75rem;
-            color: rgba(255, 255, 255, 0.35);
-            letter-spacing: 0.5px;
-        }
 
         /* ==========================================================================
         CONTROLES DE ACESSIBILIDADE (TEMAS)
@@ -501,21 +361,12 @@
             --text-principal: #f1f9f4;
             --text-secundario: #9db8a8;
             --card-bg: #12251a;
-            --card-border: 1px solid rgba(74, 222, 128, 0.16);
+            --card-border: 1px solid color-mix(in srgb, var(--verde-secundario, #16a765) 16%, transparent);
             --card-shadow: 0 10px 15px -3px rgba(0,0,0,0.4);
 
-            --navbar-bg: #0c1b12;
-            --sidebar-bg: #0c1b12;
-            --surface-border: rgba(74, 222, 128, 0.14);
             --surface-muted-bg: #0a1810;
             --surface-muted-border: #2a4d38;
 
-            --menu-text: #9db8a8;
-            --menu-text-hover: #4ade80;
-            --menu-hover-bg: rgba(74, 222, 128, 0.08);
-            --menu-active-bg: rgba(74, 222, 128, 0.12);
-            --menu-active-text: #4ade80;
-            --menu-active-accent: #4ade80;
 
             --chart-1: #10b981;
             --chart-2: #3b82f6;
@@ -526,20 +377,13 @@
             --chart-grid: rgba(74, 222, 128, 0.10);
             --chart-tick: #9db8a8;
 
-            --panel-bg: #12251a;
-            --panel-text: #f1f9f4;
-            --panel-item-bg: #0a1810;
-            --panel-btn-bg: #1e3a2a;
-            --panel-btn-text: #d9ede1;
-            --panel-btn-hover: #2a4d38;
         }
+        body.dark-theme .navbar-right .accessibility-trigger:hover { background: rgba(255, 255, 255, 0.16); color: #ffffff; }
 
-        body.dark-theme .toggle-menu-btn { background: #16281c; border-color: var(--surface-border); color: #d9ede1; }
-        body.dark-theme .user-avatar { background: rgba(74, 222, 128, 0.12); border-color: rgba(74, 222, 128, 0.2); color: #4ade80; }
-        body.dark-theme .navbar-right .accessibility-trigger { background: rgba(74, 222, 128, 0.12); border-color: rgba(74, 222, 128, 0.2); color: #4ade80; }
+        body.dark-theme .navbar-right .accessibility-trigger { background: rgba(255, 255, 255, 0.08); border-color: rgba(255, 255, 255, 0.16); color: #f1f5f9; }
         body.dark-theme .input-box select,
         body.dark-theme .input-box input[type="date"] { color-scheme: dark; }
-        body.dark-theme .card-grafico-header h3 i { filter: brightness(1.1); }
+        body.dark-theme .card-grafico-header :is(h2, h3) i { filter: brightness(1.1); }
 
         body.high-contrast {
             background: #000000 !important;
@@ -602,6 +446,18 @@
         body.high-contrast .filtros-ativos .chip {
             background: #000000 !important;
             border: 2px solid #ffff00 !important;
+            color: #ffff00 !important;
+        }
+
+        /* --card-bg/--surface-muted-bg não são redefinidas acima — sem
+           esta regra a barra de Unidade Produtiva ficava com fundo branco
+           (texto amarelo em cima, quase ilegível) no meio de uma tela toda
+           preta. */
+        body.high-contrast .fazenda-selector-bar,
+        body.high-contrast .select-fazenda,
+        body.high-contrast .selector-hint {
+            background: #000000 !important;
+            border-color: #ffff00 !important;
             color: #ffff00 !important;
         }
 
@@ -715,7 +571,7 @@
             margin-bottom: 20px;
         }
 
-        .modal-top img { width: 80px; }
+        .modal-top img { width: 110px; }
         .modal-top h2 { font-size: 1.25rem; font-weight: 700; color: var(--text-principal); }
         .modal-top p { font-size: 0.875rem; font-weight: 400; color: var(--text-secundario); margin-top: 4px; }
 
@@ -778,8 +634,8 @@
 
         .input-box input:focus,
         .input-box select:focus {
-            border-color: #059669;
-            box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.15);
+            border-color: var(--verde-ativo, #087a47);
+            box-shadow: 0 0 0 3px color-mix(in srgb, var(--verde-principal, #0e4a27) 15%, transparent);
         }
 
         .date-group {
@@ -790,36 +646,11 @@
 
         /* Presets de período (7 dias / 30 dias / mês atual), atalho para
            não precisar digitar as duas datas manualmente toda vez. */
-        .presets-periodo {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-top: 8px;
-        }
-
-        .btn-preset {
-            background: var(--surface-muted-bg);
-            border: 1px solid var(--surface-muted-border);
-            color: var(--text-secundario);
-            font-size: 12px;
-            font-weight: 600;
-            padding: 6px 12px;
-            border-radius: 20px;
-            cursor: pointer;
-            transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
-        }
-
-        .btn-preset:hover,
-        .btn-preset.ativo {
-            background: linear-gradient(135deg, #4ade80, #059669);
-            border-color: transparent;
-            color: #ffffff;
-            box-shadow: 0 4px 10px -2px rgba(5, 150, 105, 0.4);
-        }
+        .presets-periodo { margin-top: 8px; }   /* estilo: partials/paleta-verde */
 
         .submit-btn {
             width: 100%;
-            background: #163a24;
+            background: var(--verde-principal, #0e4a27);
             color: white;
             border: none;
             padding: 14px;
@@ -833,10 +664,10 @@
             align-items: center;
             justify-content: center;
             gap: 8px;
-            box-shadow: 0 4px 12px rgba(22, 58, 36, 0.15);
+            box-shadow: 0 4px 12px color-mix(in srgb, var(--verde-principal, #0e4a27) 15%, transparent);
         }
 
-        .submit-btn:hover { background: #1d4d2f; transform: translateY(-1px); box-shadow: 0 10px 25px rgba(22, 58, 36, 0.35); }
+        .submit-btn:hover { background: var(--verde-hover, #0b3d21); transform: translateY(-1px); box-shadow: 0 10px 25px color-mix(in srgb, var(--verde-principal, #0e4a27) 35%, transparent); }
 
         .btn-limpar-filtros {
             display: flex;
@@ -845,7 +676,7 @@
             gap: 8px;
             margin-top: 10px;
             background: var(--card-bg);
-            color: #117943;
+            color: var(--verde-texto, #0e4a27);
             border: 1px solid var(--surface-muted-border);
             padding: 12px;
             border-radius: 10px;
@@ -859,15 +690,67 @@
         /* ==========================================
         5. CONTEÚDO PRINCIPAL (MAIN)
         ========================================== */
+        /* Sem "margin-top: 70px" (resquício de um layout antigo com navbar
+           fixa no topo) — a navbar de verdade já não empurra o conteúdo
+           assim, e esse valor jogava o título bem mais baixo que os botões
+           flutuantes de notificações/acessibilidade (topo em y:20, mesmo
+           padrão do Dashboard e das demais telas). "padding-top: 20px" é o
+           que alinha o título "Relatório Avançado" na mesma linha deles. */
         .main {
-            margin-top: 70px;
             margin-left: 260px;
             padding: 40px;
-            min-height: calc(100vh - 70px);
+            padding-top: 20px;
+            min-height: 100vh;
         }
 
-        .main.expanded {
-            margin-left: 0;
+
+        /* Título da página — mesmo componente/medidas do Dashboard e das
+           telas de Lote/Cocho/Fazenda/Ordenha (.header > .header-title).
+           Esta tela era a única sem nenhum título/subtítulo próprio: ia
+           direto da navbar pro seletor de Unidade Produtiva. */
+        .header {
+            margin-bottom: 20px;
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 14px;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .header-title :is(h1, h2) {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--text-principal);
+            margin-bottom: 6px;
+            letter-spacing: -0.5px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .header-title :is(h1, h2) i {
+            color: var(--verde-texto, #0e4a27);
+            font-size: 1.375rem;
+        }
+
+        .header-title p {
+            color: var(--text-secundario);
+            font-size: 0.9375rem;
+        }
+
+        @media (max-width: 768px) {
+            .header-title :is(h1, h2) { font-size: 1.5rem; }
+        }
+
+        @media (max-width: 576px) {
+            .header-title p { font-size: 0.844rem; }
         }
 
         .grid-relatorios {
@@ -886,7 +769,7 @@
             flex-direction: column;
         }
 
-        .card-grafico-header h3 {
+        .card-grafico-header :is(h2, h3) {
             font-size: 18px;
             font-weight: 700;
             color: var(--text-principal);
@@ -1021,10 +904,11 @@
             align-items: center;
             gap: 6px;
             margin-top: 18px;
-            color: #16a34a;
+            color: var(--verde-texto, #0e4a27);
             font-weight: 700;
             font-size: 0.8125rem;
             text-decoration: none;
+            min-height: 32px; /* área de toque (tinha ~16px de altura) */
         }
 
         .card-link:hover { text-decoration: underline; }
@@ -1070,7 +954,7 @@
         5b. CARDS DO TOPO (Consumo/Custo/Média Diária/kg Vivo/Eficiência) —
         mesmos 5 cards que existiam no Plano Alimentar, movidos pra cá.
         ========================================== */
-        .trend-up { color: #16a34a; }
+        .trend-up { color: var(--verde-texto, #0e4a27); }
         .trend-down { color: #dc2626; }
         .trend-neutral { color: #94a3b8; }
 
@@ -1084,45 +968,9 @@
             color: #ffff00 !important;
         }
 
-        /* Chips de atalho de período (Hoje/7/30/90 dias) — mesmo componente
-           usado na Conversão Alimentar do Plano Alimentar. */
-        .periodo-chips {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 18px;
-            flex-wrap: wrap;
-        }
-
-        .periodo-chip {
-            padding: 8px 16px;
-            border-radius: 20px;
-            border: 1px solid var(--card-border, #e2e8f0);
-            background: var(--card-bg);
-            color: var(--text-secundario);
-            font-size: 0.813rem;
-            font-weight: 600;
-            cursor: pointer;
-            text-decoration: none;
-            transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
-        }
-
-        .periodo-chip:hover { border-color: #10b981; color: #10b981; }
-
-        .periodo-chip.active {
-            background: #10b981;
-            border-color: #10b981;
-            color: #ffffff;
-        }
-
-        body.high-contrast .periodo-chip {
-            background: #000000 !important;
-            border: 2px solid #ffff00 !important;
-            color: #ffff00 !important;
-        }
-        body.high-contrast .periodo-chip.active {
-            background: #ffff00 !important;
-            color: #000000 !important;
-        }
+        /* Chips de atalho de período (Hoje/7/15/30/60/90 dias) — estilo
+           padrão do sistema (partials/paleta-verde); aqui só o espaçamento. */
+        .periodo-chips { margin-bottom: 18px; }
 
         /* Cards de destaque "Melhor Desempenho"/"Necessita Atenção",
            extraídos do topo/base do Ranking de Lotes já calculado. */
@@ -1132,6 +980,25 @@
             gap: 16px;
             margin-bottom: 25px;
         }
+
+        .relatorio-fonte-dados {
+            display: flex;
+            gap: 8px;
+            align-items: flex-start;
+            margin: 0 0 16px;
+            padding: 10px 14px;
+            border-radius: 10px;
+            background: var(--surface-muted-bg);
+            border: 1px solid var(--surface-muted-border);
+            font-size: 0.8125rem;
+            line-height: 1.45;
+            color: var(--text-secundario);
+        }
+        .relatorio-fonte-dados i { margin-top: 3px; color: var(--verde-texto, #0e4a27); }
+        .relatorio-fonte-dados strong { color: var(--text-principal); }
+        .relatorio-fonte-dados a { color: var(--verde-texto, #0e4a27); font-weight: 600; }
+        body.high-contrast .relatorio-fonte-dados { background: #000 !important; border: 2px solid #ffff00 !important; color: #ffff00 !important; }
+        body.high-contrast .relatorio-fonte-dados :is(i, strong, a) { color: #ffff00 !important; }
 
         .stat-cards-row {
             display: grid;
@@ -1160,7 +1027,7 @@
         /* Gradiente sutil por card — mesmo padrão do Plano Alimentar e do
            Dashboard: um tom vivo no canto superior, esmaecendo pro fundo
            neutro do card. */
-        .stat-card--verde { background: linear-gradient(160deg, rgba(16, 185, 129, 0.12), transparent 60%), var(--card-bg); }
+        .stat-card--verde { background: linear-gradient(160deg, color-mix(in srgb, var(--verde-principal, #0e4a27) 12%, transparent), transparent 60%), var(--card-bg); }
         .stat-card--ambar { background: linear-gradient(160deg, rgba(249, 115, 22, 0.12), transparent 60%), var(--card-bg); }
         .stat-card--azul  { background: linear-gradient(160deg, rgba(37, 99, 235, 0.12), transparent 60%), var(--card-bg); }
         .stat-card--ciano { background: linear-gradient(160deg, rgba(8, 145, 178, 0.12), transparent 60%), var(--card-bg); }
@@ -1205,8 +1072,8 @@
         }
 
         .icone-verde {
-            background: linear-gradient(145deg, #4ade80, #059669);
-            box-shadow: 0 6px 14px -4px rgba(5, 150, 105, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.4), inset 0 -2px 3px rgba(0, 0, 0, 0.16);
+            background: linear-gradient(145deg, var(--verde-secundario, #16a765), var(--verde-principal, #0e4a27));
+            box-shadow: 0 6px 14px -4px color-mix(in srgb, var(--verde-principal, #0e4a27) 50%, transparent), inset 0 1px 1px rgba(255, 255, 255, 0.4), inset 0 -2px 3px rgba(0, 0, 0, 0.16);
         }
         .icone-ambar {
             background: linear-gradient(145deg, #fbbf24, #f97316);
@@ -1253,9 +1120,9 @@
             display: flex;
             align-items: flex-start;
             gap: 10px;
-            background: #f0fdf4;
-            border: 1px solid #bbf7d0;
-            color: #15803d;
+            background: var(--verde-claro, #e8f5ee);
+            border: 1px solid var(--verde-borda, rgba(14, 74, 39, 0.28));
+            color: var(--verde-texto, #0e4a27);
             border-radius: 10px;
             padding: 11px 14px;
             font-size: 0.8125rem;
@@ -1265,7 +1132,7 @@
 
         .insight-banner i { margin-top: 2px; flex-shrink: 0; }
 
-        body.dark-theme .insight-banner { background: rgba(74, 222, 128, 0.12); border-color: rgba(74, 222, 128, 0.3); color: #4ade80; }
+        body.dark-theme .insight-banner { background: color-mix(in srgb, var(--verde-secundario, #16a765) 12%, transparent); border-color: color-mix(in srgb, var(--verde-secundario, #16a765) 30%, transparent); color: var(--verde-texto, #0e4a27); }
         body.high-contrast .insight-banner { background: #000000 !important; border: 2px solid #ffff00 !important; color: #ffff00 !important; }
 
         /* ==========================================
@@ -1287,13 +1154,13 @@
             width: 36px;
             height: 36px;
             border-radius: 10px;
-            background: linear-gradient(145deg, #4ade80, #059669);
+            background: linear-gradient(145deg, var(--verde-secundario, #16a765), var(--verde-principal, #0e4a27));
             color: #ffffff;
             display: flex;
             align-items: center;
             justify-content: center;
             flex-shrink: 0;
-            box-shadow: 0 6px 13px -4px rgba(5, 150, 105, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.4), inset 0 -2px 3px rgba(0, 0, 0, 0.16);
+            box-shadow: 0 6px 13px -4px color-mix(in srgb, var(--verde-principal, #0e4a27) 50%, transparent), inset 0 1px 1px rgba(255, 255, 255, 0.4), inset 0 -2px 3px rgba(0, 0, 0, 0.16);
         }
 
         body.high-contrast .resumo-categoria-icon {
@@ -1354,11 +1221,11 @@
             border-radius: 20px;
             font-size: 0.71875rem;
             font-weight: 700;
-            background: #dcfce7;
-            color: #15803d;
+            background: var(--verde-claro, #e8f5ee);
+            color: var(--verde-texto, #0e4a27);
         }
 
-        body.dark-theme .categoria-badge { background: rgba(74, 222, 128, 0.14); color: #4ade80; }
+        body.dark-theme .categoria-badge { background: color-mix(in srgb, var(--verde-secundario, #16a765) 14%, transparent); color: var(--verde-texto, #0e4a27); }
 
         .btn-ver-mais {
             background: var(--card-bg);
@@ -1373,7 +1240,7 @@
             margin: 18px auto 0;
         }
 
-        .btn-ver-mais:hover { border-color: #16a34a; color: #16a34a; }
+        .btn-ver-mais:hover { border-color: var(--verde-hover, #0b3d21); color: var(--verde-texto, #0e4a27); }
         .btn-ver-mais:disabled { opacity: 0.6; cursor: not-allowed; }
 
         body.high-contrast .ranking-table th,
@@ -1393,20 +1260,11 @@
             .navbar {
                 padding: 0 20px;
             }
-            .sidebar {
-                left: -260px;
-            }
-            .sidebar.active-mobile {
-                left: 0;
-                box-shadow: 10px 0 30px rgba(0, 0, 0, 0.18);
-            }
-            .user-info {
-                display: none;
-            }
             .main {
                 margin-left: 0;
                 width: 100%;
                 padding: 20px;
+                padding-top: 20px;
             }
             .grid-relatorios {
                 grid-template-columns: 1fr;
@@ -1434,129 +1292,25 @@
             }
         }
     </style>
-</head>
+@endpush
 
-<body>
-
-    <!-- Fundo escurecido do menu mobile (fecha a sidebar ao clicar fora) -->
-    <div class="sidebar-overlay" id="sidebarOverlay"></div>
-
-    <!-- SIDEBAR LATERAL -->
-    <div class="sidebar" id="sidebar">
-        <div class="menu">
-            <a href="{{ route('cadastro.index') }}">
-                <i class="fa-solid fa-chart-line"></i>
-                <span>Dashboard</span>
-            </a>
-            <a href="{{ route('fazenda.listar') }}">
-                <i class="fa-solid fa-location-dot"></i>
-                <span>Gestão de Fazendas</span>
-            </a>
-            <a href="{{ route('lote.listar') }}">
-                <i class="fa-solid fa-layer-group"></i>
-                <span>Gestão de Lotes</span>
-            </a>
-            <a href="{{ route('ordenha.listar') }}">
-                <i class="fa-solid fa-droplet"></i>
-                <span>Ordenha e Leite</span>
-            </a>
-            <a href="{{ route('cocho.listar') }}">
-                <i class="fa-solid fa-cube"></i>
-                <span>Gestão de Cochos</span>
-            </a>
-            <a href="{{ route('racao.listar') }}">
-                <i class="fa-solid fa-wheat-awn"></i>
-                <span>Gestão de Rações</span>
-            </a>
-            <a href="{{ route('estoque.listar') }}">
-                <i class="fa-solid fa-box"></i>
-                <span>Nível de Estoque</span>
-            </a>
-            <a href="{{ route('plano.listar') }}">
-                <i class="fa-solid fa-clipboard-list"></i>
-                <span>Plano Alimentar</span>
-            </a>
-            <a href="{{ route('relatorio.listar') }}" class="active">
-                <i class="fa-regular fa-file-lines"></i>
-                <span>Relatório Avançado</span>
-            </a>
-            <a href="{{ route('perfil') }}">
-                <i class="fa-solid fa-user-gear"></i>
-                <span>Meu Perfil</span>
-            </a>
-            <div class="footer-right">© 2026 AgriFarm</div>
-        </div>
-    </div>
-
-    <!-- NAVBAR SUPERIOR -->
-    <div class="navbar" id="navbar">
-        <div class="navbar-left">
-            <button class="toggle-menu-btn" id="toggleMenuBtn" title="Menu Lateral">
-                <i class="fa-solid fa-bars"></i>
-            </button>
-
-            <div class="navbar-logo">
-                <img src="{{ asset('agrifarm-removebg-preview.png') }}" alt="Logo">
-            </div>
-        </div>
-
-        <a href="{{ route('relatorio.pdf', request()->all()) }}" class="btn-pdf">
-            <i class="fas fa-download"></i> Exportar PDF
-        </a>
-
-        <div class="navbar-right">
-            <button class="btn-abrir-filtros" id="openFiltrosBtn">
-                <i class="fa-solid fa-sliders"></i> Filtros Avançados
-                <span class="filtros-badge {{ count($filtrosAplicados ?? []) ? 'visivel' : '' }}">{{ count($filtrosAplicados ?? []) }}</span>
-            </button>
-
-            <a href="<?= route('perfil') ?>" class="user-profile" title="Meu perfil">
-                <div class="user-avatar">
-                    @if ($cadastroLogado->foto ?? false)
-                        <img src="{{ asset('storage/' . $cadastroLogado->foto) }}" alt="Foto de perfil" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">
-                    @else
-                        <i class="fa-solid fa-user-gear"></i>
-                    @endif
-                </div>
-                <div class="user-info">
-                    <span class="user-name">Olá, <?= session('usuario_nome') ?></span>
-                    <span class="user-role">Administrador</span>
-                </div>
-            </a>
-
-            <div class="navbar-divider"></div>
-
-            <a href="{{ route('logout') }}" class="navbar-logout">
-                <i class="fa-solid fa-right-from-bracket"></i>
-                <span>Sair</span>
-            </a>
-        </div>
-    </div>
-
+@section('content')
     <div id="modalFiltros" class="modal">
         <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="tituloModalFiltros">
             <button class="close" id="closeFiltrosBtn" aria-label="Fechar"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
             <div class="modal-top">
-                <img src="{{ asset('Logo.png') }}" alt="Logo">
+                <img src="{{ asset('logo.png') }}" alt="Logo">
                 <h2 id="tituloModalFiltros">Filtros Avançados</h2>
                 <p>Escolha o que exibir nos relatórios</p>
             </div>
 
             <form action="{{ route('relatorio.listar') }}" method="GET">
-                <div class="campo">
-                    <label for="fazenda">Fazenda</label>
-                    <div class="input-box">
-                        <i class="fa-solid fa-location-dot" aria-hidden="true"></i>
-                        <select name="fazenda" id="fazenda">
-                            <option value="">Todas as Fazendas</option>
-                            @foreach($fazendas as $fazenda)
-                                <option value="{{ $fazenda->id }}" {{ request('fazenda') == $fazenda->id ? 'selected' : '' }}>
-                                    {{ $fazenda->nome_fazenda }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-                </div>
+                <!-- A Fazenda não é mais escolhida aqui — é a Unidade
+                     Produtiva selecionada na barra do topo. Este campo
+                     oculto só garante que aplicar Lote/Ração/Período não
+                     perca a unidade atual (um <form method="GET"> só manda
+                     os campos que ele mesmo tem). -->
+                <input type="hidden" name="fazenda_id" value="{{ $fazendaSelecionadaId }}">
 
                 <div class="campo">
                     <label for="lote">Lote</label>
@@ -1565,15 +1319,12 @@
                         <select name="lote" id="lote">
                             <option value="todos">Todos os Lotes</option>
                             @foreach($lotes as $lote)
-                                <option value="{{ $lote->id }}" data-fazenda="{{ $lote->fazenda_id }}" {{ request('lote') == $lote->id ? 'selected' : '' }}>
+                                <option value="{{ $lote->id }}" {{ request('lote') == $lote->id ? 'selected' : '' }}>
                                     {{ $lote->nome_lote }}
                                 </option>
                             @endforeach
                         </select>
                     </div>
-                    <small id="loteHint" style="display:none; color: var(--text-secundario); font-size: 11.5px;">
-                        Mostrando apenas os lotes da fazenda selecionada.
-                    </small>
                 </div>
 
                 <div class="campo">
@@ -1621,19 +1372,59 @@
                         </div>
                     </div>
                     <div class="presets-periodo">
-                        <button type="button" class="btn-preset" data-dias="7">Últimos 7 dias</button>
-                        <button type="button" class="btn-preset" data-dias="30">Últimos 30 dias</button>
+                        @foreach ([7, 15, 30, 60, 90] as $diasPreset)
+                            <button type="button" class="btn-preset" data-dias="{{ $diasPreset }}">{{ $diasPreset }} dias</button>
+                        @endforeach
                         <button type="button" class="btn-preset" data-mes-atual="1">Este mês</button>
                     </div>
                 </div>
 
                 <button type="submit" class="submit-btn"><i class="fa-solid fa-check"></i> Aplicar Filtros</button>
-                <a href="{{ route('relatorio.listar') }}" class="btn-limpar-filtros"><i class="fa-solid fa-eraser"></i> Limpar Filtros</a>
+                <a href="{{ route('relatorio.listar', ['fazenda_id' => $fazendaSelecionadaId]) }}" class="btn-limpar-filtros"><i class="fa-solid fa-eraser"></i> Limpar Filtros</a>
             </form>
         </div>
     </div>
 
     <div class="main" id="mainContent">
+        <div class="header">
+            <div class="header-title">
+                <h1><i class="fa-regular fa-file-lines titulo-icone" aria-hidden="true"></i> Relatório Avançado</h1>
+                <p>Indicadores, gráficos e ranking de desempenho da Unidade Produtiva selecionada.</p>
+            </div>
+
+            <div class="header-actions">
+                <a href="{{ route('relatorio.pdf', request()->all()) }}" class="btn-pdf">
+                    <i class="fas fa-download"></i> Exportar PDF
+                </a>
+                <button class="btn-abrir-filtros" id="openFiltrosBtn">
+                    <i class="fa-solid fa-sliders"></i> Filtros Avançados
+                    <span class="filtros-badge {{ count($filtrosAplicados ?? []) ? 'visivel' : '' }}">{{ count($filtrosAplicados ?? []) }}</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Barra "Unidade Produtiva" — mesma lógica/aparência/comportamento
+             do Dashboard: escolher a fazenda aqui é o que decide quais
+             indicadores, gráficos, tabelas e filtros o resto da tela
+             mostra. -->
+        <div class="fazenda-selector-bar">
+            <div class="fazenda-selector-bar-label"><i class="fa-solid fa-tractor"></i> Unidade Produtiva:</div>
+            <select class="select-fazenda" aria-label="Selecionar fazenda" onchange="window.location.href='{{ route('relatorio.listar') }}?fazenda_id=' + this.value" aria-label="Selecionar Unidade Produtiva">
+                <option value="">Escolha uma fazenda</option>
+                @foreach ($fazendas as $fazenda)
+                    <option value="{{ $fazenda->id }}" {{ $fazenda->id == ($fazendaSelecionadaId ?? null) ? 'selected' : '' }}>
+                        {{ $fazenda->nome_fazenda }}
+                    </option>
+                @endforeach
+            </select>
+            @if (empty($fazendaSelecionadaId))
+                <div class="selector-hint">
+                    <i class="fa-solid fa-circle-info"></i>
+                    Selecione uma Unidade Produtiva para carregar os indicadores, gráficos e tabelas do relatório.
+                </div>
+            @endif
+        </div>
+
         <div class="filtros-ativos {{ count($filtrosAplicados ?? []) ? 'visivel' : '' }}" id="filtrosAtivos">
             @foreach ($filtrosAplicados ?? [] as $filtro)
                 <div class="chip" data-chave="{{ $filtro['chave'] }}">
@@ -1648,12 +1439,14 @@
 
         @php
             $hojeChip = \Carbon\Carbon::today();
-            $periodosPreset = [
-                'hoje' => ['label' => 'Hoje', 'inicio' => $hojeChip->toDateString(), 'fim' => $hojeChip->toDateString()],
-                '7'    => ['label' => '7 dias', 'inicio' => $hojeChip->copy()->subDays(6)->toDateString(), 'fim' => $hojeChip->toDateString()],
-                '30'   => ['label' => '30 dias', 'inicio' => $hojeChip->copy()->subDays(29)->toDateString(), 'fim' => $hojeChip->toDateString()],
-                '90'   => ['label' => '90 dias', 'inicio' => $hojeChip->copy()->subDays(89)->toDateString(), 'fim' => $hojeChip->toDateString()],
-            ];
+            $periodosPreset = ['hoje' => ['label' => 'Hoje', 'inicio' => $hojeChip->toDateString(), 'fim' => $hojeChip->toDateString()]];
+            foreach ([7, 15, 30, 60, 90] as $diasChip) {
+                $periodosPreset[(string) $diasChip] = [
+                    'label' => "$diasChip dias",
+                    'inicio' => $hojeChip->copy()->subDays($diasChip - 1)->toDateString(),
+                    'fim' => $hojeChip->toDateString(),
+                ];
+            }
             $dataInicioAtual = request('data_inicio');
             $dataFimAtual = request('data_fim');
             $semFiltroPeriodo = !$dataInicioAtual && !$dataFimAtual;
@@ -1687,13 +1480,21 @@
             };
         @endphp
 
+        {{-- De onde vêm os números: o produtor precisa saber que é o plano,
+             não o que foi medido no cocho. --}}
+        <p class="relatorio-fonte-dados">
+            <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
+            Consumo e custo deste relatório vêm do <strong>plano alimentar</strong>: a ração vinculada a cada lote, pelo preço cadastrado de cada ração.
+            O que foi realmente colocado ou consumido em cada cocho aparece em <a href="{{ route('cocho.listar') }}">Gestão de Cochos</a>.
+        </p>
+
         <div class="stat-cards-row">
             <div class="stat-card stat-card--verde">
                 <div class="stat-card-top">
                     <div class="stat-card-icon icone-verde"><i class="fa-solid fa-sack-dollar" aria-hidden="true"></i></div>
                 </div>
                 <div>
-                    <div class="stat-card-label">Consumo Total de Ração</div>
+                    <div class="stat-card-label">Consumo Planejado</div>
                     <div class="stat-card-valor">{{ number_format($statCards['consumo']['valor'] ?? 0, 0, ',', '.') }} kg</div>
                 </div>
                 <div class="stat-card-trend {{ $trendClasse($statCards['consumo']['variacao'] ?? null) }}">
@@ -1711,7 +1512,7 @@
                     <div class="stat-card-icon icone-ambar"><i class="fa-solid fa-coins" aria-hidden="true"></i></div>
                 </div>
                 <div>
-                    <div class="stat-card-label">Custo Total</div>
+                    <div class="stat-card-label">Custo Planejado</div>
                     <div class="stat-card-valor">R$ {{ number_format($statCards['custo']['valor'] ?? 0, 2, ',', '.') }}</div>
                 </div>
                 <div class="stat-card-trend {{ $trendClasse($statCards['custo']['variacao'] ?? null) }}">
@@ -1730,7 +1531,7 @@
                 </div>
                 <div>
                     <div class="stat-card-label">Média Diária</div>
-                    <div class="stat-card-valor">{{ number_format($statCards['mediaDiaria']['valor'] ?? 0, 1, ',', '.') }} kg/dia</div>
+                    <div class="stat-card-valor">{{ number_format($statCards['mediaDiaria']['valor'] ?? 0, 2, ',', '.') }} kg/dia</div>
                 </div>
                 <div class="stat-card-trend {{ $trendClasse($statCards['mediaDiaria']['variacao'] ?? null) }}">
                     @if (is_null($statCards['mediaDiaria']['variacao'] ?? null))
@@ -1794,7 +1595,7 @@
                         <div class="stat-card-valor">{{ $loteDestaqueMelhor->nome_lote }}</div>
                     </div>
                     <div class="stat-card-trend trend-up">
-                        <i class="fa-solid fa-gauge-high" aria-hidden="true"></i> {{ $loteDestaqueMelhor->eficiencia }}% de eficiência · {{ number_format($loteDestaqueMelhor->consumo_medio_dia, 1, ',', '.') }} kg/dia
+                        <i class="fa-solid fa-gauge-high" aria-hidden="true"></i> {{ $loteDestaqueMelhor->eficiencia }}% de eficiência · {{ number_format($loteDestaqueMelhor->consumo_medio_dia, 2, ',', '.') }} kg/dia
                     </div>
                 </div>
 
@@ -1807,7 +1608,7 @@
                         <div class="stat-card-valor">{{ $loteDestaquePior->nome_lote }}</div>
                     </div>
                     <div class="stat-card-trend trend-down">
-                        <i class="fa-solid fa-gauge-high" aria-hidden="true"></i> {{ $loteDestaquePior->eficiencia }}% de eficiência · {{ number_format($loteDestaquePior->consumo_medio_dia, 1, ',', '.') }} kg/dia
+                        <i class="fa-solid fa-gauge-high" aria-hidden="true"></i> {{ $loteDestaquePior->eficiencia }}% de eficiência · {{ number_format($loteDestaquePior->consumo_medio_dia, 2, ',', '.') }} kg/dia
                     </div>
                 </div>
             </div>
@@ -1817,8 +1618,8 @@
 
             <div class="card-grafico">
                 <div class="card-grafico-header">
-                    <h3><i class="fa-solid fa-wave-square" style="color: #10b981;"></i> Consumo de Ração ao Longo do Tempo</h3>
-                    <p>Acompanhamento diário do consumo total &middot; {{ $periodoLabel ?? '' }}</p>
+                    <h2 id="sec-consumo-tempo"><i class="fa-solid fa-wave-square" style="color: var(--verde-texto, #0e4a27);"></i> Consumo de Ração ao Longo do Tempo</h2>
+                    <p>Consumo diário previsto pelo plano alimentar (ração vinculada a cada lote) &middot; {{ $periodoLabel ?? '' }}</p>
                 </div>
                 <div class="chart-container">
                     <canvas id="chartConsumoTempo"></canvas>
@@ -1833,7 +1634,7 @@
 
             <div class="card-grafico">
                 <div class="card-grafico-header">
-                    <h3><i class="fa-solid fa-chart-bar" style="color: #10b981;"></i> Consumo e Custo por Lote</h3>
+                    <h2 id="sec-consumo-custo-lote"><i class="fa-solid fa-chart-bar" style="color: var(--verde-texto, #0e4a27);"></i> Consumo e Custo por Lote</h2>
                     <p>Comparativo entre consumo (kg/dia) e custo (R$/dia)</p>
                 </div>
                 <div class="chart-container">
@@ -1857,7 +1658,7 @@
 
         <div class="card-grafico" style="margin-bottom: 25px;">
             <div class="card-grafico-header">
-                <h3><i class="fa-solid fa-chart-line" style="color: #10b981;"></i> Evolução Histórica (6 meses)</h3>
+                <h2 id="sec-evolucao-historica"><i class="fa-solid fa-chart-line" style="color: var(--verde-texto, #0e4a27);"></i> Evolução Histórica (6 meses)</h2>
                 <p>Consumo total mensal, sempre os últimos 6 meses — independente do período filtrado acima</p>
             </div>
             <div class="chart-container">
@@ -1875,7 +1676,7 @@
 
             <div class="card-grafico">
                 <div class="card-grafico-header">
-                    <h3><i class="fa-solid fa-chart-pie" style="color: #10b981;"></i> Distribuição de Gastos por Ração</h3>
+                    <h2 id="sec-distribuicao-gastos"><i class="fa-solid fa-chart-pie" style="color: var(--verde-texto, #0e4a27);"></i> Distribuição de Gastos por Ração</h2>
                     <p>Composição do custo total por tipo de ração</p>
                 </div>
                 <div class="donut-layout">
@@ -1901,7 +1702,7 @@
 
             <div class="card-grafico">
                 <div class="card-grafico-header">
-                    <h3><i class="fa-solid fa-bullseye" style="color:#10b981;"></i> Eficiência por Lote</h3>
+                    <h2 id="sec-eficiencia-lote"><i class="fa-solid fa-bullseye" style="color:var(--verde-texto, #0e4a27);"></i> Eficiência por Lote</h2>
                     <p>Indicadores comparativos de desempenho</p>
                 </div>
                 <div class="chart-container">
@@ -1917,7 +1718,7 @@
 
             <div class="card-grafico">
                 <div class="card-grafico-header">
-                    <h3><i class="fa-solid fa-layer-group" style="color:#10b981;"></i> Resumo por Categoria</h3>
+                    <h2 id="sec-resumo-categoria"><i class="fa-solid fa-layer-group" style="color:var(--verde-texto, #0e4a27);"></i> Resumo por Categoria</h2>
                     <p>Visão geral consolidada por tipo de animal</p>
                 </div>
                 @if (($resumoPorCategoria ?? collect())->isNotEmpty())
@@ -1950,7 +1751,7 @@
         <div class="card-grafico" id="rankingLotes">
             <div class="card-grafico-header card-grafico-header-flex">
                 <div>
-                    <h3><i class="fa-solid fa-ranking-star" style="color:#10b981;"></i> Ranking de Lotes por Desempenho</h3>
+                    <h2 id="sec-ranking-lotes"><i class="fa-solid fa-ranking-star" style="color:var(--verde-texto, #0e4a27);"></i> Ranking de Lotes por Desempenho</h2>
                     <p>Ordenação por eficiência alimentar</p>
                 </div>
                 <button type="button" class="btn-toggle-ranking" id="btnToggleRanking" onclick="alternarRankingLotes()" aria-expanded="true" aria-controls="conteudoRankingLotes">
@@ -1991,21 +1792,9 @@
         </div>
     </div>
 
-    @include('partials.acessibilidade')
-    @include('partials.assistente-ia')
+@endsection
 
-    <!-- WIDGET VLIBRAS -->
-    <div vw class="enabled">
-        <div vw-access-button class="active"></div>
-        <div vw-plugin-wrapper>
-            <div class="vw-plugin-top-wrapper"></div>
-        </div>
-    </div>
-    <script src="https://vlibras.gov.br/app/vlibras-plugin.js"></script>
-    <script>
-        new window.VLibras.Widget('https://vlibras.gov.br/app');
-    </script>
-
+@push('scripts')
     <script src="{{ asset('js/vendor/chart.min.js') }}"></script>
 
 <script>
@@ -2061,8 +1850,6 @@
     const openFiltrosBtn = document.getElementById('openFiltrosBtn');
     const closeFiltrosBtn = document.getElementById('closeFiltrosBtn');
     const toggleMenuBtn = document.getElementById('toggleMenuBtn');
-    const sidebar = document.getElementById('sidebar');
-    const mainContent = document.getElementById('mainContent');
     const sidebarOverlay = document.getElementById('sidebarOverlay');
 
     if (openFiltrosBtn) {
@@ -2102,27 +1889,15 @@
         }, 320);
     }
 
+    // O botão de menu e o overlay já abrem/fecham a drawer (ver
+    // layouts/app.blade.php) — aqui só reagimos à mesma ação para remedir
+    // os gráficos depois da transição.
     if (toggleMenuBtn) {
-        toggleMenuBtn.onclick = () => {
-            if (window.innerWidth > 992) {
-                sidebar.classList.toggle('collapsed');
-                mainContent.classList.toggle('expanded');
-            } else {
-                sidebar.classList.toggle('active-mobile');
-                if (sidebarOverlay) sidebarOverlay.classList.toggle('active');
-            }
-
-            remedirGraficosAposTransicaoSidebar();
-        };
+        toggleMenuBtn.addEventListener('click', remedirGraficosAposTransicaoSidebar);
     }
 
     if (sidebarOverlay) {
-        sidebarOverlay.addEventListener('click', () => {
-            sidebar.classList.remove('active-mobile');
-            sidebarOverlay.classList.remove('active');
-
-            remedirGraficosAposTransicaoSidebar();
-        });
+        sidebarOverlay.addEventListener('click', remedirGraficosAposTransicaoSidebar);
     }
 
     // ==========================================
@@ -2131,9 +1906,11 @@
     // ==========================================
 
     // Mapeia o "chave" de cada chip para o(s) parâmetro(s) de query real(is)
-    // que devem ser removidos da URL ao clicar no "×".
+    // que devem ser removidos da URL ao clicar no "×". A Fazenda não entra
+    // mais aqui — virou a Unidade Produtiva selecionada no topo, e
+    // removerFiltrosDaURL() só mexe nos parâmetros que ela mesma apaga, sem
+    // tocar em fazenda_id (que já está na URL atual).
     const PARAMS_POR_FILTRO = {
-        fazenda: ['fazenda'],
         lote: ['lote'],
         categoria_animal: ['categoria_animal'],
         tipo_racao: ['tipo_racao'],
@@ -2155,40 +1932,10 @@
     const limparTudoBtn = document.getElementById('limparTudoBtn');
     if (limparTudoBtn) {
         limparTudoBtn.addEventListener('click', () => {
-            window.location.href = '{{ route('relatorio.listar') }}';
+            // "Limpar todos" só zera Lote/Categoria/Ração/Período — a
+            // Unidade Produtiva continua selecionada.
+            window.location.href = '{{ route('relatorio.listar') }}?fazenda_id={{ $fazendaSelecionadaId }}';
         });
-    }
-
-    // Cascata Fazenda → Lote: ao escolher uma fazenda, o select de Lote
-    // passa a mostrar só os lotes daquela fazenda (evita escolher um lote
-    // que não existe na fazenda filtrada).
-    const selectFazenda = document.getElementById('fazenda');
-    const selectLote = document.getElementById('lote');
-    const loteHint = document.getElementById('loteHint');
-
-    function aplicarFiltroCascataLote() {
-        if (!selectFazenda || !selectLote) return;
-
-        const fazendaEscolhida = selectFazenda.value;
-        let opcaoSelecionadaAindaValida = false;
-
-        Array.from(selectLote.options).forEach((opcao) => {
-            if (!opcao.dataset.fazenda) {
-                opcao.hidden = false;
-                return;
-            }
-            const pertenceAFazenda = !fazendaEscolhida || opcao.dataset.fazenda === fazendaEscolhida;
-            opcao.hidden = !pertenceAFazenda;
-            if (pertenceAFazenda && opcao.selected) opcaoSelecionadaAindaValida = true;
-        });
-
-        if (!opcaoSelecionadaAindaValida) selectLote.value = 'todos';
-        if (loteHint) loteHint.style.display = fazendaEscolhida ? 'block' : 'none';
-    }
-
-    if (selectFazenda) {
-        selectFazenda.addEventListener('change', aplicarFiltroCascataLote);
-        aplicarFiltroCascataLote();
     }
 
     // Atalhos de período: preenchem as duas datas de uma vez.
@@ -2604,7 +2351,15 @@
         botao.textContent = 'Carregando...';
 
         try {
-            const resposta = await fetch('{{ route('relatorio.rankingJson') }}' + window.location.search);
+            const resposta = await fetch('{{ route('relatorio.rankingJson') }}' + window.location.search, {
+                headers: { 'Accept': 'application/json' },
+            });
+
+            if (resposta.status === 401) {
+                window.location.href = '{{ route('login.index') }}';
+                return;
+            }
+
             const dados = await resposta.json();
 
             if (dados.success) {
@@ -2620,3 +2375,4 @@
         }
     }
 </script>
+@endpush

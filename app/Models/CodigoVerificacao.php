@@ -81,4 +81,32 @@ class CodigoVerificacao extends Model
     {
         $this->update(['usado_em' => now()]);
     }
+
+    /**
+     * Só chamado quando validar() já retornou null — descobre POR QUE, pra
+     * quem chama poder mostrar uma mensagem específica (expirado / nenhum
+     * código pendente / dígitos errados) em vez de um "inválido ou
+     * expirado" genérico. Não entra em validar() em si: essa distinção só é
+     * útil pra quem já tem UM código de verdade em mãos e quer saber por
+     * que ele não funcionou — não deve virar uma forma de "sondar" códigos
+     * alheios tentando descobrir se algum está perto de expirar.
+     */
+    public static function motivoFalha(string $email, string $codigo, string $proposito): string
+    {
+        $pendente = self::where('email', $email)
+            ->where('proposito', $proposito)
+            ->whereNull('usado_em')
+            ->latest('id')
+            ->first();
+
+        if (!$pendente) {
+            return 'sem_codigo';
+        }
+
+        if ($pendente->expira_em->isPast()) {
+            return 'expirado';
+        }
+
+        return 'incorreto';
+    }
 }

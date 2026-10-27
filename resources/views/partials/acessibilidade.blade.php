@@ -3,6 +3,7 @@
      Inclua com @@include('partials.acessibilidade') em qualquer página que
      tenha uma navbar fixa. O componente é autossuficiente (CSS + HTML + JS).
      ========================================================================== -->
+@include('partials.a11y-global')
 <style>
     html {
         /* Usamos "zoom" em vez de "transform: scale()" de propósito: um
@@ -10,7 +11,7 @@
            elemento position:fixed da página (navbar, sidebar, modais),
            fazendo-os "descolar" do viewport e sumir em páginas com pouco
            conteúdo. A propriedade zoom escala sem esse efeito colateral. */
-        font-size: var(--font-scale, 100%);
+        /* Tamanho do texto: aplicado por elemento no script abaixo (A+/A-). */
         /* Tamanho natural do sistema: 100% (sem redução) — o controle
            "Zoom do Sistema" deste painel continua funcionando normalmente
            a partir daqui (pra mais ou pra menos); "Padrão" volta pra 100%. */
@@ -29,7 +30,7 @@
         height: 46px;
         border-radius: 50%;
         background: rgba(255, 255, 255, 0.1);
-        color: var(--brand-green-light, #4ade80);
+        color: var(--brand-green-light, var(--verde-texto, #0e4a27));
         border: 1px solid rgba(209, 161, 54, 0.25);
         backdrop-filter: blur(6px);
         cursor: pointer;
@@ -43,18 +44,50 @@
         transition: transform 0.3s ease, background-color 0.2s, border-color 0.2s;
     }
 
+    /* Variante "pill" com texto, usada quando o botão é movido para dentro
+       de .navbar-right (ver script no fim deste arquivo) — nas telas sem
+       navbar (login, etc.) o botão continua um círculo só com ícone. */
     .accessibility-trigger.acc-trigger-inline {
         position: static;
-        width: 38px;
-        height: 38px;
+        width: auto;
+        height: auto;
         font-size: 17px;
         box-shadow: none;
+        border-radius: 999px;
+        padding: 9px 18px 9px 14px;
+        gap: 9px;
+        background: var(--sidebar-bg, #123f22);
+        color: #ffffff;
+        border-color: transparent;
+    }
+
+    .acc-trigger-label {
+        display: none;
+        font-size: 0.8125rem;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+    .accessibility-trigger.acc-trigger-inline .acc-trigger-label {
+        display: inline;
     }
 
     .accessibility-trigger:hover {
         transform: scale(1.1) rotate(45deg);
         background: rgba(255, 255, 255, 0.2);
         color: #ffffff;
+    }
+
+    .accessibility-trigger.acc-trigger-inline:hover {
+        transform: none;
+        filter: brightness(1.12);
+        background: var(--sidebar-bg, #123f22);
+        color: #ffffff;
+    }
+
+    @media (max-width: 480px) {
+        .acc-trigger-label { display: none; }
+        .accessibility-trigger.acc-trigger-inline { padding: 9px; border-radius: 50%; }
     }
 
     body.high-contrast .accessibility-trigger {
@@ -121,7 +154,7 @@
         justify-content: space-between;
     }
 
-    .accessibility-modal .modal-header h3 {
+    .accessibility-modal .modal-header .acc-modal-titulo {
         font-size: 1.2rem;
         font-weight: 600;
         display: flex;
@@ -159,7 +192,7 @@
         gap: 12px;
     }
 
-    .accessibility-modal .modal-section h4 {
+    .accessibility-modal .modal-section .acc-secao-titulo {
         font-size: 0.88rem;
         text-transform: uppercase;
         letter-spacing: 0.05em;
@@ -180,7 +213,7 @@
            zoom subia, pois a media query de largura da tela não percebia
            esse espaço extra necessário. Com auto-fit cada cartão nunca fica
            menor que 170px e a grade se ajusta sozinha em qualquer zoom. */
-        grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(min(170px, 100%), 1fr));
         gap: 12px;
     }
 
@@ -233,6 +266,7 @@
         right: 0;
         bottom: 0;
         background-color: #ccc;
+        border: 2px solid transparent;
         transition: .3s;
         border-radius: 24px;
     }
@@ -255,6 +289,22 @@
 
     .accessibility-modal input:checked + .slider-switch:before {
         transform: translateX(22px);
+    }
+
+    /* Hover/Focus/Active — o <input> em si fica invisível (opacity:0), então
+       sem estas regras o controle nunca dava NENHUM feedback visual ao
+       passar o mouse, focar via teclado ou pressionar. */
+    .accessibility-modal .switch-btn:hover .slider-switch {
+        filter: brightness(0.94);
+    }
+
+    .accessibility-modal .switch-btn input:focus-visible + .slider-switch {
+        outline: 2px solid #4F7724;
+        outline-offset: 3px;
+    }
+
+    .accessibility-modal .switch-btn input:active + .slider-switch {
+        filter: brightness(0.88);
     }
 
     .accessibility-modal .btn-group-row {
@@ -321,8 +371,8 @@
         box-shadow: 0 4px 14px rgba(0, 0, 0, .25);
     }
 
-    .accessibility-modal .voice-start { background: #14532d; }
-    .accessibility-modal .voice-start:hover { background: #166534; }
+    .accessibility-modal .voice-start { background: var(--verde-principal, #0e4a27); }
+    .accessibility-modal .voice-start:hover { background: var(--verde-hover, #0b3d21); }
     .accessibility-modal .voice-stop { background: #b91c1c; }
     .accessibility-modal .voice-stop:hover { background: #dc2626; }
 
@@ -374,9 +424,9 @@
         border-bottom: 2px solid #ffffff !important;
     }
 
-    body.high-contrast .accessibility-modal .modal-header h3,
+    body.high-contrast .accessibility-modal .modal-header .acc-modal-titulo,
     body.high-contrast .accessibility-modal .modal-close,
-    body.high-contrast .accessibility-modal .modal-section h4 {
+    body.high-contrast .accessibility-modal .modal-section .acc-secao-titulo {
         color: #ffff00 !important;
     }
 
@@ -428,12 +478,47 @@
         border: 2px solid #ffffff !important;
     }
 
+    /* O estado "ligado" normal (verde, regra acima) usa `background` como
+       atalho pra um GRADIENTE (background-image), não uma cor sólida. Uma
+       sobrescrita que só define `background-color` (como esta tinha antes)
+       fica escondida atrás desse gradiente — ele continua pintado por
+       cima, e o botão "Alto Contraste" continuava aparecendo verde mesmo
+       com esta regra "vencendo" pela especificidade/!important. Por isso
+       aqui precisa ser `background` (o atalho completo): ao dar só uma cor
+       sólida, ele também zera o background-image herdado, removendo o
+       gradiente verde de vez — e não só empilhando uma cor atrás dele. */
+    /* Trilho "desligado" (Modo Escuro, quando quem está ativo é o Alto
+       Contraste): preto/branco em vez do cinza neutro padrão, pra seguir a
+       mesma paleta do resto do alto contraste mesmo no estado inativo. */
+    body.high-contrast .accessibility-modal .slider-switch {
+        background: #000000 !important;
+        border-color: #ffffff !important;
+    }
+
+    body.high-contrast .accessibility-modal .slider-switch:before {
+        background: #ffffff !important;
+    }
+
     body.high-contrast .accessibility-modal input:checked + .slider-switch {
-        background-color: #ffff00 !important;
+        background: #ffff00 !important;
+        border-color: #ffff00 !important;
     }
 
     body.high-contrast .accessibility-modal input:checked + .slider-switch:before {
-        background-color: #000000 !important;
+        background: #000000 !important;
+    }
+
+    body.high-contrast .accessibility-modal .switch-btn:hover .slider-switch {
+        filter: brightness(1.15);
+    }
+
+    body.high-contrast .accessibility-modal .switch-btn input:focus-visible + .slider-switch {
+        outline: 3px solid #ffffff !important;
+        outline-offset: 3px;
+    }
+
+    body.high-contrast .accessibility-modal input:checked:focus-visible + .slider-switch {
+        outline-color: #ffffff !important;
     }
 
     body.high-contrast .modal-overlay {
@@ -447,69 +532,71 @@
 </style>
 
 <!-- BOTÃO FIXO DE ACESSIBILIDADE -->
-<button class="accessibility-trigger" id="accTrigger" aria-label="Abrir configurações de acessibilidade">
-    <i class="fa-solid fa-universal-access"></i>
+<button type="button" class="accessibility-trigger" id="accTrigger" aria-label="Abrir configurações de acessibilidade" aria-controls="accModal" aria-haspopup="dialog" aria-expanded="false">
+    <i class="fa-solid fa-universal-access" aria-hidden="true"></i>
+    <span class="acc-trigger-label">Acessibilidade</span>
 </button>
 
 <!-- QUADRADO CENTRAL DO PAINEL DE ACESSIBILIDADE -->
-<div class="accessibility-modal" id="accModal">
+<div class="accessibility-modal" id="accModal" role="dialog" aria-modal="true" aria-labelledby="accModalTitulo">
     <div class="modal-header">
-        <h3><i class="fa-solid fa-universal-access"></i> Painel de Acessibilidade</h3>
-        <button class="modal-close" id="accClose" aria-label="Fechar painel">&times;</button>
+        <h2 id="accModalTitulo" class="acc-modal-titulo"><i class="fa-solid fa-universal-access" aria-hidden="true"></i> Painel de Acessibilidade</h2>
+        <button type="button" class="modal-close" id="accClose" aria-label="Fechar painel de acessibilidade">&times;</button>
     </div>
 
     <div class="modal-body">
         <div class="modal-section">
-            <h4><i class="fa-solid fa-palette"></i> Preferências de Tema</h4>
+            <h3 class="acc-secao-titulo"><i class="fa-solid fa-palette" aria-hidden="true"></i> Preferências de Tema</h3>
             <div class="control-grid">
                 <div class="control-item">
-                    <span class="control-label"><i class="fa-solid fa-moon"></i> Modo Escuro</span>
+                    <span class="control-label" id="lblDarkMode"><i class="fa-solid fa-moon" aria-hidden="true"></i> Modo Escuro</span>
                     <label class="switch-btn">
-                        <input type="checkbox" id="chkDarkMode">
-                        <span class="slider-switch"></span>
+                        <input type="checkbox" id="chkDarkMode" role="switch" aria-labelledby="lblDarkMode">
+                        <span class="slider-switch" aria-hidden="true"></span>
                     </label>
                 </div>
                 <div class="control-item">
-                    <span class="control-label"><i class="fa-solid fa-circle-half-stroke"></i> Alto Contraste</span>
+                    <span class="control-label" id="lblHighContrast"><i class="fa-solid fa-circle-half-stroke" aria-hidden="true"></i> Alto Contraste</span>
                     <label class="switch-btn">
-                        <input type="checkbox" id="chkHighContrast">
-                        <span class="slider-switch"></span>
+                        <input type="checkbox" id="chkHighContrast" role="switch" aria-labelledby="lblHighContrast">
+                        <span class="slider-switch" aria-hidden="true"></span>
                     </label>
                 </div>
             </div>
         </div>
 
         <div class="modal-section">
-            <h4><i class="fa-solid fa-sliders"></i> Dimensionamento</h4>
+            <h3 class="acc-secao-titulo"><i class="fa-solid fa-sliders" aria-hidden="true"></i> Dimensionamento</h3>
             <div class="control-grid">
-                <div class="control-item-vertical">
-                    <span class="control-label"><i class="fa-solid fa-font"></i> Tamanho do Texto</span>
+                <div class="control-item-vertical" role="group" aria-labelledby="lblFonte">
+                    <span class="control-label" id="lblFonte"><i class="fa-solid fa-font" aria-hidden="true"></i> Tamanho do Texto <span class="acc-valor" id="accValorFonte">100%</span></span>
                     <div class="btn-group-row">
-                        <button class="acc-btn" id="btnDecreaseFont" title="Diminuir texto"><i class="fa-solid fa-minus"></i></button>
-                        <button class="acc-btn btn-secondary" id="btnResetFont" title="Restaurar texto">Padrão</button>
-                        <button class="acc-btn" id="btnIncreaseFont" title="Aumentar texto"><i class="fa-solid fa-plus"></i></button>
+                        <button type="button" class="acc-btn" id="btnDecreaseFont" title="Diminuir texto" aria-label="Diminuir o tamanho do texto (A-)"><i class="fa-solid fa-minus" aria-hidden="true"></i></button>
+                        <button type="button" class="acc-btn btn-secondary" id="btnResetFont" title="Restaurar texto" aria-label="Restaurar o tamanho padrão do texto">Padrão</button>
+                        <button type="button" class="acc-btn" id="btnIncreaseFont" title="Aumentar texto" aria-label="Aumentar o tamanho do texto (A+)"><i class="fa-solid fa-plus" aria-hidden="true"></i></button>
                     </div>
                 </div>
-                <div class="control-item-vertical">
-                    <span class="control-label"><i class="fa-solid fa-magnifying-glass-plus"></i> Zoom do Sistema</span>
+                <div class="control-item-vertical" role="group" aria-labelledby="lblZoom">
+                    <span class="control-label" id="lblZoom"><i class="fa-solid fa-magnifying-glass-plus" aria-hidden="true"></i> Zoom do Sistema <span class="acc-valor" id="accValorZoom">100%</span></span>
                     <div class="btn-group-row">
-                        <button class="acc-btn" id="btnDecreaseZoom" title="Diminuir zoom"><i class="fa-solid fa-minus"></i></button>
-                        <button class="acc-btn btn-secondary" id="btnResetZoom" title="Restaurar zoom">Padrão</button>
-                        <button class="acc-btn" id="btnIncreaseZoom" title="Aumentar zoom"><i class="fa-solid fa-plus"></i></button>
+                        <button type="button" class="acc-btn" id="btnDecreaseZoom" title="Diminuir zoom" aria-label="Diminuir o zoom"><i class="fa-solid fa-minus" aria-hidden="true"></i></button>
+                        <button type="button" class="acc-btn btn-secondary" id="btnResetZoom" title="Restaurar zoom" aria-label="Restaurar o zoom padrão">Padrão</button>
+                        <button type="button" class="acc-btn" id="btnIncreaseZoom" title="Aumentar zoom" aria-label="Aumentar o zoom"><i class="fa-solid fa-plus" aria-hidden="true"></i></button>
                     </div>
                 </div>
             </div>
+            <p class="a11y-sr-only" id="accAnuncio" role="status" aria-live="polite"></p>
         </div>
 
         <div class="modal-section">
-            <h4><i class="fa-solid fa-volume-high"></i> Leitura de Tela (Voz)</h4>
+            <h3 class="acc-secao-titulo"><i class="fa-solid fa-volume-high" aria-hidden="true"></i> Leitura de Tela (Voz)</h3>
             <div class="voice-box">
                 <div class="voice-controls">
-                    <button class="acc-btn-voice voice-start" id="btnStartVoice">
-                        <i class="fa-solid fa-play"></i> Ouvir Página
+                    <button type="button" class="acc-btn-voice voice-start" id="btnStartVoice">
+                        <i class="fa-solid fa-play" aria-hidden="true"></i> Ouvir Página
                     </button>
-                    <button class="acc-btn-voice voice-stop" id="btnStopVoice">
-                        <i class="fa-solid fa-stop"></i> Parar Áudio
+                    <button type="button" class="acc-btn-voice voice-stop" id="btnStopVoice">
+                        <i class="fa-solid fa-stop" aria-hidden="true"></i> Parar Áudio
                     </button>
                 </div>
                 <p class="voice-tip">Clique em "Ouvir Página" para escutar de forma automatizada o resumo do conteúdo desta tela.</p>
@@ -556,8 +643,132 @@
         }
 
         let currentFontScale = 100;
-        let currentZoomScale = 1.0;
+        // Zoom inicial definido pela própria página (a landing usa 0.9): é o
+        // "Padrão" do botão e o valor mostrado antes de qualquer ajuste —
+        // antes o painel dizia "100%" com a página em 90%, e "Padrão" não
+        // voltava ao estado inicial.
+        const zoomPadrao = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--zoom-scale')) || 1;
+        let currentZoomScale = zoomPadrao;
         let speechUtterance = null;
+
+        // O zoom (CSS "zoom" no <html>) não aciona media queries: a tela
+        // "encolhe" sem o CSS saber. A classe deixa as telas trocarem layouts
+        // largos (ex.: tabela de 8 colunas do Estoque) pela versão que quebra
+        // linha enquanto o zoom estiver ampliado.
+        function aplicarZoomNoHtml(escala) {
+            document.documentElement.style.setProperty('--zoom-scale', escala);
+            document.documentElement.classList.toggle('zoom-sistema-ampliado', escala > 1);
+        }
+
+        // ==========================================
+        // TAMANHO DO TEXTO (A+ / A-)
+        // Antes só mudava o font-size do <html>, o que só afeta medidas em
+        // "rem" — a maior parte das telas usa "px", então o texto não mudava.
+        // Agora cada elemento com texto guarda o tamanho original (já
+        // calculado pelo navegador, venha de px, rem ou media query) e recebe
+        // esse tamanho × escala. "Padrão" devolve o estilo original intacto.
+        // ==========================================
+        const SEL_TEXTO_FORMULARIO = 'input, select, textarea, button, label';
+        const textoEscalado = new Set();
+        let observadorFonte = null;
+
+        const temTextoProprio = (el) => {
+            if (el.matches(SEL_TEXTO_FORMULARIO)) return true;
+            for (const no of el.childNodes) {
+                if (no.nodeType === 3 && no.nodeValue.trim()) return true;
+            }
+            return false;
+        };
+
+        // O próprio painel não cresce (continua cabendo na tela para voltar
+        // ao padrão); a barra inferior e o header do celular também não —
+        // têm altura fixa e 6 itens lado a lado: ampliados, os rótulos viravam
+        // "Faze…", "Coc…". O zoom do sistema/navegador continua valendo neles.
+        const ignorar = (el) => el.closest('script, style, noscript, canvas, .accessibility-modal, .accessibility-trigger, [vw], .mobile-bottom-nav, .mobile-header')
+            || [...el.classList].some((c) => c.startsWith('fa-'));
+
+        const ehAlvo = (el) => el instanceof HTMLElement && !el.dataset.a11yFonteOriginal && !ignorar(el) && temTextoProprio(el);
+
+        // Duas fases: MEDE todos antes de MUDAR qualquer um. Antes media e
+        // aplicava elemento a elemento — o filho (<strong> dentro de <p>,
+        // <span> dentro de <button>) herdava o tamanho já aumentado do pai e
+        // era aumentado de novo (150% virava 225%).
+        const escalarLote = (elementos, escala) => {
+            const medidas = elementos.filter(ehAlvo).map((el) => [el, getComputedStyle(el).fontSize, el.style.fontSize || '']);
+            medidas.forEach(([el, original, inline]) => {
+                el.dataset.a11yFonteOriginal = original;
+                el.dataset.a11yFonteInline = inline;
+                el.style.fontSize = (parseFloat(original) * escala).toFixed(2) + 'px';
+                textoEscalado.add(el);
+            });
+        };
+
+        const restaurarFonte = () => {
+            textoEscalado.forEach((el) => {
+                el.style.fontSize = el.dataset.a11yFonteInline || '';
+                delete el.dataset.a11yFonteOriginal;
+                delete el.dataset.a11yFonteInline;
+            });
+            textoEscalado.clear();
+        };
+
+        const aplicarEscalaFonte = (percentual) => {
+            // Mede sempre a partir do tamanho original (sem escala anterior).
+            restaurarFonte();
+            if (observadorFonte) { observadorFonte.disconnect(); observadorFonte = null; }
+            if (percentual === 100) return;
+
+            const escala = percentual / 100;
+            escalarLote([...document.body.querySelectorAll('*')], escala);
+
+            // Conteúdo que chega depois (listas via fetch, modais montados):
+            // mede com os ancestrais momentaneamente no tamanho original,
+            // senão o novo elemento herdaria o tamanho já ampliado.
+            let pendentes = [];
+            let agendado = false;
+            const escalarPendentes = () => {
+                agendado = false;
+                const novos = pendentes.filter((el) => document.contains(el) && ehAlvo(el));
+                pendentes = [];
+                if (!novos.length) return;
+                textoEscalado.forEach((el) => { el.style.fontSize = el.dataset.a11yFonteInline || ''; });
+                const medidas = novos.map((el) => [el, getComputedStyle(el).fontSize, el.style.fontSize || '']);
+                textoEscalado.forEach((el) => { el.style.fontSize = (parseFloat(el.dataset.a11yFonteOriginal) * escala).toFixed(2) + 'px'; });
+                medidas.forEach(([el, original, inline]) => {
+                    el.dataset.a11yFonteOriginal = original;
+                    el.dataset.a11yFonteInline = inline;
+                    el.style.fontSize = (parseFloat(original) * escala).toFixed(2) + 'px';
+                    textoEscalado.add(el);
+                });
+            };
+            observadorFonte = new MutationObserver((mutacoes) => {
+                mutacoes.forEach((m) => m.addedNodes.forEach((no) => {
+                    if (no.nodeType !== 1) return;
+                    pendentes.push(no, ...no.querySelectorAll('*'));
+                }));
+                if (pendentes.length && !agendado) { agendado = true; requestAnimationFrame(escalarPendentes); }
+            });
+            observadorFonte.observe(document.body, { childList: true, subtree: true });
+        };
+
+        // Media queries mudam o tamanho "original" ao girar a tela/redimensionar.
+        let reescalarTimer = null;
+        window.addEventListener('resize', () => {
+            if (currentFontScale === 100) return;
+            clearTimeout(reescalarTimer);
+            reescalarTimer = setTimeout(() => aplicarEscalaFonte(currentFontScale), 250);
+        });
+
+        const accAnuncio = document.getElementById('accAnuncio');
+        const accValorFonte = document.getElementById('accValorFonte');
+        const accValorZoom = document.getElementById('accValorZoom');
+        const mostrarValores = (anunciar) => {
+            const fonte = `${currentFontScale}%`;
+            const zoom = `${Math.round(currentZoomScale * 100)}%`;
+            if (accValorFonte) accValorFonte.textContent = fonte;
+            if (accValorZoom) accValorZoom.textContent = zoom;
+            if (anunciar && accAnuncio) accAnuncio.textContent = anunciar === 'fonte' ? `Tamanho do texto: ${fonte}` : `Zoom: ${zoom}`;
+        };
 
         // ==========================================
         // SINCRONIZAÇÃO COM O SERVIDOR (entre dispositivos)
@@ -605,6 +816,7 @@
         function aplicarPreferenciasDoServidor(preferencias) {
             if (!preferencias) return;
 
+            const temaAntes = temaAtual();
             document.body.classList.remove('dark-theme', 'high-contrast');
             chkDarkMode.checked = false;
             chkHighContrast.checked = false;
@@ -618,17 +830,32 @@
             }
             localStorage.setItem('theme', preferencias.tema ?? 'light');
 
+            // Tema mudou por causa do servidor (salvo em outro aparelho): avisa
+            // as telas como se o usuário tivesse clicado no interruptor — os
+            // gráficos se redesenham com as cores do tema novo (antes ficavam
+            // com eixos/legendas do tema anterior, ilegíveis).
+            // Só nas telas internas (data-mobile-shell): a landing tem tema
+            // próprio ("landingTheme") e não pode ser afetada.
+            if (temaAtual() !== temaAntes && document.body.hasAttribute('data-mobile-shell')) {
+                const alvo = temaAtual() === 'contrast' ? chkHighContrast : chkDarkMode;
+                alvo.dispatchEvent(new Event('change'));
+            }
+
             if (preferencias.tamanho_fonte) {
-                currentFontScale = parseInt(preferencias.tamanho_fonte, 10);
-                document.documentElement.style.setProperty('--font-scale', `${currentFontScale}%`);
+                const escalaServidor = parseInt(preferencias.tamanho_fonte, 10);
+                if (escalaServidor !== currentFontScale) {
+                    currentFontScale = escalaServidor;
+                    aplicarEscalaFonte(currentFontScale);
+                }
                 localStorage.setItem('fontScale', currentFontScale);
             }
 
             if (preferencias.zoom) {
                 currentZoomScale = parseFloat(preferencias.zoom);
-                document.documentElement.style.setProperty('--zoom-scale', currentZoomScale);
+                aplicarZoomNoHtml(currentZoomScale);
                 localStorage.setItem('zoomScale', currentZoomScale);
             }
+            mostrarValores();
         }
 
         function carregarPreferenciasDoServidor() {
@@ -693,8 +920,9 @@
 
         const updateFontScale = (newScale) => {
             currentFontScale = Math.max(80, Math.min(newScale, 150));
-            document.documentElement.style.setProperty('--font-scale', `${currentFontScale}%`);
+            aplicarEscalaFonte(currentFontScale);
             localStorage.setItem('fontScale', currentFontScale);
+            mostrarValores('fonte');
             salvarPreferenciasNoServidor();
         };
         btnIncreaseFont.addEventListener('click', () => updateFontScale(currentFontScale + 10));
@@ -702,69 +930,114 @@
         btnResetFont.addEventListener('click', () => updateFontScale(100));
 
         const updateZoomScale = (newZoom) => {
-            currentZoomScale = Math.max(0.5, Math.min(newZoom, 1.3));
-            document.documentElement.style.setProperty('--zoom-scale', currentZoomScale);
+            currentZoomScale = Math.round(Math.max(0.5, Math.min(newZoom, 1.3)) * 100) / 100;
+            aplicarZoomNoHtml(currentZoomScale);
             localStorage.setItem('zoomScale', currentZoomScale);
+            mostrarValores('zoom');
             salvarPreferenciasNoServidor();
         };
         btnIncreaseZoom.addEventListener('click', () => updateZoomScale(currentZoomScale + 0.05));
         btnDecreaseZoom.addEventListener('click', () => updateZoomScale(currentZoomScale - 0.05));
-        btnResetZoom.addEventListener('click', () => updateZoomScale(1.0));
+        btnResetZoom.addEventListener('click', () => updateZoomScale(zoomPadrao));
+
+        // ==========================================
+        // LEITURA DA PÁGINA (VOZ)
+        // Antes lia só o título + a descrição do topo (ex.: em Gestão de
+        // Lotes, 83 caracteres e nenhum lote). Agora percorre o conteúdo
+        // principal VISÍVEL na ordem da tela — títulos, cards, textos,
+        // tabelas e o nome dos gráficos —, pulando menu, modais fechados e
+        // este painel. Fala em trechos curtos: o Chrome corta uma fala
+        // longa no meio (~15 s) sem avisar.
+        // ==========================================
+        const IGNORAR_NA_LEITURA = '.accessibility-modal, .accessibility-trigger, #accOverlay, .sidebar, .mobile-header, '
+            + '.mobile-bottom-nav, .mobile-menu, nav, footer, script, style, noscript, template, select, '
+            + '[aria-hidden="true"], [inert], .a11y-pular, .ai-chat-panel, .ai-chat-trigger, [vw], #splash';
+
+        const coletarTextoDaPagina = () => {
+            const raiz = document.querySelector('main, [role="main"]') || document.body;
+            const blocos = [];
+            let blocoAtual = null;
+            let texto = '';
+            const fecharBloco = () => {
+                const t = texto.replace(/\s+/g, ' ').trim();
+                if (t && blocos[blocos.length - 1] !== t) blocos.push(t);
+                texto = '';
+            };
+            const walker = document.createTreeWalker(raiz, NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT, {
+                acceptNode(no) {
+                    const el = no.nodeType === 1 ? no : no.parentElement;
+                    if (!el || el.closest(IGNORAR_NA_LEITURA)) return NodeFilter.FILTER_REJECT;
+                    if (no.nodeType === 1) {
+                        // Gráfico (canvas com role="img"): lê o nome dele.
+                        return el.getAttribute('role') === 'img' && el.getAttribute('aria-label')
+                            ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP;
+                    }
+                    if (!no.nodeValue.trim() || !el.getClientRects().length) return NodeFilter.FILTER_REJECT;
+                    const estilo = getComputedStyle(el);
+                    return estilo.visibility === 'hidden' ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT;
+                },
+            });
+            while (walker.nextNode()) {
+                const no = walker.currentNode;
+                if (no.nodeType === 1) {
+                    fecharBloco();
+                    blocos.push(no.getAttribute('aria-label'));
+                    blocoAtual = null;
+                    continue;
+                }
+                // Agrupa o texto pelo bloco (div/p/li/td...) mais próximo:
+                // "Estoque" + "120 kg" do mesmo card viram uma frase só.
+                let bloco = no.parentElement;
+                while (bloco && bloco !== raiz && getComputedStyle(bloco).display.startsWith('inline')) bloco = bloco.parentElement;
+                if (bloco !== blocoAtual) { fecharBloco(); blocoAtual = bloco; }
+                texto += ' ' + no.nodeValue;
+            }
+            fecharBloco();
+            return blocos;
+        };
+
+        // Junta blocos curtos em falas de até ~220 caracteres.
+        const montarFalas = (blocos) => {
+            const falas = [];
+            let atual = '';
+            blocos.forEach((b) => {
+                const frase = /[.!?:]$/.test(b) ? b : b + '.';
+                if (atual && (atual.length + frase.length) > 220) { falas.push(atual); atual = ''; }
+                atual = atual ? atual + ' ' + frase : frase;
+            });
+            if (atual) falas.push(atual);
+            return falas;
+        };
+
+        const ROTULO_OUVIR = '<i class="fa-solid fa-play" aria-hidden="true"></i> Ouvir Página';
+        const voltarBotaoOuvir = () => { btnStartVoice.innerHTML = ROTULO_OUVIR; };
 
         btnStartVoice.addEventListener('click', () => {
-            window.speechSynthesis.cancel();
-            let textToRead = "";
-
-            const heading = document.querySelector('.header-title h2, .header h1');
-            const description = document.querySelector('.header-title p, .header p');
-
-            if (heading) textToRead += heading.innerText + ". ";
-            if (description) textToRead += description.innerText + ". ";
-
-            document.querySelectorAll('.premium-card, .card-title').forEach(el => {
-                const label = el.querySelector ? el.querySelector('.premium-card-label') : null;
-                const value = el.querySelector ? el.querySelector('.premium-card-value') : null;
-                if (label && value) {
-                    textToRead += label.innerText + ": " + value.innerText + ". ";
-                }
-            });
-
-            document.querySelectorAll('.alert-item-text h4').forEach(alerta => {
-                textToRead += "Alerta: " + alerta.innerText + ". ";
-            });
-
-            // Fallback genérico: páginas sem os elementos específicos acima
-            // (ex.: a landing page pública) caem aqui, lendo os títulos e
-            // parágrafos do conteúdo principal na ordem em que aparecem.
-            if (!textToRead.trim()) {
-                const raiz = document.querySelector('main, #mainArea, #mainContent') || document.body;
-                raiz.querySelectorAll('h1, h2, h3, h4, p, li').forEach(el => {
-                    if (el.closest('.accessibility-modal, .accessibility-trigger, nav, .mobile-menu, footer, script, style')) {
-                        return;
-                    }
-                    const texto = el.innerText.trim();
-                    if (texto) {
-                        textToRead += texto + ". ";
-                    }
-                });
+            if (!('speechSynthesis' in window)) {
+                if (accAnuncio) accAnuncio.textContent = 'A leitura em voz não é suportada neste navegador.';
+                btnStartVoice.title = 'Leitura em voz não suportada neste navegador';
+                return;
             }
+            window.speechSynthesis.cancel();
+            const falas = montarFalas(coletarTextoDaPagina());
+            if (!falas.length) return;
 
-            if (!textToRead.trim()) return;
+            btnStartVoice.innerHTML = '<i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i> Lendo...';
+            if (accAnuncio) accAnuncio.textContent = 'Lendo a página.';
 
-            speechUtterance = new SpeechSynthesisUtterance(textToRead);
-            speechUtterance.lang = 'pt-BR';
-
-            btnStartVoice.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Lendo...';
-
-            speechUtterance.onend = () => btnStartVoice.innerHTML = '<i class="fa-solid fa-play"></i> Ouvir Página';
-            speechUtterance.onerror = () => btnStartVoice.innerHTML = '<i class="fa-solid fa-play"></i> Ouvir Página';
-
-            window.speechSynthesis.speak(speechUtterance);
+            falas.forEach((texto, i) => {
+                speechUtterance = new SpeechSynthesisUtterance(texto);
+                speechUtterance.lang = 'pt-BR';
+                if (i === falas.length - 1) speechUtterance.onend = voltarBotaoOuvir;
+                speechUtterance.onerror = voltarBotaoOuvir;
+                window.speechSynthesis.speak(speechUtterance);
+            });
         });
 
         btnStopVoice.addEventListener('click', () => {
-            window.speechSynthesis.cancel();
-            btnStartVoice.innerHTML = '<i class="fa-solid fa-play"></i> Ouvir Página';
+            if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+            voltarBotaoOuvir();
+            if (accAnuncio) accAnuncio.textContent = 'Leitura interrompida.';
         });
 
         const loadPreferences = () => {
@@ -789,16 +1062,17 @@
             const savedFont = localStorage.getItem('fontScale');
             if (savedFont) {
                 currentFontScale = parseInt(savedFont, 10);
-                document.documentElement.style.setProperty('--font-scale', `${currentFontScale}%`);
+                aplicarEscalaFonte(currentFontScale);
             }
 
             const savedZoom = localStorage.getItem('zoomScale');
             if (savedZoom) {
                 currentZoomScale = parseFloat(savedZoom);
-                document.documentElement.style.setProperty('--zoom-scale', currentZoomScale);
+                aplicarZoomNoHtml(currentZoomScale);
             }
         };
         loadPreferences();
+        mostrarValores();
 
         // localStorage já pintou a página instantaneamente; agora consulta
         // o servidor (se logado) pra sincronizar com o que foi salvo em

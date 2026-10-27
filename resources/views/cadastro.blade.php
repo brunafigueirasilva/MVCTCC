@@ -9,7 +9,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
 </head>
-<style>
+@include('partials.paleta-verde')
+    <style>
     /* ================= CONFIGURAÇÕES DE VARIÁVEIS (TEMA CLARO DEFAULT) ================= */
     :root {
         --font-scale: 100%;
@@ -99,7 +100,7 @@
         width: 52px;
         height: 52px;
         border-radius: 50%;
-        background: #14532d;
+        background: var(--verde-principal, #0e4a27);
         color: white;
         border: none;
         cursor: pointer;
@@ -114,7 +115,7 @@
 
     .accessibility-trigger:hover {
         transform: scale(1.1) rotate(45deg);
-        background: #166534;
+        background: var(--verde-hover, #0b3d21);
     }
 
     body.high-contrast .accessibility-trigger {
@@ -185,7 +186,7 @@
     body.high-contrast .feature i {
         background: #000000 !important;
         border: 1px solid #ffff00 !important;
-        color: #ffff00 !important;
+        color: #ffffff !important;
         /* Ícones em Amarelo */
     }
 
@@ -198,7 +199,7 @@
         background: #000000 !important;
     }
 
-    body.high-contrast .top-text h2 {
+    body.high-contrast .top-text :is(h1, h2) {
         color: #ffff00 !important;
     }
 
@@ -353,7 +354,7 @@
     }
 
     body.high-contrast .left-content h2,
-    body.high-contrast .top-text h2 {
+    body.high-contrast .top-text :is(h1, h2) {
         color: #ffff00 !important;
         /* Títulos em Amarelo */
     }
@@ -369,7 +370,7 @@
     body.high-contrast .feature i {
         background: #000000 !important;
         border: 1px solid #ffff00 !important;
-        color: #ffff00 !important;
+        color: #ffffff !important;
     }
 
     body.high-contrast .feature span {
@@ -636,7 +637,7 @@
     }
 
     input:checked+.slider-switch {
-        background-color: #22c55e;
+        background-color: var(--verde-secundario, #16a765);
     }
 
     body.high-contrast input:checked+.slider-switch {
@@ -710,11 +711,11 @@
     }
 
     .voice-start {
-        background: #14532d;
+        background: var(--verde-principal, #0e4a27);
     }
 
     .voice-start:hover {
-        background: #166534;
+        background: var(--verde-hover, #0b3d21);
     }
 
     .voice-stop {
@@ -763,11 +764,6 @@
             border-radius: 16px;
         }
 
-        .accessibility-trigger {
-            top: auto;
-            bottom: 20px;
-            right: 20px;
-        }
     }
 
     html {
@@ -807,7 +803,7 @@
     /* LADO ESQUERDO */
     .left-side {
         width: 50%;
-        background: linear-gradient(rgba(7, 48, 25, 0.75), rgba(8, 26, 16, 0.95)),
+        background: linear-gradient(color-mix(in srgb, var(--verde-principal, #0e4a27) 75%, transparent), rgba(8, 26, 16, 0.95)),
             url('https://images.unsplash.com/photo-1516467508483-a7212febe31a?q=80&w=1400&auto=format&fit=crop');
         background-size: cover;
         background-position: center;
@@ -858,7 +854,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        color: #22c55e;
+        color: #ffffff;
     }
 
     /* LADO DIREITO (FORMULÁRIO MODIFICADO) */
@@ -874,7 +870,7 @@
         margin-bottom: 25px;
     }
 
-    .top-text h2 {
+    .top-text :is(h1, h2) {
         font-size: 2rem;
         color: var(--text-primary);
         margin-bottom: 8px;
@@ -940,13 +936,13 @@
 
     .input-box input:focus {
         outline: none;
-        border-color: #15803d;
-        box-shadow: 0 0 0 4px rgba(21, 128, 61, 0.15);
+        border-color: var(--verde-ativo, #087a47);
+        box-shadow: 0 0 0 4px color-mix(in srgb, var(--verde-principal, #0e4a27) 15%, transparent);
     }
 
     /* Estado de validação (usado no campo de Email) */
     .input-box.is-valid input {
-        border-color: #22c55e;
+        border-color: var(--verde-secundario, #16a765);
     }
 
     .input-box.is-invalid input {
@@ -957,11 +953,16 @@
         box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.15);
     }
 
+    /* Cores do retorno dos campos (ok/erro) com contraste ≥ 4,5:1 em cada tema. */
+    :root { --feedback-ok: #15803d; --feedback-erro: #dc2626; }
+    body.dark-theme { --feedback-ok: #4ade80; --feedback-erro: #fca5a5; }
+    body.high-contrast { --feedback-ok: #ffff00; --feedback-erro: #ffffff; }
+
     .field-feedback {
         display: block;
         margin-top: 6px;
         font-size: 0.8rem;
-        color: #ef4444;
+        color: var(--feedback-erro);
         min-height: 1em;
     }
 
@@ -972,7 +973,12 @@
 
     .toggle-password {
         position: absolute;
-        right: 15px;
+        right: 8px;
+        min-width: 32px; /* alvo de toque confortável */
+        min-height: 32px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
         top: 50%;
         transform: translateY(-50%);
         background: none;
@@ -994,7 +1000,7 @@
     .btn-register {
         width: 100%;
         border: none;
-        background: linear-gradient(90deg, #14532d, #166534);
+        background: linear-gradient(90deg, var(--verde-principal, #0e4a27), var(--verde-principal, #0e4a27));
         color: white;
         padding: 15px;
         border-radius: 12px;
@@ -1007,7 +1013,7 @@
 
     .btn-register:hover {
         transform: translateY(-2px);
-        box-shadow: 0 10px 20px rgba(22, 101, 52, 0.3);
+        box-shadow: 0 10px 20px color-mix(in srgb, var(--verde-principal, #0e4a27) 30%, transparent);
     }
 
     .divider {
@@ -1056,14 +1062,14 @@
 
     .footer a,
     .footer a:visited {
-        color: #14532d;
+        color: var(--verde-texto, #0e4a27);
         font-weight: 600;
         text-decoration: none;
     }
 
     .footer a:hover,
     .footer a:active {
-        color: #166534;
+        color: var(--verde-texto, #0e4a27);
     }
 
     .footer-note {
@@ -1091,7 +1097,7 @@
         width: 50px;
         height: 50px;
         border-radius: 50%;
-        background: #14532d;
+        background: var(--verde-principal, #0e4a27);
         color: white;
         border: none;
         cursor: pointer;
@@ -1106,7 +1112,7 @@
 
     .accessibility-trigger:hover {
         transform: scale(1.1) rotate(45deg);
-        background: #166534;
+        background: var(--verde-hover, #0b3d21);
     }
 
     body.high-contrast .accessibility-trigger {
@@ -1243,7 +1249,7 @@
     }
 
     input:checked+.slider-switch {
-        background-color: #22c55e;
+        background-color: var(--verde-secundario, #16a765);
     }
 
     body.high-contrast input:checked+.slider-switch {
@@ -1306,11 +1312,11 @@
     }
 
     .voice-start {
-        background: #14532d;
+        background: var(--verde-principal, #0e4a27);
     }
 
     .voice-start:hover {
-        background: #166534;
+        background: var(--verde-hover, #0b3d21);
     }
 
     .voice-stop {
@@ -1382,7 +1388,7 @@
     }
 
     @media(max-width: 600px) {
-        .top-text h2 {
+        .top-text :is(h1, h2) {
             font-size: 1.5rem;
         }
 
@@ -1390,21 +1396,24 @@
             font-size: 1.4rem;
         }
 
+        /* Acima do robô do assistente (mesmo canto): antes os dois ficavam
+           no mesmo lugar e o robô cobria este botão no celular. */
         .accessibility-trigger {
             top: auto;
-            bottom: 20px;
-            right: 20px;
+            bottom: calc(16px + 58px + 14px);
+            right: 16px;
         }
     }
 </style>
 
 <body>
+    @include('partials.a11y-global')
 
     <div class="register-container">
         <!-- LADO ESQUERDO -->
         <div class="left-side">
             <div class="logo">
-                <img src="Logo.png" alt="Logo Agrifarm" width="110px">
+                <img src="Logo.png" alt="Logo Agrifarm" width="150px">
             </div>
 
             <div class="left-content">
@@ -1434,7 +1443,7 @@
         <!-- LADO DIREITO -->
         <div class="right-side">
             <div class="top-text">
-                <h2>Criar Conta</h2>
+                <h1><i class="fa-solid fa-user-plus titulo-icone titulo-icone-verde" aria-hidden="true"></i> Criar Conta</h1>
                 <p>Cadastre-se para acessar o sistema</p>
             </div>
 
@@ -1450,7 +1459,7 @@
                     </div>
 
                     <div class="form-group">
-                        <label>Telefone</label>
+                        <label for="telefone">Telefone</label>
                         <div class="input-box">
                             <i class="fa-solid fa-phone"></i>
                             <input type="text" id="telefone" name="telefone" placeholder="(19) 99999-9999"
@@ -1460,21 +1469,21 @@
                 </div>
 
                 <div class="form-group">
-                    <label>Email</label>
+                    <label for="email">Email</label>
                     <div class="input-box" id="emailBox">
                         <i class="fa-regular fa-envelope"></i>
-                        <input type="email" id="email" name="email" placeholder="Digite seu email" required>
+                        <input type="email" id="email" name="email" placeholder="Digite seu email" autocomplete="email" aria-describedby="emailFeedback" required>
                     </div>
-                    <span class="field-feedback" id="emailFeedback"></span>
+                    <span class="field-feedback" id="emailFeedback" aria-live="polite"></span>
                 </div>
 
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Senha</label>
+                        <label for="password">Senha</label>
                         <div class="input-box" id="passwordBox">
                             <i class="fa-solid fa-lock"></i>
                             <input type="password" id="password" name="password" class="has-toggle"
-                                placeholder="Digite sua senha" minlength="8" required>
+                                placeholder="Digite sua senha" minlength="8" autocomplete="new-password" aria-describedby="passwordFeedback" required>
                             <button type="button" class="toggle-password" data-target="password"
                                 aria-label="Mostrar senha">
                                 <i class="fa-regular fa-eye"></i>
@@ -1484,7 +1493,7 @@
                     </div>
 
                     <div class="form-group">
-                        <label>Confirmar Senha</label>
+                        <label for="password_confirmation">Confirmar Senha</label>
                         <div class="input-box">
                             <i class="fa-solid fa-lock"></i>
                             <input type="password" id="password_confirmation" name="password_confirmation"
@@ -1511,20 +1520,18 @@
 
             <div class="footer">
                 Já possui conta?
-                <a href="{{ route('login.index') }}">Entrar</a>
-                <p class="footer-note">Não é possível navegar pelo sistema digitando o endereço diretamente na barra de pesquisa do navegador — utilize sempre os links e botões do site.</p>
-            </div>
+                <a href="{{ route('login.index') }}">Entrar</a>            </div>
             </form>
         </div>
     </div>
 
     <!-- Botão Fixo de Engrenagem (Disparador) -->
-    <button class="accessibility-trigger" id="accTrigger" aria-label="Abrir configurações de acessibilidade">
+    <button type="button" class="accessibility-trigger" id="accTrigger" aria-label="Abrir configurações de acessibilidade" aria-controls="accModal" aria-haspopup="dialog">
         <i class="fa-solid fa-universal-access"></i>
     </button>
 
     <!-- Quadrado Central de Configurações (Modal Box) -->
-    <div class="accessibility-modal" id="accModal">
+    <div class="accessibility-modal" id="accModal" role="dialog" aria-modal="true" aria-label="Painel de Acessibilidade">
         <div class="modal-header">
             <h3><i class="fa-solid fa-universal-access"></i> Painel de Acessibilidade</h3>
             <button class="modal-close" id="accClose" aria-label="Fechar painel">&times;</button>
@@ -1536,16 +1543,16 @@
                 <h4><i class="fa-solid fa-palette"></i> Preferências de Tema</h4>
                 <div class="control-grid">
                     <div class="control-item">
-                        <span class="control-label"><i class="fa-solid fa-moon"></i> Modo Escuro</span>
+                        <span class="control-label" id="lblDarkMode"><i class="fa-solid fa-moon" aria-hidden="true"></i> Modo Escuro</span>
                         <label class="switch-btn">
-                            <input type="checkbox" id="chkDarkMode">
+                            <input type="checkbox" id="chkDarkMode" role="switch" aria-labelledby="lblDarkMode">
                             <span class="slider-switch"></span>
                         </label>
                     </div>
                     <div class="control-item">
-                        <span class="control-label"><i class="fa-solid fa-circle-half-stroke"></i> Alto Contraste</span>
+                        <span class="control-label" id="lblHighContrast"><i class="fa-solid fa-circle-half-stroke" aria-hidden="true"></i> Alto Contraste</span>
                         <label class="switch-btn">
-                            <input type="checkbox" id="chkHighContrast">
+                            <input type="checkbox" id="chkHighContrast" role="switch" aria-labelledby="lblHighContrast">
                             <span class="slider-switch"></span>
                         </label>
                     </div>
@@ -1612,7 +1619,7 @@
     </div>
     <script src="https://vlibras.gov.br/app/vlibras-plugin.js"></script>
     <script>
-        new window.VLibras.Widget('https://vlibras.gov.br/app');
+        if (window.VLibras) new window.VLibras.Widget('https://vlibras.gov.br/app'); // CDN do governo fora do ar/bloqueado: segue sem o widget
     </script>
 
     <script>
@@ -1669,6 +1676,7 @@
                     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
                     emailBox.classList.remove('is-valid', 'is-invalid');
+                    emailInput.removeAttribute('aria-invalid');
                     emailFeedback.textContent = '';
 
                     if (value.length === 0) return;
@@ -1677,6 +1685,7 @@
                         emailBox.classList.add('is-valid');
                     } else {
                         emailBox.classList.add('is-invalid');
+                        emailInput.setAttribute('aria-invalid', 'true');
                         emailFeedback.textContent = 'Digite um email válido.';
                     }
                 };
@@ -1698,6 +1707,7 @@
                     const value = passwordInput.value;
 
                     passwordBox.classList.remove('is-valid', 'is-invalid');
+                    passwordInput.removeAttribute('aria-invalid');
 
                     if (value.length === 0) {
                         passwordFeedback.textContent = passwordDica;
@@ -1708,11 +1718,12 @@
                     if (passwordRegex.test(value)) {
                         passwordBox.classList.add('is-valid');
                         passwordFeedback.textContent = passwordDica;
-                        passwordFeedback.style.color = '#22c55e';
+                        passwordFeedback.style.color = 'var(--feedback-ok)';
                     } else {
                         passwordBox.classList.add('is-invalid');
+                        passwordInput.setAttribute('aria-invalid', 'true');
                         passwordFeedback.textContent = passwordDica;
-                        passwordFeedback.style.color = '#ef4444';
+                        passwordFeedback.style.color = 'var(--feedback-erro)';
                     }
                 };
 
@@ -1804,7 +1815,7 @@
 
                 const mainHeading = document.querySelector('.left-content h2');
                 const mainDesc = document.querySelector('.left-content p');
-                const rightHeading = document.querySelector('.top-text h2');
+                const rightHeading = document.querySelector('.top-text :is(h1, h2)');
                 const rightDesc = document.querySelector('.top-text p');
 
                 if (mainHeading) textToRead += mainHeading.innerText + ". ";

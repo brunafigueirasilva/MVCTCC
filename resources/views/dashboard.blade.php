@@ -1,13 +1,13 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
+@extends('layouts.app')
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AgriFarm | Dashboard Avançado</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="{{ asset('js/vendor/chart.min.js') }}"></script>
+@section('title', 'AgriFarm | Dashboard Avançado')
+@section('body-attrs')data-tema-padrao="escuro"@endsection
 
+@push('scripts')
+<script src="{{ asset('js/vendor/chart.min.js') }}"></script>
+@endpush
+
+@push('styles')
     <style>
         /* ==========================================================================
         1. RESET, VARIÁVEIS DE SISTEMA E CONFIGURAÇÕES GERAIS
@@ -30,9 +30,9 @@
 
             /* Cores dos Cartões Modernos */
             --card-verde-bg: #f0fdf4;
-            --card-verde-border: #dcfce7;
-            --card-verde-icon-bg: #e2fbe8;
-            --card-verde-texto: #15803d;
+            --card-verde-border: var(--verde-claro, #e8f5ee);
+            --card-verde-icon-bg: var(--verde-claro, #e8f5ee);
+            --card-verde-texto: var(--verde-texto, #0e4a27);
 
             --card-azul-bg: #f0f7ff;
             --card-azul-border: #e0f2fe;
@@ -49,25 +49,11 @@
             --card-roxo-icon-bg: #f3e8ff;
             --card-roxo-texto: #6b21a8;
 
-            /* Um pouco mais escuro que o verde-base do projeto (#14532d),
-               só o suficiente para dar mais profundidade contra os cartões
-               brancos, sem se afastar da identidade visual. */
-            --navbar-bg: #123f22;
-            --sidebar-bg: #123f22;
-            --surface-border: rgba(255, 255, 255, 0.15);
-
             /* Superfícies "neutras" (dica de seleção, item de alerta padrão)
                usadas nos dois temas — mantidas como variável para nunca
                precisar de uma cor fixa duplicada por tema. */
             --surface-muted-bg: #f8fafc;
             --surface-muted-border: #cbd5e1;
-
-            --menu-text: #b2cbb9;
-            --menu-text-hover: #ffffff;
-            --menu-hover-bg: rgba(255, 255, 255, 0.05);
-            --menu-active-bg: rgba(255, 255, 255, 0.08);
-            --menu-active-text: #4ade80;
-            --menu-active-accent: #4ade80;
 
             /* Paleta dos gráficos (Chart.js). Ordem fixa e validada para
                distinção segura em daltonismo (ver skill de dataviz). */
@@ -79,338 +65,16 @@
             --chart-6: #e11d48;
             --chart-grid: #eef2f6;
             --chart-tick: #94a3b8;
-
-            /* Painel de Acessibilidade (componente compartilhado) */
-            --panel-bg: #ffffff;
-            --panel-text: #1f2937;
-            --panel-item-bg: #f9fafb;
-            --panel-btn-bg: #e5e7eb;
-            --panel-btn-text: #374151;
-            --panel-btn-hover: #d1d5db;
-        }
-
-        body {
-            background: var(--bg-principal);
-            color: var(--text-principal);
-            overflow-x: hidden;
-            transition: background 0.3s, color 0.3s;
         }
 
         .sidebar, .navbar, .main, .card, .box, .premium-card {
             transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, transform 0.2s ease, left 0.3s ease, width 0.3s ease, margin 0.3s ease, filter 0.25s ease;
         }
 
-        /* Quando o painel de acessibilidade está aberto (classe alternada em
-           <body> pelo partials.acessibilidade), o desfoque é aplicado
-           diretamente na navbar, sidebar e conteúdo principal — em vez de
-           depender só do backdrop-filter do overlay, que não desfoca de
-           forma confiável elementos "position: fixed" empilhados (navbar e
-           sidebar ficavam nítidas, só o conteúdo central parecia borrado). */
-        body.acc-modal-open .sidebar,
-        body.acc-modal-open .navbar,
-        body.acc-modal-open .main {
-            filter: blur(6px);
-            pointer-events: none;
-        }
-
-        /* ==========================================================================
-        2. NAVBAR SUPERIOR
-        ========================================================================== */
-        .navbar {
-            height: 70px;
-            background: var(--navbar-bg);
-            border-bottom: 1px solid var(--surface-border);
-            box-shadow: 0 2px 12px rgba(15, 23, 42, 0.04);
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 32px;
-            z-index: 999;
-        }
-
-        .navbar-left {
-            display: flex;
-            align-items: center;
-            gap: 22px;
-            min-width: 0;
-        }
-
-        .toggle-menu-btn {
-            background: #ffffff;
-            border: 1px solid var(--surface-border);
-            color: #4ade80;
-            font-size: 1.063rem;
-            padding: 9px 13px;
-            border-radius: 10px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid var(--surface-border);
-        }
-
-        .toggle-menu-btn:hover {
-            background: rgba(255, 255, 255, 0.18);
-            border-color: rgba(255, 255, 255, 0.25);
-            color: #ffffff;
-            transform: translateY(-1px);
-        }
-
-        /* Logo diretamente sobre o fundo escuro da navbar, sem caixa/quadrado
-           atrás — apenas a imagem (com fundo transparente) maior e nítida. */
-        .navbar-logo {
-            display: flex;
-            align-items: center;
-            min-width: 0;
-        }
-
-        .navbar-logo img {
-            height: 44px;
-            width: auto;
-            max-width: 220px;
-            object-fit: contain;
-            display: block;
-            image-rendering: -webkit-optimize-contrast;
-        }
-
-        .navbar-right {
-            display: flex;
-            align-items: center;
-            gap: 18px;
-        }
-
-        .user-profile {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            text-decoration: none;
-            padding: 6px 10px;
-            margin: -6px -10px;
-            border-radius: 12px;
-            cursor: pointer;
-        }
-
-        .user-profile:hover {
-            background: rgba(255, 255, 255, 0.08);
-        }
-
-        .user-avatar {
-            width: 40px;
-            height: 40px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #4ade80;
-            font-size: 1rem;
-            border: 1px solid var(--surface-border);
-            flex-shrink: 0;
-        }
-
-        .user-info {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .user-name {
-            color: #ffffff;
-            font-size: 0.875rem;
-            font-weight: 600;
-        }
-
-        .user-role {
-            color: #a7f3d0;
-            font-size: 0.6875rem;
-            font-weight: 500;
-        }
-
-        .navbar-divider {
-            width: 1px;
-            height: 28px;
-            background: var(--surface-border);
-        }
-
-        .navbar-logout {
-            text-decoration: none;
-            color: #fca5a5;
-            font-weight: 600;
-            font-size: 0.875rem;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 10px 16px;
-            border-radius: 10px;
-            background: rgba(239, 68, 68, 0.08);
-            border: 1px solid rgba(239, 68, 68, 0.12);
-            transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
-        }
-
-        .navbar-logout:hover {
-            background: linear-gradient(135deg, #f87171, #dc2626);
-            border-color: transparent;
-            color: #ffffff;
-            transform: translateY(-1px);
-            box-shadow: 0 8px 18px -6px rgba(220, 38, 38, 0.55);
-        }
-
-        .navbar-logout:active { transform: translateY(0); box-shadow: none; }
-
-        /* Botão de acessibilidade inserido dentro da navbar (ver partials/acessibilidade). */
-        .navbar-right .accessibility-trigger {
-            background: rgba(255, 255, 255, 0.1);
-            color: #4ade80;
-            border: 1px solid var(--surface-border);
-        }
-        .navbar-right .accessibility-trigger:hover {
-            background: rgba(255, 255, 255, 0.2);
-            color: #ffffff;
-        }
-
-        /* ==========================================================================
-        3. SIDEBAR LATERAL
-        ========================================================================== */
-        .sidebar {
-            width: 260px;
-            background: var(--sidebar-bg);
-            border-right: 1px solid var(--surface-border);
-            box-shadow: 2px 0 12px rgba(15, 23, 42, 0.03);
-            color: var(--menu-text);
-            position: fixed;
-            top: 70px;
-            left: 0;
-            bottom: 0;
-            padding: 0 16px 20px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            z-index: 998;
-        }
-
-        .sidebar.collapsed {
-            left: -260px;
-        }
-
-        /* Fundo escurecido atrás do menu lateral quando ele abre como
-           "gaveta" (drawer) por cima do conteúdo em telas de celular/tablet
-           — antes não existia, então o menu abria sem nenhuma forma de
-           fechar clicando fora dele. Só existe (via @media) em telas
-           estreitas, onde a sidebar vira overlay. */
-        .sidebar-overlay {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.45);
-            z-index: 997;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-
-        @media (max-width: 992px) {
-            .sidebar-overlay.active {
-                display: block;
-                opacity: 1;
-            }
-        }
-
-        .menu {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            min-height: 100%;
-            padding-top: 20px;
-        }
-
-        .menu a {
-            text-decoration: none;
-            color: var(--menu-text);
-            padding: 12px 14px;
-            /* Cantos arredondados só do lado direito: com os 4 cantos
-               arredondados, a barra de destaque (border-left) ficava cortada
-               de forma torta nas pontas — por isso o item selecionado
-               parecia "desajeitado". Deixando o lado esquerdo reto, a barra
-               sai como uma linha limpa e contínua. */
-            border-radius: 0 10px 10px 0;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            font-size: 0.875rem;
-            font-weight: 500;
-            border-left: 4px solid transparent;
-            position: relative;
-            transition: background-color 0.18s ease, color 0.18s ease, border-left-color 0.18s ease, transform 0.18s ease;
-        }
-
-        .menu a:hover {
-            background: var(--menu-hover-bg);
-            color: var(--menu-text-hover);
-            transform: translateX(4px);
-        }
-
-        @keyframes menuIconBounce {
-            0% { transform: translateY(0) scale(1); }
-            30% { transform: translateY(-9px) scale(1.16); }
-            50% { transform: translateY(1px) scale(0.95); }
-            70% { transform: translateY(-4px) scale(1.06); }
-            100% { transform: translateY(0) scale(1); }
-        }
-
-        .menu a:hover i {
-            animation: menuIconBounce 0.55s cubic-bezier(.34,1.56,.64,1);
-        }
-
-        .menu a.active {
-            background: var(--menu-active-bg);
-            color: var(--menu-active-text);
-            font-weight: 700;
-            border-left-color: var(--menu-active-accent);
-            box-shadow: inset 0 0 0 1px rgba(74, 222, 128, 0.12);
-        }
-
-        .menu i {
-            width: 20px;
-            font-size: 1rem;
-            text-align: center;
-            transition: transform 0.18s ease;
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-            .menu a, .menu i { transition: background-color 0.18s ease, color 0.18s ease; }
-            .menu a:hover { transform: none; }
-            .menu a:hover i { animation: none; }
-        }
-
-        .footer-right {
-            margin-top: auto;
-            padding-top: 20px;
-            border-top: 1px solid var(--surface-border);
-            text-align: center;
-            font-size: 0.75rem;
-            color: rgba(255, 255, 255, 0.35);
-            letter-spacing: 0.5px;
-        }
-
         /* ==========================================================================
         4. ÁREA PRINCIPAL E MÓDULOS DE CONTEÚDO
+        (navbar/drawer em si vivem só em layouts/app.blade.php)
         ========================================================================== */
-        .main {
-            margin-left: 260px;
-            width: calc(100% - 260px);
-            padding: 40px;
-            padding-top: 90px;
-        }
-
-        .main.expanded {
-            margin-left: 0;
-            width: 100%;
-        }
-
         .header {
             margin-bottom: 28px;
             display: flex;
@@ -420,7 +84,7 @@
             gap: 20px;
         }
 
-        .header-title h2 {
+        .header-title :is(h1, h2) {
             font-size: 1.75rem;
             font-weight: 700;
             color: var(--text-principal);
@@ -481,8 +145,8 @@
         }
 
         .select-fazenda:focus {
-            border-color: #16a34a;
-            box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.1);
+            border-color: var(--verde-ativo, #087a47);
+            box-shadow: 0 0 0 3px color-mix(in srgb, var(--verde-principal, #0e4a27) 10%, transparent);
         }
 
         .selector-hint {
@@ -504,7 +168,8 @@
         ========================================================================== */
         .cards-row {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr));
+            grid-auto-rows: 1fr;
             gap: 20px;
         }
 
@@ -564,14 +229,19 @@
             letter-spacing: -0.1px;
         }
 
+        /* Tamanho acompanha a largura do card e, no limite, quebra linha —
+           nunca corta o valor com "…" (ex.: "R$ 1.04..."). */
         .premium-card-value {
-            font-size: 1.688rem;
+            font-size: clamp(1.25rem, 1.75vw, 1.688rem);
             font-weight: 700;
             color: var(--text-principal);
             line-height: 1.15;
             white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            overflow-wrap: anywhere;
+        }
+
+        @media (max-width: 1400px) {
+            .premium-card-value { white-space: normal; }
         }
 
         .premium-card-subtext {
@@ -579,12 +249,10 @@
             color: var(--text-secundario);
             font-weight: 500;
             margin-top: 2px;
-            display: flex;
-            align-items: center;
-            gap: 5px;
+            line-height: 1.4;
         }
 
-        .trend-up { color: #16a34a; }
+        .trend-up { color: var(--verde-texto, #0e4a27); }
         .trend-down { color: #dc2626; }
         .trend-neutral { color: #94a3b8; }
 
@@ -592,11 +260,11 @@
            bloco de cor pastel chapado) e o selo do ícone com gradiente
            vivo + glow — sem borda/linha de destaque lateral. */
         .premium-verde {
-            background: linear-gradient(160deg, rgba(16, 185, 129, 0.12), transparent 60%), var(--card-bg);
+            background: linear-gradient(160deg, color-mix(in srgb, var(--verde-principal, #0e4a27) 12%, transparent), transparent 60%), var(--card-bg);
         }
         .premium-verde .premium-card-icon-zone {
-            background: linear-gradient(145deg, #4ade80, #059669);
-            box-shadow: 0 6px 16px -4px rgba(5, 150, 105, 0.5), inset 0 2px 3px rgba(255, 255, 255, 0.4), inset 0 -3px 5px rgba(0, 0, 0, 0.16);
+            background: linear-gradient(145deg, var(--verde-secundario, #16a765), var(--verde-principal, #0e4a27));
+            box-shadow: 0 6px 16px -4px color-mix(in srgb, var(--verde-principal, #0e4a27) 50%, transparent), inset 0 2px 3px rgba(255, 255, 255, 0.4), inset 0 -3px 5px rgba(0, 0, 0, 0.16);
         }
         .premium-verde .premium-card-label { color: var(--card-verde-texto); }
 
@@ -643,7 +311,7 @@
            para 2 ou 1 coluna sozinho, em qualquer zoom ou resolução. */
         .content-graphics-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr));
             gap: 22px;
             align-items: stretch;
         }
@@ -659,7 +327,15 @@
             min-width: 0;
         }
 
-        .box h3 {
+        /* O sino de notificações (layout global) leva direto pra cá via
+           #alertasSistema; sem isso o navegador rola até o topo exato do
+           card, deixando-o embaixo dos botões flutuantes fixos (menu e
+           acessibilidade) que ficam por cima de tudo no canto superior. */
+        #alertasSistema {
+            scroll-margin-top: 90px;
+        }
+
+        .box :is(h2, h3) {
             margin-bottom: 20px;
             color: var(--text-principal);
             font-size: 0.969rem;
@@ -669,7 +345,7 @@
             gap: 8px;
         }
 
-        .box h3 i {
+        .box :is(h2, h3) i {
             font-size: 0.875rem;
             width: 30px;
             height: 30px;
@@ -706,11 +382,20 @@
         }
 
         .no-data-message i {
-            display: block;
-            font-size: 1.625rem;
-            margin-bottom: 10px;
-            color: #cbd5e1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 52px;
+            height: 52px;
+            margin: 0 auto 12px;
+            border-radius: 50%;
+            background: var(--surface-muted-bg);
+            font-size: 1.375rem;
+            color: #94a3b8;
         }
+
+        .no-data-message i.icone-sucesso { background: var(--verde-claro, #e8f5ee); color: var(--verde-texto, #0e4a27); }
+        body.dark-theme .no-data-message i.icone-sucesso { background: color-mix(in srgb, var(--verde-secundario, #16a765) 14%, transparent); color: var(--verde-texto, #0e4a27); }
 
         .alerts-wrapper {
             display: flex;
@@ -734,15 +419,19 @@
 
         .alert-item {
             background: var(--surface-muted-bg);
-            border-radius: 12px;
-            padding: 16px;
+            border: 1px solid var(--surface-muted-border);
+            border-radius: 14px;
+            padding: 14px 16px;
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
             gap: 12px;
-            border-left: 4px solid var(--surface-muted-border);
-            border: 1px solid var(--surface-muted-border);
-            border-left-width: 5px;
+            transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+        }
+
+        .alert-item:hover {
+            box-shadow: var(--card-shadow);
+            transform: translateY(-1px);
         }
 
         /* Os tons "críticos"/"baixos" são pastéis pensados para o tema
@@ -750,43 +439,69 @@
            sobre o fundo escuro. Nos dois temas o texto já usa
            var(--text-principal)/var(--text-secundario), então só a cor de
            fundo/realce precisa de uma variante por tema. */
-        .alert-item.critico {
-            border-left-color: #ef4444;
-            background: #fef2f2;
-        }
+        .alert-item.critico { background: #fef2f2; border-color: #fecaca; }
+        .alert-item.baixo { background: #fff7ed; border-color: #fed7aa; }
 
-        .alert-item.baixo {
-            border-left-color: #f97316;
-            background: #fff7ed;
-        }
-
-        body.dark-theme .alert-item.critico { background: rgba(239, 68, 68, 0.12); }
-        body.dark-theme .alert-item.baixo { background: rgba(249, 115, 22, 0.12); }
+        body.dark-theme .alert-item.critico { background: rgba(239, 68, 68, 0.10); border-color: rgba(239, 68, 68, 0.25); }
+        body.dark-theme .alert-item.baixo { background: rgba(249, 115, 22, 0.10); border-color: rgba(249, 115, 22, 0.25); }
 
         .alert-item-main {
             display: flex;
-            gap: 10px;
+            gap: 12px;
+            min-width: 0;
         }
 
+        /* Ícone em círculo por severidade — no lugar do emoji solto que
+           vinha grudado no título, mesmo tratamento já usado no modal de
+           alertas do layout global (sino de notificações). */
+        .alert-item-icone {
+            width: 34px;
+            height: 34px;
+            border-radius: 10px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.875rem;
+            color: #ffffff;
+        }
+
+        .alert-item.critico .alert-item-icone {
+            background: linear-gradient(145deg, #f87171, #dc2626);
+            box-shadow: 0 4px 10px -3px rgba(220, 38, 38, 0.5);
+        }
+
+        .alert-item.baixo .alert-item-icone {
+            background: linear-gradient(145deg, #fb923c, #ea580c);
+            box-shadow: 0 4px 10px -3px rgba(234, 88, 12, 0.5);
+        }
+
+        .alert-item-text { min-width: 0; }
+
+        .alert-item-text h3,
         .alert-item-text h4 {
             font-size: 0.844rem;
-            font-weight: 600;
+            font-weight: 700;
             color: var(--text-principal);
             margin-bottom: 4px;
+            overflow-wrap: break-word;
         }
 
         .alert-item-text p {
             font-size: 0.781rem;
             color: var(--text-secundario);
-            line-height: 1.4;
+            line-height: 1.45;
         }
 
         .badge {
-            padding: 4px 10px;
+            padding: 3px 10px;
             border-radius: 20px;
-            font-size: 0.6875rem;
+            font-size: 0.65625rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
             font-weight: 700;
             white-space: nowrap;
+            flex-shrink: 0;
         }
 
         .badge-critico {
@@ -813,24 +528,11 @@
             --text-principal: #f1f9f4;
             --text-secundario: #9db8a8;
             --card-bg: #12251a;
-            --card-border: 1px solid rgba(74, 222, 128, 0.16);
+            --card-border: 1px solid color-mix(in srgb, var(--verde-secundario, #16a765) 16%, transparent);
             --card-shadow: 0 10px 15px -3px rgba(0,0,0,0.4);
 
-            /* Mesma ideia do tema claro: um degrau a mais de escuro que o
-               fundo da página, só para separar visualmente navbar/sidebar
-               do conteúdo — não um tom totalmente novo. */
-            --navbar-bg: #0c1b12;
-            --sidebar-bg: #0c1b12;
-            --surface-border: rgba(74, 222, 128, 0.14);
             --surface-muted-bg: #0a1810;
             --surface-muted-border: #2a4d38;
-
-            --menu-text: #9db8a8;
-            --menu-text-hover: #4ade80;
-            --menu-hover-bg: rgba(74, 222, 128, 0.08);
-            --menu-active-bg: rgba(74, 222, 128, 0.12);
-            --menu-active-text: #4ade80;
-            --menu-active-accent: #4ade80;
 
             --chart-1: #16a34a;
             --chart-2: #3b82f6;
@@ -840,19 +542,8 @@
             --chart-6: #f43f5e;
             --chart-grid: rgba(74, 222, 128, 0.10);
             --chart-tick: #9db8a8;
-
-            --panel-bg: #12251a;
-            --panel-text: #f1f9f4;
-            --panel-item-bg: #0a1810;
-            --panel-btn-bg: #1e3a2a;
-            --panel-btn-text: #d9ede1;
-            --panel-btn-hover: #2a4d38;
         }
-
-        body.dark-theme .toggle-menu-btn { background: #16281c; border-color: var(--surface-border); color: #d9ede1; }
-        body.dark-theme .user-avatar { background: rgba(74, 222, 128, 0.12); border-color: rgba(74, 222, 128, 0.2); color: #4ade80; }
-        body.dark-theme .navbar-right .accessibility-trigger { background: rgba(74, 222, 128, 0.12); border-color: rgba(74, 222, 128, 0.2); color: #4ade80; }
-        body.dark-theme .box h3 i { background: rgba(74, 222, 128, 0.12); }
+        body.dark-theme .box :is(h2, h3) i { background: color-mix(in srgb, var(--verde-secundario, #16a765) 12%, transparent); }
         body.dark-theme .selector-hint { background: #0a1810; border-color: #2a4d38; color: #9db8a8; }
 
         /* Os cartões premium usavam fundo pastel claro fixo (pensado só para
@@ -867,7 +558,7 @@
         /* Mesmo degradê + selo 3D do tema claro (cores autocontidas, já
            funcionam bem no fundo escuro) — só o rótulo muda de tom pra um
            pouco mais claro, sem a linha de borda esquerda que existia antes. */
-        body.dark-theme .premium-verde .premium-card-label { color: #4ade80; }
+        body.dark-theme .premium-verde .premium-card-label { color: var(--verde-texto, #0e4a27); }
         body.dark-theme .premium-azul .premium-card-label { color: #38bdf8; }
         body.dark-theme .premium-laranja .premium-card-label { color: #fb923c; }
         body.dark-theme .premium-roxo .premium-card-label { color: #c084fc; }
@@ -934,9 +625,12 @@
         body.high-contrast .premium-card-icon-zone,
         body.high-contrast .toggle-menu-btn,
         body.high-contrast .user-avatar,
-        body.high-contrast .box h3 i {
+        body.high-contrast .box :is(h2, h3) i,
+        body.high-contrast .alert-item-icone,
+        body.high-contrast .no-data-message i {
             background: #000000 !important;
             border: 2px solid #ffff00 !important;
+            color: #ffff00 !important;
         }
 
         body.high-contrast .badge {
@@ -947,8 +641,7 @@
 
         body.high-contrast .alert-item {
             background: #000000 !important;
-            border: 2px solid #ffffff !important;
-            border-left: 5px solid #ffff00 !important;
+            border: 2px solid #ffff00 !important;
         }
 
         /* Estas três superfícies usam as variáveis --card-bg/--surface-muted-bg,
@@ -963,11 +656,7 @@
             color: #ffff00 !important;
         }
 
-        body.high-contrast .navbar-logout {
-            background: #000000 !important;
-            border: 2px solid #ffffff !important;
-            color: #ffffff !important;
-        }
+        body.high-contrast
 
         body.high-contrast a:focus-visible,
         body.high-contrast button:focus-visible,
@@ -980,142 +669,170 @@
         9. ADAPTAÇÕES RESPONSIVAS
         ========================================================================== */
 
-        @media (max-width: 992px) {
-            .main {
-                margin-left: 0;
-                width: 100%;
-                padding: 24px;
-                padding-top: 90px;
-            }
-
-            .sidebar { left: -260px; }
-            .sidebar.active-mobile { left: 0; box-shadow: 10px 0 30px rgba(0, 0, 0, 0.18); }
-            .user-info { display: none; }
-        }
-
         @media (max-width: 768px) {
-            .navbar { padding: 0 20px; }
-            .navbar-logo img { height: 36px; }
-            .header-title h2 { font-size: 1.5rem; }
-            .main { padding: 18px; padding-top: 86px; }
+            .header-title :is(h1, h2) { font-size: 1.5rem; }
             .box { padding: 20px; }
             .chart-container { height: 250px; }
         }
 
         @media (max-width: 576px) {
-            .navbar { padding: 0 14px; gap: 10px; }
-            .navbar-logo img { height: 30px; }
             .header-title p { font-size: 0.844rem; }
             .premium-card-value { font-size: 1.438rem; }
             .fazenda-selector-bar { flex-direction: column; align-items: stretch; padding: 16px; }
             .select-fazenda { max-width: 100%; }
             .selector-hint { width: 100%; }
-            .cards-row { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; }
+            .cards-row { grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr)); gap: 14px; }
         }
 
-        @media (max-width: 400px) {
-            .premium-card { flex-direction: column; align-items: flex-start; gap: 14px; padding: 18px; }
-            .premium-card-icon-zone { width: 48px; height: 48px; font-size: 1.188rem; }
-            .navbar-right { gap: 10px; }
-            .navbar-logout span { display: none; }
+        /* ==========================================================================
+        10. MODO APP (MOBILE) — abaixo de 992px a página vira, visualmente, o
+        equivalente ao app mobile: cabeçalho com o botão de acessibilidade
+        fazendo o papel do "engrenagem" de configurações, cartões em grade 2
+        colunas no estilo "selo em cima, valor grande embaixo" e uma barra de
+        abas fixa no rodapé no lugar da sidebar (que continua existindo como
+        o menu "Mais"). O "Sair" mora só na navbar (igual a todas as outras
+        páginas do sistema) — não duplica mais no rodapé da sidebar. Acima de
+        992px nada aqui se aplica — a experiência de admin com sidebar
+        permanece intacta, como decidido.
+        ========================================================================== */
+        @media (max-width: 992px) {
+            .header-title :is(h1, h2) {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+
+            /* --- Seletor de fazenda: campo com aparência de "caixa"
+               tocável, com seta própria no lugar da seta nativa do navegador. --- */
+            .select-fazenda {
+                appearance: none;
+                -webkit-appearance: none;
+                -moz-appearance: none;
+                width: 100%;
+                max-width: none;
+                background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='9' viewBox='0 0 14 9'%3E%3Cpath fill='%2364748b' d='M7 9 0 1.6 1.6 0 7 5.8 12.4 0 14 1.6z'/%3E%3C/svg%3E");
+                background-repeat: no-repeat;
+                background-position: right 14px center;
+                padding-right: 36px;
+            }
+
+            /* --- Cartões: grade fixa de 2 colunas; cada cartão passa de
+               "ícone à esquerda / texto empilhado à direita" para "ícone +
+               rótulo numa linha, valor grande e legenda ocupando a linha
+               inteira abaixo" — igual à referência. O card "Ordenha e
+               Leite" é a exceção: continua no layout horizontal original,
+               ocupando a linha toda. --- */
+            .cards-row {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 14px;
+            }
+
+            /* A referência mobile não traz este cartão (fica só "Custo da
+               Ração Hoje" em R$) — some apenas aqui; no desktop continua
+               aparecendo normalmente. */
+            .card-racao-consumida {
+                display: none;
+            }
+
+            .premium-card {
+                padding: 16px;
+                flex-wrap: wrap;
+                row-gap: 6px;
+                column-gap: 10px;
+            }
+
+            .premium-card-icon-zone {
+                width: 38px;
+                height: 38px;
+                font-size: 1rem;
+            }
+
+            .premium-card:not(.premium-card-link) .premium-card-icon-zone {
+                order: 1;
+            }
+
+            .premium-card:not(.premium-card-link) .premium-card-data-zone {
+                display: contents;
+            }
+
+            .premium-card:not(.premium-card-link) .premium-card-label {
+                order: 2;
+                flex: 1;
+                min-width: 0;
+                font-size: 0.75rem;
+            }
+
+            .premium-card:not(.premium-card-link) .premium-card-value {
+                order: 3;
+                flex-basis: 100%;
+                font-size: 1.5rem;
+                white-space: normal;
+            }
+
+            .premium-card:not(.premium-card-link) .premium-card-subtext {
+                order: 4;
+                flex-basis: 100%;
+                font-size: 0.7rem;
+            }
+
+            .premium-card-link {
+                grid-column: 1 / -1;
+            }
+
+            .premium-card-link .premium-card-subtext {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                gap: 8px;
+            }
+
+            .premium-card-link .ver-detalhes {
+                white-space: nowrap;
+                flex-shrink: 0;
+            }
+
+            .premium-card-link .middot {
+                display: none;
+            }
+
+            /* --- Cartões de gráfico: viram cabeçalhos "expansíveis" (com
+               setinha à direita) e uma prévia mais compacta do gráfico. --- */
+            .box :is(h2, h3) {
+                justify-content: space-between;
+            }
+
+            .box :is(h2, h3) i.box-chevron {
+                margin-left: auto;
+                width: auto;
+                height: auto;
+                background: transparent;
+                color: var(--text-secundario);
+                font-size: 0.8rem;
+            }
+
+            .chart-container {
+                height: 200px;
+            }
+
+            /* --- Sidebar vira o menu "Mais": some por padrão e é acionada
+               pela barra de abas / botão de menu como gaveta, exatamente
+               como já acontecia. --- */
+
+        }
+
+        @media (min-width: 993px) {
+            .box :is(h2, h3) i.box-chevron { display: none; }
         }
 
     </style>
-</head>
+@endpush
 
-<body data-tema-padrao="escuro">
-
-    <!-- Fundo escurecido do menu mobile (fecha a sidebar ao clicar fora) -->
-    <div class="sidebar-overlay" id="sidebarOverlay"></div>
-
-    <!-- SIDEBAR LATERAL -->
-    <div class="sidebar" id="sidebar">
-        <div class="menu">
-            <a href="{{ route('cadastro.index') }}" class="active">
-                <i class="fa-solid fa-chart-line"></i>
-                <span>Dashboard</span>
-            </a>
-            <a href="{{ route('fazenda.listar') }}">
-                <i class="fa-solid fa-location-dot"></i>
-                <span>Gestão de Fazendas</span>
-            </a>
-            <a href="{{ route('lote.listar') }}">
-                <i class="fa-solid fa-layer-group"></i>
-                <span>Gestão de Lotes</span>
-            </a>
-            <a href="{{ route('ordenha.listar') }}">
-                <i class="fa-solid fa-droplet"></i>
-                <span>Ordenha e Leite</span>
-            </a>
-            <a href="{{ route('cocho.listar') }}">
-                <i class="fa-solid fa-cube"></i>
-                <span>Gestão de Cochos</span>
-            </a>
-            <a href="{{ route('racao.listar') }}">
-                <i class="fa-solid fa-wheat-awn"></i>
-                <span>Gestão de Rações</span>
-            </a>
-            <a href="{{ route('estoque.listar') }}">
-                <i class="fa-solid fa-box"></i>
-                <span>Nível de Estoque</span>
-            </a>
-            <a href="{{ route('plano.listar') }}">
-                <i class="fa-solid fa-clipboard-list"></i>
-                <span>Plano Alimentar</span>
-            </a>
-            <a href="{{ route('relatorio.listar') }}">
-                <i class="fa-regular fa-file-lines"></i>
-                <span>Relatório Avançado</span>
-            </a>
-            <a href="{{ route('perfil') }}">
-                <i class="fa-solid fa-user-gear"></i>
-                <span>Meu Perfil</span>
-            </a>
-            <div class="footer-right">© 2026 AgriFarm</div>
-        </div>
-    </div>
-
-    <!-- NAVBAR SUPERIOR -->
-    <div class="navbar" id="navbar">
-        <div class="navbar-left">
-            <button class="toggle-menu-btn" id="toggleMenuBtn" title="Menu Lateral">
-                <i class="fa-solid fa-bars"></i>
-            </button>
-
-            <div class="navbar-logo">
-                <img src="{{ asset('agrifarm-removebg-preview.png') }}" alt="AgriFarm">
-            </div>
-        </div>
-
-        <div class="navbar-right">
-            <a href="{{ route('perfil') }}" class="user-profile" title="Meu perfil">
-                <div class="user-avatar">
-                    @if ($cadastroLogado->foto ?? false)
-                        <img src="{{ asset('storage/' . $cadastroLogado->foto) }}" alt="Foto de perfil" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">
-                    @else
-                        <i class="fa-solid fa-user-gear"></i>
-                    @endif
-                </div>
-                <div class="user-info">
-                    <span class="user-name">Olá, {{ session('usuario_nome') }}</span>
-                    <span class="user-role">Administrador</span>
-                </div>
-            </a>
-
-            <div class="navbar-divider"></div>
-
-            <a href="{{ route('logout') }}" class="navbar-logout">
-                <i class="fa-solid fa-right-from-bracket"></i>
-                <span>Sair</span>
-            </a>
-        </div>
-    </div>
-
+@section('content')
     <!-- ÁREA DE CONTEÚDO PRINCIPAL -->
     <main class="main" id="mainArea">
         <div class="header">
             <div class="header-title">
-                <h2>Dashboard Avançado</h2>
+                <h1><i class="fa-solid fa-chart-line titulo-icone" aria-hidden="true"></i> Dashboard Avançado</h1>
                 <p>Painel de controle centralizado para a gestão estratégica de sua fazenda.</p>
             </div>
         </div>
@@ -1143,7 +860,7 @@
             <!-- Barra Seletora Integrada -->
             <div class="fazenda-selector-bar">
                 <div class="fazenda-selector-bar-label"><i class="fa-solid fa-tractor"></i> Unidade Produtiva:</div>
-                <select class="select-fazenda" onchange="window.location.href='?fazenda_id=' + this.value">
+                <select class="select-fazenda" aria-label="Selecionar fazenda" onchange="window.location.href='?fazenda_id=' + this.value">
                     <option value="">Escolha uma fazenda</option>
                     @foreach ($fazendas as $fazenda)
                         <option value="{{ $fazenda->id }}"
@@ -1193,7 +910,7 @@
                             @if ($semFazenda)
                                 Selecione uma fazenda
                             @else
-                                Somando todos os lotes desta fazenda
+                                Somando os lotes ativos desta fazenda
                             @endif
                         </span>
                     </div>
@@ -1211,6 +928,7 @@
                                 Selecione uma fazenda
                             @elseif ($cochosCount > 0)
                                 Nível médio de ração: <strong>{{ $nivelMedioCochos }}%</strong>
+                                · <strong>{{ number_format($racaoNosCochos ?? 0, 0, ',', '.') }} kg</strong> nos cochos
                             @else
                                 Nenhum cocho cadastrado
                             @endif
@@ -1218,7 +936,7 @@
                     </div>
                 </div>
 
-                <div class="premium-card premium-azul">
+                <div class="premium-card premium-azul card-racao-consumida">
                     <div class="premium-card-icon-zone">
                         <i class="fa-solid fa-bucket"></i>
                     </div>
@@ -1234,6 +952,9 @@
                             @else
                                 Sem registro de ontem para comparar
                             @endif
+                            @unless ($semFazenda)
+                                <br>Previsto pelo plano · <strong>{{ number_format($consumoRegistradoHoje ?? 0, 0, ',', '.') }} kg</strong> registrados nos cochos
+                            @endunless
                         </span>
                     </div>
                 </div>
@@ -1245,7 +966,13 @@
                     <div class="premium-card-data-zone">
                         <span class="premium-card-label">Custo da Ração Hoje</span>
                         <span class="premium-card-value">R$ {{ number_format($custoHoje ?? 0, 2, ',', '.') }}</span>
-                        <span class="premium-card-subtext">Preço médio do kg: R$ {{ number_format($precoMedioKg, 2, ',', '.') }}</span>
+                        <span class="premium-card-subtext">
+                            @if ($semFazenda)
+                                Selecione uma fazenda
+                            @else
+                                Preço médio do kg: R$ {{ number_format($precoMedioKg ?? 0, 2, ',', '.') }}
+                            @endif
+                        </span>
                     </div>
                 </div>
 
@@ -1256,7 +983,15 @@
                     <div class="premium-card-data-zone">
                         <span class="premium-card-label">Eficiência Alimentar</span>
                         <span class="premium-card-value">{{ number_format($eficienciaAlimentar ?? 0, 1, ',', '.') }}%</span>
-                        <span class="premium-card-subtext">Consumo real vs. plano ideal</span>
+                        <span class="premium-card-subtext">
+                            @if ($semFazenda)
+                                Selecione uma fazenda
+                            @elseif (($lotesComRegistroHoje ?? 0) > 0)
+                                <strong>{{ $lotesComRacaoHoje }}</strong> de {{ $lotesComRegistroHoje }} lote(s) com ração vinculada
+                            @else
+                                Sem consumo registrado hoje
+                            @endif
+                        </span>
                     </div>
                 </div>
 
@@ -1265,7 +1000,7 @@
                         <i class="fa-solid fa-warehouse"></i>
                     </div>
                     <div class="premium-card-data-zone">
-                        <span class="premium-card-label">Estoque Atual</span>
+                        <span class="premium-card-label">Estoque no Armazém</span>
                         <span class="premium-card-value">{{ number_format($estoqueAtual ?? 0, 0, ',', '.') }} kg</span>
                         <span class="premium-card-subtext">
                             @if ($semFazenda)
@@ -1273,15 +1008,15 @@
                             @elseif (!is_null($diasRestantesEstoque))
                                 Autonomia estimada: <strong>{{ $diasRestantesEstoque }}</strong> dia(s)
                             @else
-                                Sem consumo médio para estimar autonomia
+                                Sem consumo para estimar autonomia
                             @endif
                         </span>
                     </div>
                 </div>
 
-                <!-- Módulo de Animal (Parto/Reprodução/Lactação/Ordenha) —
-                     resumo apenas; os cartões e gráficos completos vivem na
-                     tela própria "Ordenha e Leite". -->
+                <!-- Ordenha e Leite (produção por LOTE) — resumo apenas; os
+                     cartões e gráficos completos vivem na tela própria
+                     "Ordenha e Leite". -->
                 <a href="{{ route('ordenha.listar') }}" class="premium-card premium-azul premium-card-link">
                     <div class="premium-card-icon-zone">
                         <i class="fa-solid fa-jug-detergent"></i>
@@ -1293,7 +1028,8 @@
                             @if ($semFazenda)
                                 Selecione uma fazenda
                             @else
-                                {{ $animaisEmLactacao ?? 0 }} animais em lactação · <strong>Ver detalhes completos <i class="fa-solid fa-arrow-right"></i></strong>
+                                <span>{{ $lotesComOrdenha ?? 0 }} lote(s) em produção</span>
+                                <span class="ver-detalhes"><span class="middot">· </span><strong>Ver detalhes completos <i class="fa-solid fa-arrow-right"></i></strong></span>
                             @endif
                         </span>
                     </div>
@@ -1304,7 +1040,7 @@
         <!-- MÓDULO DOS GRÁFICOS E SISTEMA DE ALERTAS -->
         <div class="content-graphics-grid">
             <div class="box">
-                <h3 id="tituloGraficoBarras"><i class="fa-solid fa-chart-bar" style="color: #16a34a;"></i> Histórico de Consumo (7 dias)</h3>
+                <h2 id="tituloGraficoBarras"><i class="fa-solid fa-chart-bar" style="color: var(--verde-texto, #0e4a27);"></i> Histórico de Consumo (7 dias) <i class="fa-solid fa-chevron-right box-chevron"></i></h2>
                 <div class="chart-container">
                     <canvas id="barChart"></canvas>
                     <div class="chart-empty-overlay" id="barEmptyState">
@@ -1317,40 +1053,44 @@
             </div>
 
             <div class="box">
-                <h3><i class="fa-solid fa-chart-pie" style="color: #2563eb;"></i> Animais por Tipo</h3>
+                <h2 id="tituloGraficoTipos"><i class="fa-solid fa-chart-pie" style="color: #2563eb;"></i> Animais por Tipo <i class="fa-solid fa-chevron-right box-chevron"></i></h2>
                 <div class="chart-container" id="containerDonut">
                     <canvas id="donutChart"></canvas>
                     <div class="chart-empty-overlay" id="donutEmptyState">
                         <div class="no-data-message">
                             <i class="fa-solid fa-paw"></i>
-                            {{ $semFazenda ? 'Selecione uma fazenda para ver o rebanho.' : 'Nenhum lote cadastrado nesta fazenda.' }}
+                            {{ $semFazenda ? 'Selecione uma fazenda para ver o rebanho.' : 'Nenhum animal em lotes ativos nesta fazenda.' }}
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div class="box">
-                <h3><i class="fa-solid fa-bell" style="color: #dc2626;"></i> Alertas do Sistema</h3>
+            <div class="box" id="alertasSistema">
+                <h2><i class="fa-solid fa-bell" style="color: #dc2626;"></i> Alertas do Sistema</h2>
                 <div class="alerts-wrapper">
                     @php $temAlertas = isset($alertas) && count($alertas) > 0; @endphp
 
                     @if ($semFazenda)
                         <div class="no-data-message">
                             <div>
-                                <i class="fa-solid fa-tractor" style="color: #94a3b8;"></i>
+                                <i class="fa-solid fa-tractor" aria-hidden="true"></i>
                                 <p>Selecione uma fazenda para ver os alertas.</p>
                             </div>
                         </div>
                     @elseif ($temAlertas)
                         @foreach ($alertas as $alerta)
-                            <div class="alert-item {{ ($alerta->prioridade == 'critico' || $alerta->prioridade == 'alta') ? 'critico' : 'baixo' }}">
+                            @php $critico = $alerta->prioridade == 'critico' || $alerta->prioridade == 'alta'; @endphp
+                            <div class="alert-item {{ $critico ? 'critico' : 'baixo' }}">
                                 <div class="alert-item-main">
+                                    <div class="alert-item-icone">
+                                        <i class="fa-solid {{ $critico ? 'fa-triangle-exclamation' : 'fa-circle-exclamation' }}" aria-hidden="true"></i>
+                                    </div>
                                     <div class="alert-item-text">
-                                        <h4>{{ ($alerta->prioridade == 'critico' || $alerta->prioridade == 'alta') ? '🚨' : '⚠' }} {{ $alerta->titulo }}</h4>
+                                        <h3>{{ $alerta->titulo }}</h3>
                                         <p>{{ $alerta->descricao }}</p>
                                     </div>
                                 </div>
-                                <span class="badge {{ ($alerta->prioridade == 'critico' || $alerta->prioridade == 'alta') ? 'badge-critico' : 'badge-baixo' }}">
+                                <span class="badge {{ $critico ? 'badge-critico' : 'badge-baixo' }}">
                                     {{ ucfirst($alerta->prioridade) }}
                                 </span>
                             </div>
@@ -1358,7 +1098,7 @@
                     @else
                         <div class="no-data-message">
                             <div>
-                                <i class="fa-solid fa-circle-check" style="color: #16a34a; font-size: 1.5rem; margin-bottom: 8px; display: block;"></i>
+                                <i class="fa-solid fa-circle-check icone-sucesso" aria-hidden="true"></i>
                                 <p>Nenhum alerta pendente.<br>Operação rodando normalmente.</p>
                             </div>
                         </div>
@@ -1369,18 +1109,14 @@
         </div>
     </main>
 
-    @include('partials.acessibilidade')
-    @include('partials.assistente-ia')
+    {{-- A barra de abas própria do Dashboard foi removida: ficava POR CIMA
+         da navegação inferior global (layouts/app), com itens diferentes
+         das outras telas, e o "Mais" dela não abria o menu (usava uma
+         classe que a sidebar do layout não conhece). A navegação global
+         tem os mesmos destinos (Relatórios fica em "Mais"). --}}
+@endsection
 
-    <!-- WIDGET VLIBRAS -->
-    <div vw class="enabled">
-        <div vw-access-button class="active"></div>
-        <div vw-plugin-wrapper>
-            <div class="vw-plugin-top-wrapper"></div>
-        </div>
-    </div>
-    <script src="https://vlibras.gov.br/app/vlibras-plugin.js"></script>
-
+@push('scripts')
     <script>
         // O "zoom" do <html> (ver partials/acessibilidade) muda o pixel
         // ratio efetivo da página sem alterar window.devicePixelRatio —
@@ -1393,34 +1129,7 @@
             Chart.defaults.devicePixelRatio = 1;
         }
 
-        new window.VLibras.Widget('https://vlibras.gov.br/app');
-
         document.addEventListener("DOMContentLoaded", function() {
-            /* --- CONTROLE DE SIDEBAR RECOLHÍVEL --- */
-            const toggleBtn = document.getElementById('toggleMenuBtn');
-            const sidebar = document.getElementById('sidebar');
-            const mainContent = document.querySelector('.main');
-            const sidebarOverlay = document.getElementById('sidebarOverlay');
-
-            if (toggleBtn && sidebar && mainContent) {
-                toggleBtn.addEventListener('click', function() {
-                    if (window.innerWidth > 992) {
-                        sidebar.classList.toggle('collapsed');
-                        mainContent.classList.toggle('expanded');
-                    } else {
-                        sidebar.classList.toggle('active-mobile');
-                        if (sidebarOverlay) sidebarOverlay.classList.toggle('active');
-                    }
-                });
-            }
-
-            if (sidebarOverlay && sidebar) {
-                sidebarOverlay.addEventListener('click', function() {
-                    sidebar.classList.remove('active-mobile');
-                    sidebarOverlay.classList.remove('active');
-                });
-            }
-
             /* --- GRÁFICOS (CHART.JS) --- */
             /* Dados 100% vindos do back-end (CadastroController::dashboard).
                Sem fazenda selecionada, o controller já envia tudo zerado. */
@@ -1601,6 +1310,4 @@
             });
         });
     </script>
-
-</body>
-</html>
+@endpush

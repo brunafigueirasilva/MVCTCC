@@ -161,7 +161,7 @@
 
     .ai-chat-msg-user {
         align-self: flex-end;
-        background: linear-gradient(135deg, #4ade80, #059669);
+        background: linear-gradient(135deg, var(--verde-secundario, #16a765), var(--verde-principal, #0e4a27));
         color: #ffffff;
         border-bottom-right-radius: 3px;
     }
@@ -212,7 +212,7 @@
         outline: none;
     }
 
-    .ai-chat-form input:focus { border-color: #4ade80; }
+    .ai-chat-form input:focus { border-color: var(--verde-ativo, #087a47); }
 
     body.dark-theme .ai-chat-form input { background: #0a1810; border-color: #2a4d38; color: #f1f9f4; }
     body.high-contrast .ai-chat-form input { background: #000000 !important; color: #ffffff !important; border: 2px solid #ffff00 !important; }
@@ -223,7 +223,7 @@
         border-radius: 10px;
         border: none;
         flex-shrink: 0;
-        background: linear-gradient(145deg, #4ade80, #059669);
+        background: linear-gradient(145deg, var(--verde-secundario, #16a765), var(--verde-principal, #0e4a27));
         color: #ffffff;
         cursor: pointer;
         display: flex;
@@ -259,7 +259,8 @@
         </button>
     </div>
 
-    <div class="ai-chat-messages" id="aiChatMessages">
+    {{-- role="log": cada resposta nova é lida pelo leitor de tela. --}}
+    <div class="ai-chat-messages" id="aiChatMessages" role="log" aria-live="polite" aria-relevant="additions" tabindex="0" aria-label="Conversa com o assistente">
         <div class="ai-chat-msg ai-chat-msg-bot">
             Olá! Sou o assistente do AgriFarm. Pergunte algo sobre como usar o sistema — rações, lotes, plano alimentar, relatórios e mais.
         </div>
@@ -296,7 +297,11 @@
             requestAnimationFrame(() => panel.classList.toggle('aberto', vaiAbrir));
             trigger.classList.toggle('aberto', vaiAbrir);
             trigger.setAttribute('aria-expanded', vaiAbrir ? 'true' : 'false');
+            trigger.setAttribute('aria-label', vaiAbrir ? 'Fechar assistente de IA' : 'Abrir assistente de IA');
             if (vaiAbrir) input.focus();
+            // Fechou com o foco dentro do painel (agora escondido): volta pro
+            // botão do robô em vez de "sumir" no topo da página.
+            else if (panel.contains(document.activeElement) || document.activeElement === document.body) trigger.focus();
         }
 
         trigger.addEventListener('click', () => alternarPainel());
@@ -343,7 +348,7 @@
         function mostrarDigitando() {
             const bolha = document.createElement('div');
             bolha.className = 'ai-chat-msg-typing';
-            bolha.innerHTML = '<span></span><span></span><span></span>';
+            bolha.innerHTML = '<span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span><em class="a11y-sr-only">O assistente está escrevendo...</em>';
             mensagens.appendChild(bolha);
             mensagens.scrollTop = mensagens.scrollHeight;
             return bolha;

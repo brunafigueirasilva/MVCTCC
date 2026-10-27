@@ -30,22 +30,22 @@
     <td>
         <div class="time-weight-cell">
             <span class="time">{{ $lote->hora_manha }}</span>
-            <span class="weight">{{ $lote->peso_manha }} kg</span>
+            <span class="weight">{{ number_format($lote->peso_manha, 1, ',', '.') }} kg</span>
         </div>
     </td>
     <td>
         <div class="time-weight-cell">
             <span class="time">{{ $lote->hora_tarde }}</span>
-            <span class="weight">{{ $lote->peso_tarde }} kg</span>
+            <span class="weight">{{ number_format($lote->peso_tarde, 1, ',', '.') }} kg</span>
         </div>
     </td>
     <td>
         <div class="time-weight-cell">
             <span class="time">{{ $lote->hora_noite }}</span>
-            <span class="weight">{{ $lote->peso_noite }} kg</span>
+            <span class="weight">{{ number_format($lote->peso_noite, 1, ',', '.') }} kg</span>
         </div>
     </td>
-    <td class="bold-total-cell">{{ $lote->total_dia }} kg</td>
+    <td class="bold-total-cell">{{ number_format($lote->total_dia, 1, ',', '.') }} kg</td>
     <td>
         <button type="button" class="status-badge status-badge-btn {{ $lote->status_class }}"
             onclick="abrirModalDetalhesLote(this)" data-detalhes='@json($lote->detalhes)'

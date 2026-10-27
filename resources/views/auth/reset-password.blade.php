@@ -9,7 +9,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
 </head>
-<style>
+@include('partials.paleta-verde')
+    <style>
     :root {
         --bg-body-overlay: rgba(2, 31, 15, 0.75);
         --bg-container: white;
@@ -51,7 +52,7 @@
 
     .left-side {
         width: 50%;
-        background: linear-gradient(rgba(7, 48, 25, 0.75), rgba(8, 26, 16, 0.95)),
+        background: linear-gradient(color-mix(in srgb, var(--verde-principal, #0e4a27) 75%, transparent), rgba(8, 26, 16, 0.95)),
             url('https://images.unsplash.com/photo-1516467508483-a7212febe31a?q=80&w=1400&auto=format&fit=crop');
         background-size: cover;
         background-position: center;
@@ -63,7 +64,7 @@
     }
 
     .logo-icon img {
-        width: 110px;
+        width: 150px;
         height: auto;
         margin-bottom: 30px;
     }
@@ -93,7 +94,7 @@
         margin-bottom: 25px;
     }
 
-    .top-text h2 {
+    .top-text h1 {
         font-size: 2rem;
         color: var(--text-primary);
         margin-bottom: 8px;
@@ -140,8 +141,8 @@
 
     .input-box input:focus {
         outline: none;
-        border-color: #15803d;
-        box-shadow: 0 0 0 4px rgba(21, 128, 61, 0.15);
+        border-color: var(--verde-ativo, #087a47);
+        box-shadow: 0 0 0 4px color-mix(in srgb, var(--verde-principal, #0e4a27) 15%, transparent);
     }
 
     .erro {
@@ -157,7 +158,7 @@
     .btn-login {
         width: 100%;
         border: none;
-        background: linear-gradient(90deg, #14532d, #166534);
+        background: linear-gradient(90deg, var(--verde-principal, #0e4a27), var(--verde-principal, #0e4a27));
         color: white;
         padding: 15px;
         border-radius: 12px;
@@ -170,7 +171,7 @@
 
     .btn-login:hover {
         transform: translateY(-2px);
-        box-shadow: 0 10px 20px rgba(22, 101, 52, 0.3);
+        box-shadow: 0 10px 20px color-mix(in srgb, var(--verde-principal, #0e4a27) 30%, transparent);
     }
 
     .footer {
@@ -181,7 +182,7 @@
     }
 
     .footer a {
-        color: #14532d;
+        color: var(--verde-texto, #0e4a27);
         font-weight: 600;
         text-decoration: none;
     }
@@ -211,7 +212,7 @@
     <div class="login-container">
         <div class="left-side">
             <div class="logo-icon">
-                <img src="{{ asset('Logo.png') }}" alt="Logo Agrifarm">
+                <img src="{{ asset('logo.png') }}" alt="Logo Agrifarm">
             </div>
 
             <div class="left-content">
@@ -224,7 +225,7 @@
 
         <div class="right-side">
             @if($errors->any())
-                <div class="erro">
+                <div class="erro" role="alert">
                     @foreach($errors->all() as $erro)
                         <p>{{ $erro }}</p>
                     @endforeach
@@ -232,42 +233,42 @@
             @endif
 
             <div class="top-text">
-                <h2>Redefinir Senha</h2>
-                <p>Digite o código enviado para o seu e-mail e escolha sua nova senha.</p>
+                <h1><i class="fa-solid fa-key titulo-icone titulo-icone-verde" aria-hidden="true"></i> Redefinir Senha</h1>
+                <p id="ajudaCodigo">Digite o código enviado para o seu e-mail e escolha sua nova senha.</p>
             </div>
 
             <form method="POST" action="{{ route('password.update') }}">
                 @csrf
 
                 <div class="form-group">
-                    <label>Email</label>
+                    <label for="campoEmail">Email</label>
                     <div class="input-box">
-                        <i class="fa-regular fa-envelope"></i>
-                        <input type="email" name="email" value="{{ old('email', $email ?? '') }}" placeholder="Digite seu email" required>
+                        <i class="fa-regular fa-envelope" aria-hidden="true"></i>
+                        <input type="email" id="campoEmail" name="email" autocomplete="email" @error('email') aria-invalid="true" @enderror value="{{ old('email', $email ?? '') }}" placeholder="Digite seu email" required>
                     </div>
                 </div>
 
                 <div class="form-group">
-                    <label>Código de Verificação</label>
+                    <label for="campoCodigo">Código de Verificação</label>
                     <div class="input-box">
-                        <i class="fa-solid fa-key"></i>
-                        <input type="text" name="codigo" value="{{ old('codigo') }}" placeholder="000000" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" required autofocus>
+                        <i class="fa-solid fa-key" aria-hidden="true"></i>
+                        <input type="text" id="campoCodigo" name="codigo" autocomplete="one-time-code" aria-describedby="ajudaCodigo" @error('codigo') aria-invalid="true" @enderror value="{{ old('codigo') }}" placeholder="000000" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" required autofocus>
                     </div>
                 </div>
 
                 <div class="form-group">
-                    <label>Nova Senha</label>
+                    <label for="campoSenha">Nova Senha</label>
                     <div class="input-box">
-                        <i class="fa-solid fa-lock"></i>
-                        <input type="password" name="password" placeholder="Mín. 8 caracteres, maiúscula, minúscula, número e @" required minlength="8">
+                        <i class="fa-solid fa-lock" aria-hidden="true"></i>
+                        <input type="password" id="campoSenha" name="password" autocomplete="new-password" @error('password') aria-invalid="true" @enderror placeholder="Mín. 8 caracteres, maiúscula, minúscula, número e @" required minlength="8">
                     </div>
                 </div>
 
                 <div class="form-group">
-                    <label>Confirmar Nova Senha</label>
+                    <label for="campoSenhaConfirmacao">Confirmar Nova Senha</label>
                     <div class="input-box">
-                        <i class="fa-solid fa-lock"></i>
-                        <input type="password" name="password_confirmation" placeholder="Repita a nova senha" required minlength="8">
+                        <i class="fa-solid fa-lock" aria-hidden="true"></i>
+                        <input type="password" id="campoSenhaConfirmacao" name="password_confirmation" autocomplete="new-password" @error('password_confirmation') aria-invalid="true" @enderror placeholder="Repita a nova senha" required minlength="8">
                     </div>
                 </div>
 
@@ -297,7 +298,7 @@
     </div>
     <script src="https://vlibras.gov.br/app/vlibras-plugin.js"></script>
     <script>
-        new window.VLibras.Widget('https://vlibras.gov.br/app');
+        if (window.VLibras) new window.VLibras.Widget('https://vlibras.gov.br/app'); // CDN do governo fora do ar/bloqueado: segue sem o widget
     </script>
 </body>
 

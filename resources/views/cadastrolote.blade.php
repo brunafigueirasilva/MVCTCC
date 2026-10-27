@@ -1,12 +1,8 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
+@extends('layouts.app')
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AgriFarm | Gestão de Lotes</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+@section('title', 'AgriFarm | Gestão de Lotes')
 
+@push('styles')
     <style>
         /* ==========================================================================
         1. RESET, VARIÁVEIS DE SISTEMA (idêntico ao Dashboard/Fazendas)
@@ -27,30 +23,15 @@
             --card-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.04), 0 2px 8px -1px rgba(15, 23, 42, 0.02);
             --card-border: 1px solid rgba(226, 232, 240, 0.8);
 
-            --card-verde-bg: #f0fdf4;
-            --card-verde-border: #dcfce7;
-            --card-verde-icon-bg: #e2fbe8;
-            --card-verde-texto: #15803d;
+            --card-verde-bg: var(--verde-claro, #e8f5ee);
+            --card-verde-border: var(--verde-claro, #e8f5ee);
+            --card-verde-icon-bg: var(--verde-claro, #e8f5ee);
+            --card-verde-texto: var(--verde-texto, #0e4a27);
 
-            --navbar-bg: #123f22;
-            --sidebar-bg: #123f22;
-            --surface-border: rgba(255, 255, 255, 0.15);
             --surface-muted-bg: #f8fafc;
             --surface-muted-border: #cbd5e1;
 
-            --menu-text: #b2cbb9;
-            --menu-text-hover: #ffffff;
-            --menu-hover-bg: rgba(255, 255, 255, 0.05);
-            --menu-active-bg: rgba(255, 255, 255, 0.08);
-            --menu-active-text: #4ade80;
-            --menu-active-accent: #4ade80;
 
-            --panel-bg: #ffffff;
-            --panel-text: #1f2937;
-            --panel-item-bg: #f9fafb;
-            --panel-btn-bg: #e5e7eb;
-            --panel-btn-text: #374151;
-            --panel-btn-hover: #d1d5db;
         }
 
         body {
@@ -64,185 +45,46 @@
             transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, filter 0.25s ease, left 0.3s ease, width 0.3s ease, margin 0.3s ease;
         }
 
-        body.acc-modal-open .sidebar,
-        body.acc-modal-open .navbar,
-        body.acc-modal-open .main {
-            filter: blur(6px);
-            pointer-events: none;
-        }
-
         /* ==========================================================================
         2. NAVBAR SUPERIOR
+        (blur do modal de acessibilidade e estrutura de navbar/sidebar/main
+        já vêm de layouts/app.blade.php — fonte única, não duplicar aqui)
         ========================================================================== */
-        .navbar {
-            height: 70px;
-            background: var(--navbar-bg);
-            border-bottom: 1px solid var(--surface-border);
-            box-shadow: 0 2px 12px rgba(15, 23, 42, 0.04);
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 32px;
-            z-index: 999;
-        }
 
-        .navbar-left { display: flex; align-items: center; gap: 22px; min-width: 0; }
 
-        .toggle-menu-btn {
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid var(--surface-border);
-            color: #4ade80;
-            font-size: 1.063rem;
-            padding: 9px 13px;
-            border-radius: 10px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-        }
 
-        .toggle-menu-btn:hover {
-            background: rgba(255, 255, 255, 0.18);
-            border-color: rgba(255, 255, 255, 0.25);
-            color: #ffffff;
-        }
 
-        .navbar-logo { display: flex; align-items: center; min-width: 0; }
 
-        .navbar-logo img {
-            height: 44px;
-            width: auto;
-            max-width: 220px;
-            object-fit: contain;
-            display: block;
-        }
 
-        .navbar-right { display: flex; align-items: center; gap: 18px; }
 
-        .user-profile {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            text-decoration: none;
-            padding: 6px 10px;
-            margin: -6px -10px;
-            border-radius: 12px;
-            cursor: pointer;
-        }
 
-        .user-profile:hover { background: rgba(255, 255, 255, 0.08); }
 
-        .user-avatar {
-            width: 40px;
-            height: 40px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #4ade80;
-            font-size: 1rem;
-            border: 1px solid var(--surface-border);
-            flex-shrink: 0;
-        }
 
-        .user-info { display: flex; flex-direction: column; }
-        .user-name { color: #ffffff; font-size: 0.875rem; font-weight: 600; }
-        .user-role { color: #a7f3d0; font-size: 0.6875rem; font-weight: 500; }
 
-        .navbar-divider { width: 1px; height: 28px; background: var(--surface-border); }
 
-        .navbar-logout {
-            text-decoration: none;
-            color: #fca5a5;
-            font-weight: 600;
-            font-size: 0.875rem;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 10px 16px;
-            border-radius: 10px;
-            background: rgba(239, 68, 68, 0.08);
-            border: 1px solid rgba(239, 68, 68, 0.12);
-            transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
-        }
 
-        .navbar-logout:hover {
-            background: linear-gradient(135deg, #f87171, #dc2626);
-            border-color: transparent;
-            color: #ffffff;
-            transform: translateY(-1px);
-            box-shadow: 0 8px 18px -6px rgba(220, 38, 38, 0.55);
-        }
 
-        .navbar-logout:active { transform: translateY(0); box-shadow: none; }
+
 
         .navbar-right .accessibility-trigger {
-            background: rgba(255, 255, 255, 0.1);
-            color: #4ade80;
+            background: #f1f5f9;
+            color: #0f172a;
             border: 1px solid var(--surface-border);
         }
-        .navbar-right .accessibility-trigger:hover { background: rgba(255, 255, 255, 0.2); color: #ffffff; }
+        .navbar-right .accessibility-trigger:hover { background: #e2e8f0; color: #0f172a; }
 
         /* ==========================================================================
         3. SIDEBAR LATERAL
         ========================================================================== */
-        .sidebar {
-            width: 260px;
-            background: var(--sidebar-bg);
-            border-right: 1px solid var(--surface-border);
-            box-shadow: 2px 0 12px rgba(15, 23, 42, 0.03);
-            color: var(--menu-text);
-            position: fixed;
-            top: 70px;
-            left: 0;
-            bottom: 0;
-            padding: 0 16px 20px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            z-index: 998;
-        }
 
-        .sidebar.collapsed { left: -260px; }
 
-        .sidebar-overlay {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.45);
-            z-index: 997;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
 
         @media (max-width: 992px) {
             .sidebar-overlay.active { display: block; opacity: 1; }
         }
 
-        .menu { display: flex; flex-direction: column; gap: 10px; min-height: 100%; padding-top: 20px; }
 
-        .menu a {
-            text-decoration: none;
-            color: var(--menu-text);
-            padding: 12px 14px;
-            border-radius: 0 10px 10px 0;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            font-size: 0.875rem;
-            font-weight: 500;
-            border-left: 4px solid transparent;
-            position: relative;
-            transition: background-color 0.18s ease, color 0.18s ease, border-left-color 0.18s ease, transform 0.18s ease;
-        }
 
-        .menu a:hover { background: var(--menu-hover-bg); color: var(--menu-text-hover); transform: translateX(4px); }
         @keyframes menuIconBounce {
             0% { transform: translateY(0) scale(1); }
             30% { transform: translateY(-9px) scale(1.16); }
@@ -251,17 +93,8 @@
             100% { transform: translateY(0) scale(1); }
         }
 
-        .menu a:hover i { animation: menuIconBounce 0.55s cubic-bezier(.34,1.56,.64,1); }
 
-        .menu a.active {
-            background: var(--menu-active-bg);
-            color: var(--menu-active-text);
-            font-weight: 700;
-            border-left-color: var(--menu-active-accent);
-            box-shadow: inset 0 0 0 1px rgba(74, 222, 128, 0.12);
-        }
 
-        .menu i { width: 20px; font-size: 1rem; text-align: center; transition: transform 0.18s ease; }
 
         @media (prefers-reduced-motion: reduce) {
             .menu a, .menu i { transition: background-color 0.18s ease, color 0.18s ease; }
@@ -269,15 +102,6 @@
             .menu a:hover i { animation: none; }
         }
 
-        .footer-right {
-            margin-top: auto;
-            padding-top: 20px;
-            border-top: 1px solid var(--surface-border);
-            text-align: center;
-            font-size: 0.75rem;
-            color: rgba(255, 255, 255, 0.35);
-            letter-spacing: 0.5px;
-        }
 
         /* ==========================================================================
         4. ÁREA PRINCIPAL
@@ -286,10 +110,9 @@
             margin-left: 260px;
             width: calc(100% - 260px);
             padding: 40px;
-            padding-top: 90px;
+            padding-top: 20px;
         }
 
-        .main.expanded { margin-left: 0; width: 100%; }
 
         .header {
             margin-bottom: 28px;
@@ -300,7 +123,7 @@
             gap: 20px;
         }
 
-        .header-title h2 {
+        .header-title :is(h1, h2) {
             font-size: 1.75rem;
             font-weight: 700;
             color: var(--text-principal);
@@ -311,7 +134,7 @@
         .header-title p { color: var(--text-secundario); font-size: 0.9375rem; }
 
         .btn-add {
-            background: #0f602e;
+            background: var(--verde-principal, #0e4a27);
             color: white;
             border: none;
             padding: 12px 24px;
@@ -323,13 +146,13 @@
             align-items: center;
             gap: 8px;
             transition: all 0.3s ease;
-            box-shadow: 0 4px 12px rgba(15, 96, 46, 0.20);
+            box-shadow: 0 4px 12px color-mix(in srgb, var(--verde-principal, #0e4a27) 20%, transparent);
         }
 
         .btn-add:hover {
-            background: #14753a;
+            background: var(--verde-hover, #0b3d21);
             transform: translateY(-3px);
-            box-shadow: 0 10px 25px rgba(15, 96, 46, 0.35);
+            box-shadow: 0 10px 25px color-mix(in srgb, var(--verde-principal, #0e4a27) 35%, transparent);
         }
 
         .btn-add:hover i { transform: rotate(90deg); }
@@ -337,7 +160,7 @@
 
         .btn-add:active {
             transform: translateY(-1px);
-            box-shadow: 0 5px 15px rgba(15, 96, 46, 0.25);
+            box-shadow: 0 5px 15px color-mix(in srgb, var(--verde-principal, #0e4a27) 25%, transparent);
         }
 
         /* ==========================================================================
@@ -365,11 +188,11 @@
             transition: background 0.2s, border-color 0.2s;
         }
 
-        .btn-abrir-filtros:hover { border-color: #16a34a; color: #16a34a; }
+        .btn-abrir-filtros:hover { border-color: var(--verde-hover, #0b3d21); color: var(--verde-texto, #0e4a27); }
 
         .filtros-badge {
             background: #123f22;
-            color: #4ade80;
+            color: var(--verde-texto, #0e4a27);
             font-size: 11px;
             font-weight: 800;
             min-width: 18px;
@@ -455,13 +278,13 @@
             cursor: pointer;
         }
 
-        .filtros-form select:focus { border-color: #16a34a; }
+        .filtros-form select:focus { border-color: var(--verde-ativo, #087a47); }
 
         .filtros-modal-footer { display: flex; gap: 12px; margin-top: 10px; }
 
         .btn-aplicar {
             flex: 1;
-            background: #117943;
+            background: var(--verde-principal, #0e4a27);
             color: white;
             border: none;
             padding: 12px;
@@ -474,12 +297,12 @@
             gap: 8px;
         }
 
-        .btn-aplicar:hover { background: #0d6135; }
+        .btn-aplicar:hover { background: var(--verde-hover, #0b3d21); }
 
         .btn-limpar {
             flex: 1;
             background: var(--card-bg);
-            color: #117943;
+            color: var(--verde-texto, #0e4a27);
             border: 1px solid var(--surface-muted-border);
             padding: 12px;
             border-radius: 10px;
@@ -515,13 +338,13 @@
         }
 
         .alerta-sucesso {
-            background: #f0fdf4;
-            border: 1px solid #bbf7d0;
-            color: #15803d;
+            background: var(--verde-claro, #e8f5ee);
+            border: 1px solid var(--verde-borda, rgba(14, 74, 39, 0.28));
+            color: var(--verde-texto, #0e4a27);
         }
 
         body.dark-theme .alerta-erro { background: rgba(239, 68, 68, 0.12); border-color: rgba(239, 68, 68, 0.3); color: #fca5a5; }
-        body.dark-theme .alerta-sucesso { background: rgba(74, 222, 128, 0.12); border-color: rgba(74, 222, 128, 0.3); color: #4ade80; }
+        body.dark-theme .alerta-sucesso { background: color-mix(in srgb, var(--verde-secundario, #16a765) 12%, transparent); border-color: color-mix(in srgb, var(--verde-secundario, #16a765) 30%, transparent); color: var(--verde-texto, #0e4a27); }
 
         body.high-contrast .alerta-erro,
         body.high-contrast .alerta-sucesso {
@@ -573,8 +396,8 @@
             box-shadow: 0 6px 13px -4px rgba(37, 99, 235, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.4), inset 0 -2px 3px rgba(0, 0, 0, 0.16);
         }
         .stat-pill-ativos .stat-pill-icone {
-            background: linear-gradient(145deg, #4ade80, #059669);
-            box-shadow: 0 6px 13px -4px rgba(5, 150, 105, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.4), inset 0 -2px 3px rgba(0, 0, 0, 0.16);
+            background: linear-gradient(145deg, var(--verde-secundario, #16a765), var(--verde-principal, #0e4a27));
+            box-shadow: 0 6px 13px -4px color-mix(in srgb, var(--verde-principal, #0e4a27) 50%, transparent), inset 0 1px 1px rgba(255, 255, 255, 0.4), inset 0 -2px 3px rgba(0, 0, 0, 0.16);
         }
         .stat-pill-inativos .stat-pill-icone {
             background: linear-gradient(145deg, #fb7185, #e11d48);
@@ -692,27 +515,13 @@
             width: fit-content;
         }
 
-        .status-badge.status-ativo { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
+        .status-badge.status-ativo { background: var(--verde-claro, #e8f5ee); color: var(--verde-texto, #0e4a27); border: 1px solid var(--verde-borda, rgba(14, 74, 39, 0.28)); }
         .status-badge.status-inativo { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
         .status-badge.status-encerrado { background: #fee2e2; color: #dc2626; border: 1px solid #fecaca; }
 
-        body.dark-theme .status-badge.status-ativo { background: rgba(74, 222, 128, 0.12); border-color: rgba(74, 222, 128, 0.25); color: #4ade80; }
+        body.dark-theme .status-badge.status-ativo { background: color-mix(in srgb, var(--verde-secundario, #16a765) 12%, transparent); border-color: color-mix(in srgb, var(--verde-secundario, #16a765) 25%, transparent); color: var(--verde-texto, #0e4a27); }
         body.dark-theme .status-badge.status-inativo { background: rgba(251, 191, 36, 0.12); border-color: rgba(251, 191, 36, 0.25); color: #fbbf24; }
         body.dark-theme .status-badge.status-encerrado { background: rgba(239, 68, 68, 0.15); border-color: rgba(239, 68, 68, 0.3); color: #fca5a5; }
-
-        /* Badges de status do animal (AnimalRegras::corBadge) — mesma
-           paleta de status-ativo/inativo/encerrado acima, só com os nomes
-           de classe usados em Estoque/Cocho (status-ok/baixo/esgotado),
-           mais um neutro (status-indefinido) pra estados sem cor definida
-           (ex.: "Vazia", "Cancelado"). */
-        .status-badge.status-ok { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
-        .status-badge.status-baixo { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
-        .status-badge.status-esgotado { background: #fee2e2; color: #dc2626; border: 1px solid #fecaca; }
-        .status-badge.status-indefinido { background: var(--surface-muted-bg, #f8fafc); color: var(--text-secundario, #64748b); border: 1px solid var(--surface-muted-border, #cbd5e1); }
-
-        body.dark-theme .status-badge.status-ok { background: rgba(74, 222, 128, 0.12); border-color: rgba(74, 222, 128, 0.25); color: #4ade80; }
-        body.dark-theme .status-badge.status-baixo { background: rgba(251, 191, 36, 0.12); border-color: rgba(251, 191, 36, 0.25); color: #fbbf24; }
-        body.dark-theme .status-badge.status-esgotado { background: rgba(239, 68, 68, 0.15); border-color: rgba(239, 68, 68, 0.3); color: #fca5a5; }
 
         .lote-row-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
 
@@ -731,7 +540,7 @@
             white-space: nowrap;
         }
 
-        .btn-ver-detalhes:hover { border-color: #16a34a; color: #16a34a; }
+        .btn-ver-detalhes:hover { border-color: var(--verde-hover, #0b3d21); color: var(--verde-texto, #0e4a27); }
         .btn-ver-detalhes i { transition: transform 0.2s ease; font-size: 0.6875rem; }
         .btn-ver-detalhes.aberto i { transform: rotate(180deg); }
 
@@ -791,7 +600,7 @@
 
         .lote-row-detalhes {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(min(190px, 100%), 1fr));
             gap: 10px;
             padding: 16px 18px 18px 76px;
             background: var(--surface-muted-bg);
@@ -839,9 +648,11 @@
 
         .lote-row-detalhe-texto { display: flex; align-items: baseline; gap: 5px; min-width: 0; }
 
-        .lote-row-detalhes span::after { content: ':'; }
+        /* Só os rótulos "Raça:", "Peso médio:"... — antes valia pra QUALQUER
+           span dos detalhes e enchia a ordenha/histórico de ":" e caixa alta. */
+        .lote-row-detalhe-texto > span::after { content: ':'; }
 
-        .lote-row-detalhes span {
+        .lote-row-detalhe-texto > span {
             font-size: 0.65625rem;
             text-transform: uppercase;
             letter-spacing: 0.04em;
@@ -947,14 +758,14 @@
         }
 
         .modal-top { display: flex; flex-direction: column; align-items: center; margin-bottom: 20px; position: relative; }
-        .modal-top img { width: 80px; }
+        .modal-top img { width: 110px; }
         .modal-top p { font-size: 0.9375rem; font-weight: 600; color: var(--text-principal); }
 
         /* Título em destaque (bold, maior) usado pelo modal de Filtros
            Avançados — os demais modais deste arquivo continuam só com o
            <p> acima, sem <h2>, então esta regra não afeta nenhum deles. */
-        .modal-top h2 { font-size: 1.25rem; font-weight: 700; color: var(--text-principal); }
-        .modal-top h2 + p { font-size: 0.875rem; font-weight: 400; color: var(--text-secundario); margin-top: 4px; }
+        .modal-top h2 { font-size: 1.25rem; font-weight: 700; color: var(--text-principal); text-align: center; }
+        .modal-top h2 + p { font-size: 0.875rem; font-weight: 400; color: var(--text-secundario); margin-top: 4px; text-align: center; }
 
         .close {
             position: absolute;
@@ -1015,7 +826,7 @@
         .input-box select { cursor: pointer; }
 
         .input-box input:focus, .input-box select:focus {
-            border-color: #16a34a;
+            border-color: var(--verde-ativo, #087a47);
             background: var(--card-bg);
         }
 
@@ -1031,7 +842,7 @@
 
         .submit-btn {
             width: 100%;
-            background: #163a24;
+            background: var(--verde-principal, #0e4a27);
             color: white;
             border: none;
             padding: 14px;
@@ -1040,13 +851,13 @@
             font-size: 0.9375rem;
             font-weight: 600;
             transition: all 0.3s ease;
-            box-shadow: 0 4px 12px rgba(22, 58, 36, 0.15);
+            box-shadow: 0 4px 12px color-mix(in srgb, var(--verde-principal, #0e4a27) 15%, transparent);
         }
 
         .submit-btn:hover {
-            background: #1d4d2f;
+            background: var(--verde-hover, #0b3d21);
             transform: translateY(-3px);
-            box-shadow: 0 10px 25px rgba(22, 58, 36, 0.35);
+            box-shadow: 0 10px 25px color-mix(in srgb, var(--verde-principal, #0e4a27) 35%, transparent);
         }
 
         .acao-lote-nome {
@@ -1086,8 +897,8 @@
         }
 
         .btn-confirmar-recuperacao {
-            background: #15803d;
-            box-shadow: 0 4px 12px rgba(21, 128, 61, 0.2);
+            background: var(--verde-principal, #0e4a27);
+            box-shadow: 0 4px 12px color-mix(in srgb, var(--verde-principal, #0e4a27) 20%, transparent);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -1095,8 +906,8 @@
         }
 
         .btn-confirmar-recuperacao:hover {
-            background: #166534;
-            box-shadow: 0 10px 25px rgba(21, 128, 61, 0.35);
+            background: var(--verde-hover, #0b3d21);
+            box-shadow: 0 10px 25px color-mix(in srgb, var(--verde-principal, #0e4a27) 35%, transparent);
         }
 
         /* Deixa claro, dentro do próprio modal, que o retorno só pode ir
@@ -1112,6 +923,177 @@
             font-size: 0.8125rem;
             font-weight: 600;
             margin: -8px 0 18px;
+        }
+
+        /* ==========================================================================
+           MODAIS DE OCORRÊNCIA (parto, eclosão, postura, óbito, doença,
+           devolver ao lote, ordenha) — cabeçalho com ícone e cor por tipo,
+           lote em destaque, quantidade + data lado a lado, dica em caixa e
+           rodapé "Cancelar" + "Confirmar". Cada cor tem contraste ≥ 4,5:1
+           com texto branco (botão) e é a mesma usada no ícone.
+           ========================================================================== */
+        .ocorr-card {
+            --ocorr-cor: var(--verde-principal, #0e4a27);
+            width: 540px;
+            padding: 0 0 24px;
+            overflow-x: hidden;
+        }
+        .ocorr--parto       { --ocorr-cor: #be185d; }
+        .ocorr--eclosao     { --ocorr-cor: #b45309; }
+        .ocorr--postura     { --ocorr-cor: #a16207; }
+        .ocorr--morte       { --ocorr-cor: #475569; }
+        .ocorr--doenca      { --ocorr-cor: #c2410c; }
+        .ocorr--recuperacao { --ocorr-cor: #15803d; }
+        .ocorr--ordenha     { --ocorr-cor: #1d4ed8; }
+
+        .ocorr-card > form { padding: 0 28px; }
+
+        .ocorr-topo {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 24px 64px 20px 28px;
+            margin-bottom: 18px;
+            background: linear-gradient(135deg, color-mix(in srgb, var(--ocorr-cor) 12%, transparent), transparent 75%);
+            border-bottom: 1px solid color-mix(in srgb, var(--ocorr-cor) 18%, var(--surface-muted-border, #e2e8f0));
+            border-top: 4px solid var(--ocorr-cor);
+            border-radius: 18px 18px 0 0;
+        }
+        .ocorr-topo .close { top: 22px; right: 20px; }
+
+        .ocorr-icone {
+            flex-shrink: 0;
+            width: 52px;
+            height: 52px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.35rem;
+            color: #ffffff;
+            background: var(--ocorr-cor);
+            box-shadow: 0 8px 18px -6px color-mix(in srgb, var(--ocorr-cor) 70%, transparent);
+        }
+        .ocorr-titulos { min-width: 0; }
+        .ocorr-titulo {
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: var(--text-principal);
+            line-height: 1.25;
+            letter-spacing: -0.01em;
+        }
+        .ocorr-sub {
+            margin-top: 3px;
+            font-size: 0.8125rem;
+            color: var(--text-secundario);
+            line-height: 1.4;
+        }
+
+        /* Lote do registro: chip logo abaixo do cabeçalho. */
+        .acao-lote-nome.ocorr-lote {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 8px;
+            margin: 0 28px 18px;
+            padding: 10px 14px;
+            border-radius: 12px;
+            background: var(--surface-muted-bg, #f8fafc);
+            border: 1px solid var(--surface-muted-border, #e2e8f0);
+            text-align: left;
+            font-size: 0.875rem;
+        }
+        .acao-lote-nome.ocorr-lote::before {
+            content: "\f5fd"; /* fa-layer-group */
+            font-family: "Font Awesome 6 Free";
+            font-weight: 900;
+            color: var(--ocorr-cor);
+        }
+        .acao-lote-nome.ocorr-lote:empty { display: none; }
+        .ocorr-card .recuperacao-destino-fixo { margin: -6px 28px 18px; }
+
+        .ocorr-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0 14px;
+        }
+
+        .ocorr-info {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            margin: -4px 0 18px;
+            padding: 10px 12px;
+            border-radius: 10px;
+            font-size: 0.8125rem;
+            line-height: 1.45;
+            color: var(--text-principal);
+            background: color-mix(in srgb, var(--ocorr-cor) 9%, transparent);
+            border-left: 3px solid var(--ocorr-cor);
+        }
+        .ocorr-info i { color: var(--ocorr-cor); margin-top: 2px; }
+        .ocorr-info:empty { display: none; }
+
+        .ocorr-acoes {
+            display: flex;
+            gap: 12px;
+            margin-top: 6px;
+        }
+        .ocorr-cancelar {
+            flex: 0 0 auto;
+            min-width: 120px;
+            padding: 14px 18px;
+            border-radius: 10px;
+            border: 1px solid var(--surface-muted-border, #e2e8f0);
+            background: var(--card-bg);
+            color: var(--text-principal);
+            font-size: 0.9375rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .ocorr-cancelar:hover { background: var(--surface-muted-bg, #f8fafc); }
+        .ocorr-card .submit-btn.ocorr-confirmar {
+            flex: 1;
+            width: auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            background: var(--ocorr-cor);
+            box-shadow: 0 6px 16px -6px color-mix(in srgb, var(--ocorr-cor) 65%, transparent);
+        }
+        .ocorr-card .submit-btn.ocorr-confirmar:hover {
+            background: color-mix(in srgb, var(--ocorr-cor) 85%, #000000);
+            box-shadow: 0 10px 22px -6px color-mix(in srgb, var(--ocorr-cor) 70%, transparent);
+        }
+
+        body.dark-theme .ocorr-topo { background: linear-gradient(135deg, color-mix(in srgb, var(--ocorr-cor) 22%, transparent), transparent 75%); }
+        body.dark-theme .ocorr-info { background: color-mix(in srgb, var(--ocorr-cor) 16%, transparent); }
+        body.dark-theme .ocorr-info i,
+        body.dark-theme .acao-lote-nome.ocorr-lote::before { color: color-mix(in srgb, var(--ocorr-cor) 55%, #ffffff); }
+
+        body.high-contrast .ocorr-topo { background: #000000 !important; border-color: #ffff00 !important; }
+        body.high-contrast .ocorr-icone { background: #000000 !important; color: #ffff00 !important; border: 2px solid #ffff00; box-shadow: none; }
+        body.high-contrast .ocorr-titulo,
+        body.high-contrast .ocorr-sub,
+        body.high-contrast .ocorr-info,
+        body.high-contrast .acao-lote-nome.ocorr-lote { color: #ffffff !important; background: #000000 !important; border-color: #ffff00 !important; }
+        body.high-contrast .ocorr-cancelar { background: #000000 !important; color: #ffffff !important; border: 2px solid #ffffff !important; }
+
+        @media (max-width: 576px) {
+            /* Vence o padding genérico de .modal-card no celular: o
+               cabeçalho colorido encosta nas bordas do card. */
+            .modal-card.ocorr-card { padding: 0 0 20px; }
+            .ocorr-card > form { padding: 0 18px; }
+            .ocorr-topo { padding: 20px 56px 16px 18px; gap: 12px; }
+            .ocorr-icone { width: 44px; height: 44px; font-size: 1.15rem; border-radius: 13px; }
+            .ocorr-titulo { font-size: 1.125rem; }
+            .acao-lote-nome.ocorr-lote { margin: 0 18px 16px; }
+            .ocorr-card .recuperacao-destino-fixo { margin: -6px 18px 16px; }
+            .ocorr-grid { grid-template-columns: 1fr; }
+            .ocorr-acoes { flex-direction: column-reverse; }
+            .ocorr-cancelar { width: 100%; }
         }
 
         .label-opcional {
@@ -1314,38 +1296,140 @@
 
         .lote-historico-item .ponto-morte { color: #dc2626; }
         .lote-historico-item .ponto-doenca { color: #d97706; }
-        .lote-historico-item .ponto-recuperacao { color: #15803d; }
+        .lote-historico-item .ponto-recuperacao { color: var(--verde-texto, #0e4a27); }
+        .lote-historico-item .ponto-parto { color: #2563eb; }
+        .lote-historico-item .ponto-postura { color: #0891b2; }
         .lote-historico-item strong { color: var(--text-principal); font-weight: 700; }
         .lote-historico-item .variacao { color: #dc2626; font-weight: 700; }
         .lote-historico-item .variacao-doenca { color: #d97706; font-weight: 700; }
-        .lote-historico-item .variacao-recuperacao { color: #15803d; font-weight: 700; }
+        .lote-historico-item .variacao-recuperacao { color: var(--verde-texto, #0e4a27); font-weight: 700; }
+        .lote-historico-item .variacao-parto { color: #2563eb; font-weight: 700; }
+        .lote-historico-item .variacao-postura { color: #0891b2; font-weight: 700; }
         .lote-historico-item .destino { color: var(--text-principal); font-style: normal; }
         .lote-historico-item .obs { font-style: italic; }
 
-        /* "Animais deste lote" (dentro de "Ver detalhes") — cadastro rápido
-           de animal e registro de parto/ordenha por animal, sem sair da
-           tela de Lotes; o perfil completo continua em animal.detalhe. */
-        .animais-lote {
+        /* "Ordenha e Leite do Lote" (dentro de "Ver detalhes") — registro
+           rápido de produção de leite do lote inteiro, sem sair da tela de
+           Lotes. Produção é sempre por LOTE, nunca por animal individual. */
+        .ordenhas-lote {
             grid-column: 1 / -1;
             border-top: 1px dashed var(--surface-muted-border);
             margin-top: 4px;
             padding-top: 12px;
         }
 
-        .animais-lote-header {
+        .ordenhas-lote-header {
             display: flex;
             align-items: center;
             justify-content: space-between;
             gap: 10px;
             flex-wrap: wrap;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
         }
 
-        .btn-adicionar-animal {
+        .ordenhas-lote-total {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-secundario);
+        }
+        .ordenhas-lote-total strong { color: var(--text-principal); }
+
+        /* Lista compacta: uma linha fina por ordenha (data · hora · turno ·
+           litros · ações), num bloco só com divisórias — antes cada registro
+           era uma "caixa" separada com ~47px de altura. */
+        .ordenhas-lote-lista {
+            border: 1px solid var(--surface-muted-border);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .ordenha-lote-item {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            align-items: center;
+            gap: 10px;
+            padding: 5px 6px 5px 12px;
+            background: var(--card-bg);
+        }
+        .ordenha-lote-item + .ordenha-lote-item { border-top: 1px solid var(--surface-muted-border); }
+        .ordenha-lote-item:nth-child(even) { background: var(--surface-muted-bg); }
+
+        .ordenha-lote-info {
+            display: grid;
+            grid-template-columns: 82px 42px 84px minmax(64px, auto) minmax(0, 1fr);
+            align-items: center;
+            column-gap: 10px;
+            font-size: 0.8125rem;
+            color: var(--text-secundario);
+            min-width: 0;
+        }
+        .ordenha-lote-info strong { color: var(--text-principal); font-weight: 700; }
+        .ordenha-lote-hora { font-variant-numeric: tabular-nums; }
+        .ordenha-lote-litros { color: var(--text-principal); font-weight: 700; font-variant-numeric: tabular-nums; text-align: right; }
+        .ordenha-lote-obs { font-style: italic; overflow-wrap: anywhere; }
+
+        /* Turno: ícone + texto (nunca só cor). */
+        .ordenha-turno {
             display: inline-flex;
             align-items: center;
-            gap: 6px;
-            padding: 5px 12px;
+            gap: 5px;
+            width: fit-content;
+            padding: 2px 8px;
+            border-radius: 999px;
+            font-size: 0.71875rem;
+            font-weight: 700;
+        }
+        .ordenha-turno-manha { background: #fef3c7; color: #92400e; }
+        .ordenha-turno-tarde { background: #ffedd5; color: #9a3412; }
+        .ordenha-turno-noite { background: #e0e7ff; color: #3730a3; }
+        body.dark-theme .ordenha-turno-manha { background: rgba(251, 191, 36, 0.16); color: #fcd34d; }
+        body.dark-theme .ordenha-turno-tarde { background: rgba(249, 115, 22, 0.16); color: #fdba74; }
+        body.dark-theme .ordenha-turno-noite { background: rgba(129, 140, 248, 0.18); color: #c7d2fe; }
+
+        .ordenha-lote-acoes { display: flex; align-items: center; gap: 4px; }
+
+        .btn-acao-ordenha {
+            width: 30px;
+            height: 30px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            border-radius: 8px;
+            border: 1px solid var(--surface-muted-border);
+            background: var(--card-bg);
+            color: var(--text-principal);
+            cursor: pointer;
+        }
+        .btn-acao-ordenha:hover { border-color: var(--verde-hover, #0b3d21); color: var(--verde-texto, #0e4a27); }
+        .btn-acao-ordenha-excluir:hover { border-color: #dc2626; color: #dc2626; }
+
+        /* Celular: data/hora/turno numa linha, litros e observação embaixo. */
+        @media (max-width: 576px) {
+            .ordenha-lote-info {
+                grid-template-columns: auto auto auto;
+                justify-content: start;
+                row-gap: 3px;
+            }
+            .ordenha-lote-litros { text-align: left; }
+            .ordenha-lote-obs { grid-column: 1 / -1; }
+            .main .btn-acao-ordenha { min-height: 36px; width: 36px; }
+        }
+
+        .ordenhas-lote-vazio { font-size: 0.8125rem; color: var(--text-secundario); font-style: italic; }
+
+        .ordenha-turno-dica {
+            margin: -6px 0 14px;
+            font-size: 0.75rem;
+            line-height: 1.4;
+            color: var(--text-secundario);
+        }
+        .ordenha-turno-dica strong { color: var(--text-principal); }
+
+        .btn-ver-mais-ordenhas-lote {
+            display: block;
+            margin: 8px auto 0;
+            padding: 6px 16px;
             border-radius: 8px;
             border: 1px solid var(--surface-muted-border);
             background: var(--card-bg);
@@ -1353,57 +1437,15 @@
             font-size: 0.75rem;
             font-weight: 600;
             cursor: pointer;
-            transition: border-color 0.18s ease, color 0.18s ease;
         }
-        .btn-adicionar-animal:hover { border-color: #16a34a; color: #16a34a; }
+        .btn-ver-mais-ordenhas-lote:hover { border-color: #0891b2; color: #0891b2; }
 
-        .animal-lote-item {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-            flex-wrap: wrap;
-            padding: 8px 12px;
-            border-radius: 10px;
-            background: var(--surface-muted-bg);
-            margin-bottom: 6px;
-        }
-
-        .animal-lote-info {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            flex-wrap: wrap;
-            font-size: 0.8125rem;
-            color: var(--text-secundario);
-            min-width: 0;
-        }
-        .animal-lote-info strong { color: var(--text-principal); }
-        .animal-lote-info a { color: #16a34a; text-decoration: none; font-weight: 600; }
-        .animal-lote-info a:hover { text-decoration: underline; }
-
-        .animal-lote-acoes { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-
-        .btn-acao-animal {
-            font-size: 0.71875rem;
-            font-weight: 600;
-            padding: 4px 10px;
-            border-radius: 8px;
-            border: 1px solid var(--surface-muted-border);
-            background: var(--card-bg);
-            color: var(--text-principal);
-            cursor: pointer;
-        }
-        .btn-acao-animal:hover { border-color: #16a34a; color: #16a34a; }
-        .btn-acao-animal[disabled] { opacity: 0.5; cursor: not-allowed; }
-        .btn-acao-animal[disabled]:hover { border-color: var(--surface-muted-border); color: var(--text-principal); }
-
-        .animais-lote-vazio { font-size: 0.8125rem; color: var(--text-secundario); font-style: italic; }
-
-        body.high-contrast .animais-lote { border-top: 1px dashed #ffff00 !important; }
-        body.high-contrast .animal-lote-item { background: #000000 !important; border: 1px solid #ffff00 !important; }
-        body.high-contrast .btn-adicionar-animal,
-        body.high-contrast .btn-acao-animal { background: #000000 !important; border: 2px solid #ffff00 !important; color: #ffff00 !important; }
+        body.high-contrast .ordenhas-lote { border-top: 1px dashed #ffff00 !important; }
+        body.high-contrast .ordenha-lote-item { background: #000000 !important; }
+        body.high-contrast .ordenha-lote-item + .ordenha-lote-item { border-top-color: #ffff00 !important; }
+        body.high-contrast .btn-acao-ordenha { background: #000000 !important; border: 2px solid #ffff00 !important; color: #ffff00 !important; }
+        body.high-contrast .ordenhas-lote-lista { border-color: #ffff00 !important; }
+        body.high-contrast .ordenha-turno { background: #000000 !important; border: 1px solid #ffff00; color: #ffff00 !important; }
 
         /* ==========================================================================
         8. TEMAS (Dark / Alto Contraste) — mesmos tokens do Dashboard/Fazendas
@@ -1413,33 +1455,19 @@
             --text-principal: #f1f9f4;
             --text-secundario: #9db8a8;
             --card-bg: #12251a;
-            --card-border: 1px solid rgba(74, 222, 128, 0.16);
+            --card-border: 1px solid color-mix(in srgb, var(--verde-secundario, #16a765) 16%, transparent);
             --card-shadow: 0 10px 15px -3px rgba(0,0,0,0.4);
 
-            --navbar-bg: #0c1b12;
-            --sidebar-bg: #0c1b12;
-            --surface-border: rgba(74, 222, 128, 0.14);
             --surface-muted-bg: #0a1810;
             --surface-muted-border: #2a4d38;
 
-            --menu-text: #9db8a8;
-            --menu-text-hover: #4ade80;
-            --menu-hover-bg: rgba(74, 222, 128, 0.08);
-            --menu-active-bg: rgba(74, 222, 128, 0.12);
-            --menu-active-text: #4ade80;
-            --menu-active-accent: #4ade80;
 
-            --panel-bg: #12251a;
-            --panel-text: #f1f9f4;
-            --panel-item-bg: #0a1810;
-            --panel-btn-bg: #1e3a2a;
-            --panel-btn-text: #d9ede1;
-            --panel-btn-hover: #2a4d38;
         }
+        body.dark-theme .navbar-right .accessibility-trigger:hover { background: rgba(255, 255, 255, 0.16); color: #ffffff; }
 
-        body.dark-theme .toggle-menu-btn { background: #16281c; border-color: var(--surface-border); color: #d9ede1; }
-        body.dark-theme .user-avatar { background: rgba(74, 222, 128, 0.12); border-color: rgba(74, 222, 128, 0.2); color: #4ade80; }
-        body.dark-theme .navbar-right .accessibility-trigger { background: rgba(74, 222, 128, 0.12); border-color: rgba(74, 222, 128, 0.2); color: #4ade80; }
+        body.dark-theme .navbar-right .accessibility-trigger { background: rgba(255, 255, 255, 0.08); border-color: rgba(255, 255, 255, 0.16); color: #f1f5f9; }
+        body.dark-theme .input-box input,
+        body.dark-theme .input-box select { color-scheme: dark; }
 
         body.high-contrast {
             background: #000000 !important;
@@ -1522,7 +1550,15 @@
         }
         body.high-contrast .lote-historico-item .ponto-recuperacao,
         body.high-contrast .lote-historico-item .variacao-recuperacao {
-            color: #4ade80 !important;
+            color: var(--verde-texto, #0e4a27) !important;
+        }
+        body.high-contrast .lote-historico-item .ponto-parto,
+        body.high-contrast .lote-historico-item .variacao-parto {
+            color: #7dd3fc !important;
+        }
+        body.high-contrast .lote-historico-item .ponto-postura,
+        body.high-contrast .lote-historico-item .variacao-postura {
+            color: #67e8f9 !important;
         }
         /* Aviso fixo do modal "Devolver ao Lote" usa var(--card-verde-*),
            que o alto contraste não redefine. */
@@ -1626,17 +1662,14 @@
         9. RESPONSIVIDADE
         ========================================================================== */
         @media (max-width: 992px) {
-            .main { margin-left: 0; width: 100%; padding: 24px; padding-top: 90px; }
-            .sidebar { left: -260px; }
-            .sidebar.active-mobile { left: 0; box-shadow: 10px 0 30px rgba(0, 0, 0, 0.18); }
-            .user-info { display: none; }
+            .main { margin-left: 0; width: 100%; padding: 24px; padding-top: 20px; }
         }
 
         @media (max-width: 768px) {
             .navbar { padding: 0 20px; }
             .navbar-logo img { height: 36px; }
-            .main { padding: 18px; padding-top: 86px; }
-            .header-title h2 { font-size: 1.5rem; }
+            .main { padding: 18px; padding-top: 20px; }
+            .header-title :is(h1, h2) { font-size: 1.5rem; }
 
             .lotes-toolbar { align-items: stretch; }
             .toolbar-ordenar { justify-content: space-between; }
@@ -1675,99 +1708,14 @@
             .modal-card { padding: 22px; }
         }
     </style>
-</head>
+@endpush
 
-<body>
-
-    <div class="sidebar-overlay" id="sidebarOverlay"></div>
-
-    <!-- SIDEBAR LATERAL -->
-    <div class="sidebar" id="sidebar">
-        <div class="menu">
-            <a href="{{ route('cadastro.index') }}">
-                <i class="fa-solid fa-chart-line"></i>
-                <span>Dashboard</span>
-            </a>
-            <a href="{{ route('fazenda.listar') }}">
-                <i class="fa-solid fa-location-dot"></i>
-                <span>Gestão de Fazendas</span>
-            </a>
-            <a href="{{ route('lote.listar') }}" class="active">
-                <i class="fa-solid fa-layer-group"></i>
-                <span>Gestão de Lotes</span>
-            </a>
-            <a href="{{ route('ordenha.listar') }}">
-                <i class="fa-solid fa-droplet"></i>
-                <span>Ordenha e Leite</span>
-            </a>
-            <a href="{{ route('cocho.listar') }}">
-                <i class="fa-solid fa-cube"></i>
-                <span>Gestão de Cochos</span>
-            </a>
-            <a href="{{ route('racao.listar') }}">
-                <i class="fa-solid fa-wheat-awn"></i>
-                <span>Gestão de Rações</span>
-            </a>
-            <a href="{{ route('estoque.listar') }}">
-                <i class="fa-solid fa-box"></i>
-                <span>Nível de Estoque</span>
-            </a>
-            <a href="{{ route('plano.listar') }}">
-                <i class="fa-solid fa-clipboard-list"></i>
-                <span>Plano Alimentar</span>
-            </a>
-            <a href="{{ route('relatorio.listar') }}">
-                <i class="fa-regular fa-file-lines"></i>
-                <span>Relatório Avançado</span>
-            </a>
-            <a href="{{ route('perfil') }}">
-                <i class="fa-solid fa-user-gear"></i>
-                <span>Meu Perfil</span>
-            </a>
-            <div class="footer-right">© 2026 AgriFarm</div>
-        </div>
-    </div>
-
-    <!-- NAVBAR SUPERIOR -->
-    <div class="navbar" id="navbar">
-        <div class="navbar-left">
-            <button class="toggle-menu-btn" id="toggleMenuBtn" title="Menu Lateral">
-                <i class="fa-solid fa-bars"></i>
-            </button>
-            <div class="navbar-logo">
-                <img src="{{ asset('agrifarm-removebg-preview.png') }}" alt="AgriFarm">
-            </div>
-        </div>
-
-        <div class="navbar-right">
-            <a href="{{ route('perfil') }}" class="user-profile" title="Meu perfil">
-                <div class="user-avatar">
-                    @if ($cadastroLogado->foto ?? false)
-                        <img src="{{ asset('storage/' . $cadastroLogado->foto) }}" alt="Foto de perfil" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">
-                    @else
-                        <i class="fa-solid fa-user-gear"></i>
-                    @endif
-                </div>
-                <div class="user-info">
-                    <span class="user-name">Olá, {{ session('usuario_nome') }}</span>
-                    <span class="user-role">Administrador</span>
-                </div>
-            </a>
-
-            <div class="navbar-divider"></div>
-
-            <a href="{{ route('logout') }}" class="navbar-logout">
-                <i class="fa-solid fa-right-from-bracket"></i>
-                <span>Sair</span>
-            </a>
-        </div>
-    </div>
-
+@section('content')
     <!-- ÁREA DE CONTEÚDO PRINCIPAL -->
     <main class="main" id="mainArea">
         <div class="header">
             <div class="header-title">
-                <h2>Gestão de Lotes</h2>
+                <h1><i class="fa-solid fa-layer-group titulo-icone" aria-hidden="true"></i> Gestão de Lotes</h1>
                 <p>Seu rebanho organizado por lotes para você monitorar a evolução.</p>
             </div>
 
@@ -1798,7 +1746,7 @@
             <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="tituloModalFiltros">
                 <button class="close" id="closeFiltrosBtn" aria-label="Fechar"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
                 <div class="modal-top">
-                    <img src="{{ asset('Logo.png') }}" alt="Logo">
+                    <img src="{{ asset('logo.png') }}" alt="Logo">
                     <h2 id="tituloModalFiltros">Filtros Avançados</h2>
                     <p>Escolha o que exibir no painel de Lotes</p>
                 </div>
@@ -1870,9 +1818,10 @@
                     'morte' => 'Não foi possível registrar o óbito:',
                     'doenca' => 'Não foi possível registrar a doença:',
                     'recuperacao' => 'Não foi possível devolver os animais ao lote:',
-                    'animal' => 'Não foi possível cadastrar o animal:',
-                    'parto_animal' => 'Não foi possível registrar o parto:',
-                    'ordenha_animal' => 'Não foi possível registrar a ordenha:',
+                    'parto' => 'Não foi possível registrar o parto:',
+                    'eclosao' => 'Não foi possível registrar a eclosão:',
+                    'postura' => 'Não foi possível registrar a postura:',
+                    'ordenha_lote' => 'Não foi possível registrar a ordenha:',
                     default => 'Não foi possível salvar o lote:',
                 };
             @endphp
@@ -1970,15 +1919,37 @@
                     $motivoBloqueioRecuperacao = $motivoBloqueio ?: (!$lote->origem ? 'Lote original não existe mais' : '');
                     $estoquePorDoenca = $ehIsolamento ? $lote->estoquePorDoenca() : [];
 
-                    // Parto/Reprodução/Lactação/Ordenha agora são por ANIMAL
-                    // individual (ver seção "Animais deste lote" abaixo) —
-                    // a elegibilidade de sexo é checada por animal, não mais
-                    // pelo sexo agregado do lote. Só a espécie (tipo_animal)
-                    // continua sendo uma regra do LOTE: nem toda espécie
-                    // produz leite (ex.: galinha põe ovo) — só Bovino, Ovino
-                    // e Caprino têm a opção de ordenha nos seus animais.
+                    // Ordenha, Parto, Eclosão e Postura são sempre por LOTE,
+                    // nunca por animal individual. Nem toda espécie produz
+                    // leite (só Bovino, Ovino e Caprino têm ordenha) e
+                    // Avicultura é a única espécie sem parto — ela põe ovos
+                    // (Postura) que chocam (Eclosão) no lugar de parir.
+                    // Dentro de cada espécie, só lotes com fêmeas (sexo
+                    // Fêmea ou Misto) podem registrar qualquer um desses.
                     $loteTemOrdenha = in_array($lote->tipo_animal, $tiposComOrdenha, true);
-                    $animaisDoLote = $lote->animais;
+                    $loteTemParto = in_array($lote->tipo_animal, $tiposComParto, true);
+                    $loteTemEclosao = in_array($lote->tipo_animal, $tiposComEclosao, true);
+                    $loteTemPostura = in_array($lote->tipo_animal, $tiposComPostura, true);
+                    $loteTemFemea = in_array($lote->sexo, $sexosComFemea, true);
+                    // Lote de machos: NADA de ordenha na tela (nem botão
+                    // desabilitado, nem a seção "Ordenha e Leite") — só lote
+                    // com fêmeas de espécie leiteira mostra o fluxo.
+                    $mostraOrdenha = $loteTemOrdenha && $loteTemFemea;
+                    $elegivelOrdenha = $mostraOrdenha && !$motivoBloqueio;
+                    $motivoBloqueioOrdenha = $motivoBloqueio;
+                    $elegivelParto = $loteTemParto && $loteTemFemea && !$motivoBloqueio && !$ehIsolamento;
+                    $motivoBloqueioParto = $ehIsolamento
+                        ? 'Lotes de isolamento não registram parto — devolva os animais ao lote de origem primeiro.'
+                        : ($motivoBloqueio ?: (!$loteTemFemea ? 'Parto só é possível em lotes com fêmeas (sexo Fêmea ou Misto).' : (!$loteTemParto ? "Lotes de {$lote->tipo_animal} não têm parto registrado." : '')));
+                    $elegivelEclosao = $loteTemEclosao && $loteTemFemea && !$motivoBloqueio && !$ehIsolamento;
+                    $motivoBloqueioEclosao = $ehIsolamento
+                        ? 'Lotes de isolamento não registram eclosão — devolva os animais ao lote de origem primeiro.'
+                        : ($motivoBloqueio ?: (!$loteTemFemea ? 'Eclosão só é possível em lotes com fêmeas (sexo Fêmea ou Misto).' : ''));
+                    $elegivelPostura = $loteTemPostura && $loteTemFemea && !$motivoBloqueio && !$ehIsolamento;
+                    $motivoBloqueioPostura = $ehIsolamento
+                        ? 'Lotes de isolamento não registram postura — devolva os animais ao lote de origem primeiro.'
+                        : ($motivoBloqueio ?: (!$loteTemFemea ? 'Postura só é possível em lotes com fêmeas (sexo Fêmea ou Misto).' : ''));
+                    $ordenhasDoLote = $lote->ordenhas;
                 @endphp
                 <div class="lote-row"
                     data-nome="{{ strtolower($lote->nome_lote) }}"
@@ -2023,7 +1994,7 @@
                                 <div class="lote-row-dropdown">
                                     <button type="button" onclick="abrirModalEditar(
                                         '{{ $lote->id }}',
-                                        '{{ $lote->nome_lote }}',
+                                        @js($lote->nome_lote),
                                         '{{ $lote->fazenda_id }}',
                                         '{{ $lote->tipo_animal }}',
                                         '{{ $lote->finalidade }}',
@@ -2031,8 +2002,10 @@
                                         '{{ $lote->idade_media }}',
                                         '{{ $lote->quantidade_animais }}',
                                         '{{ $lote->peso_medio }}',
-                                        '{{ $lote->data_entrada }}',
-                                        '{{ $statusAtual }}'
+                                        '{{ $statusAtual }}',
+                                        @js($lote->raca),
+                                        '{{ $lote->quantidade_cochos ?? 0 }}',
+                                        @js(optional($lote->data_entrada)->format('Y-m-d'))
                                     )">
                                         <i class="fa-solid fa-pen"></i> Editar
                                     </button>
@@ -2056,6 +2029,43 @@
                                             <i class="fa-solid fa-virus"></i> Registrar Doença
                                         </button>
                                     @endif
+                                    @unless ($ehIsolamento)
+                                        @if ($loteTemEclosao)
+                                            <button type="button" onclick="abrirModalEclosao(this)"
+                                                data-id="{{ $lote->id }}"
+                                                data-nome="{{ $lote->nome_lote }}"
+                                                data-quantidade="{{ $lote->quantidade_animais }}"
+                                                @if (!$elegivelEclosao) disabled title="{{ $motivoBloqueioEclosao }}" @endif>
+                                                <i class="fa-solid fa-egg"></i> Registrar Eclosão
+                                            </button>
+                                        @else
+                                            <button type="button" onclick="abrirModalParto(this)"
+                                                data-id="{{ $lote->id }}"
+                                                data-nome="{{ $lote->nome_lote }}"
+                                                data-quantidade="{{ $lote->quantidade_animais }}"
+                                                @if (!$elegivelParto) disabled title="{{ $motivoBloqueioParto }}" @endif>
+                                                <i class="fa-solid fa-baby"></i> Registrar Parto
+                                            </button>
+                                        @endif
+                                        @if ($loteTemPostura)
+                                            <button type="button" onclick="abrirModalPostura(this)"
+                                                data-id="{{ $lote->id }}"
+                                                data-nome="{{ $lote->nome_lote }}"
+                                                data-quantidade="{{ $lote->quantidade_animais }}"
+                                                @if (!$elegivelPostura) disabled title="{{ $motivoBloqueioPostura }}" @endif>
+                                                <i class="fa-solid fa-egg"></i> Registrar Postura
+                                            </button>
+                                        @endif
+                                        @if ($mostraOrdenha)
+                                            <button type="button" onclick="abrirModalOrdenhaLote({{ $lote->id }}, @js($lote->nome_lote))"
+                                                data-ordenha-lote-add
+                                                data-id="{{ $lote->id }}"
+                                                data-nome="{{ $lote->nome_lote }}"
+                                                @if (!$elegivelOrdenha) disabled title="{{ $motivoBloqueioOrdenha }}" @endif>
+                                                <i class="fa-solid fa-droplet"></i> Registrar Ordenha
+                                            </button>
+                                        @endif
+                                    @endunless
                                     <button type="button" onclick="abrirModalMorte(this)"
                                         data-id="{{ $lote->id }}"
                                         data-nome="{{ $lote->nome_lote }}"
@@ -2078,6 +2088,13 @@
                     </div>
 
                     <div class="lote-row-detalhes" hidden>
+                        <div class="lote-row-detalhe-item">
+                            <div class="lote-row-detalhe-icone"><i class="fa-solid fa-dna"></i></div>
+                            <div class="lote-row-detalhe-texto">
+                                <span>Raça</span>
+                                <strong>{{ $lote->raca ?? '—' }}</strong>
+                            </div>
+                        </div>
                         <div class="lote-row-detalhe-item">
                             <div class="lote-row-detalhe-icone"><i class="fa-solid fa-weight-scale"></i></div>
                             <div class="lote-row-detalhe-texto">
@@ -2106,81 +2123,32 @@
                                 <strong>{{ $lote->idade_media ?? '—' }}</strong>
                             </div>
                         </div>
-                        <div class="lote-row-detalhe-item">
-                            <div class="lote-row-detalhe-icone"><i class="fa-solid fa-calendar"></i></div>
-                            <div class="lote-row-detalhe-texto">
-                                <span>Data de entrada</span>
-                                <strong>{{ \Carbon\Carbon::parse($lote->data_entrada)->format('d/m/Y') }}</strong>
-                            </div>
-                        </div>
 
-                        <div class="animais-lote">
-                            <div class="animais-lote-header">
-                                <span class="lote-historico-titulo" style="margin-bottom:0;">Animais deste lote ({{ $animaisDoLote->count() }})</span>
-                                <button
-                                    type="button"
-                                    class="btn-adicionar-animal"
-                                    data-animal-add
-                                    data-id="{{ $lote->id }}"
-                                    data-nome="{{ $lote->nome_lote }}"
-                                    onclick="abrirModalAnimal({{ $lote->id }}, @js($lote->nome_lote))"
-                                >
-                                    <i class="fa-solid fa-plus" aria-hidden="true"></i> Adicionar Animal
-                                </button>
-                            </div>
-
-                            @forelse ($animaisDoLote as $animal)
-                                @php
-                                    $elegivelParto = $animal->status === 'Ativo' && $animal->sexo === 'Fêmea';
-                                    $elegivelOrdenha = $elegivelParto && $loteTemOrdenha && $animal->lactacaoAtiva;
-                                @endphp
-                                <div class="animal-lote-item">
-                                    <div class="animal-lote-info">
-                                        <span class="status-badge {{ \App\Support\AnimalRegras::corBadge($animal->status_reprodutivo) }}">{{ $animal->status_reprodutivo }}</span>
-                                        <strong>{{ $animal->nome }}</strong>
-                                        @if ($animal->identificador)
-                                            <span>#{{ $animal->identificador }}</span>
-                                        @endif
-                                        <span>{{ $animal->sexo }}</span>
-                                        @if ($animal->idade !== null)
-                                            <span>{{ $animal->idade }} {{ Str::plural('ano', $animal->idade) }}</span>
-                                        @endif
-                                        @if ($animal->peso)
-                                            <span>{{ number_format($animal->peso, 1, ',', '.') }} kg</span>
-                                        @endif
-                                        <a href="{{ route('animal.detalhe', $animal->id) }}">Ver perfil completo</a>
-                                    </div>
-                                    <div class="animal-lote-acoes">
-                                        <button
-                                            type="button"
-                                            class="btn-acao-animal"
-                                            data-animal-parto
-                                            data-animal-id="{{ $animal->id }}"
-                                            data-animal-nome="{{ $animal->nome }}"
-                                            @if (!$elegivelParto) disabled title="Somente fêmeas ativas podem ter partos registrados." @endif
-                                            onclick="abrirModalPartoAnimal({{ $animal->id }}, @js($animal->nome))"
-                                        >
-                                            <i class="fa-solid fa-baby" aria-hidden="true"></i> Parto
-                                        </button>
-                                        @if ($loteTemOrdenha)
-                                            <button
-                                                type="button"
-                                                class="btn-acao-animal"
-                                                data-animal-ordenha
-                                                data-animal-id="{{ $animal->id }}"
-                                                data-animal-nome="{{ $animal->nome }}"
-                                                @if (!$elegivelOrdenha) disabled title="Só é possível registrar ordenha em fêmeas ativas com lactação ativa." @endif
-                                                onclick="abrirModalOrdenhaAnimal({{ $animal->id }}, @js($animal->nome))"
-                                            >
-                                                <i class="fa-solid fa-droplet" aria-hidden="true"></i> Ordenha
-                                            </button>
-                                        @endif
-                                    </div>
+                        @if ($mostraOrdenha)
+                            <div class="ordenhas-lote">
+                                <div class="ordenhas-lote-header">
+                                    <span class="lote-historico-titulo" style="margin-bottom:0;">Ordenha e Leite do Lote ({{ $ordenhasDoLote->count() }})</span>
+                                    @if ($ordenhasDoLote->isNotEmpty())
+                                        <span class="ordenhas-lote-total">Total: <strong>{{ number_format($ordenhasDoLote->sum('quantidade_litros'), 1, ',', '.') }} L</strong></span>
+                                    @endif
                                 </div>
-                            @empty
-                                <p class="animais-lote-vazio">Nenhum animal cadastrado neste lote ainda.</p>
-                            @endforelse
-                        </div>
+
+                                @if ($ordenhasDoLote->isEmpty())
+                                    <p class="ordenhas-lote-vazio">Nenhuma ordenha registrada neste lote ainda.</p>
+                                @else
+                                    <div id="ordenhasLote_{{ $lote->id }}" class="ordenhas-lote-lista">
+                                        @include('partials.ordenhas-lote-linhas', ['ordenhas' => $ordenhasDoLote->take(10), 'lote' => $lote])
+                                    </div>
+                                @endif
+                                @if ($ordenhasDoLote->count() > 10)
+                                    <button type="button" class="btn-ver-mais-ordenhas-lote"
+                                        data-lote-id="{{ $lote->id }}"
+                                        onclick="verMaisOrdenhasLote(this)">
+                                        Ver mais ordenhas
+                                    </button>
+                                @endif
+                            </div>
+                        @endif
 
                         @if ($lote->ocorrencias->isNotEmpty())
                             <div class="lote-historico">
@@ -2211,6 +2179,21 @@
                                             @if ($ocorrencia->loteDestino)
                                                 <span class="destino">vindos de "{{ $ocorrencia->loteDestino->nome_lote }}"</span>
                                             @endif
+                                        @elseif ($ocorrencia->tipo === 'parto')
+                                            <span class="ponto-parto"><i class="fa-solid fa-circle" style="font-size:0.5rem;"></i></span>
+                                            <strong>Parto registrado</strong>
+                                            <span>{{ \Carbon\Carbon::parse($ocorrencia->data_ocorrencia)->format('d/m/Y') }}</span>
+                                            <span class="variacao-parto">{{ $ocorrencia->quantidade_antes }} → {{ $ocorrencia->quantidade_depois }} animais</span>
+                                        @elseif ($ocorrencia->tipo === 'eclosao')
+                                            <span class="ponto-parto"><i class="fa-solid fa-circle" style="font-size:0.5rem;"></i></span>
+                                            <strong>Eclosão registrada</strong>
+                                            <span>{{ \Carbon\Carbon::parse($ocorrencia->data_ocorrencia)->format('d/m/Y') }}</span>
+                                            <span class="variacao-parto">{{ $ocorrencia->quantidade_antes }} → {{ $ocorrencia->quantidade_depois }} animais</span>
+                                        @elseif ($ocorrencia->tipo === 'postura')
+                                            <span class="ponto-postura"><i class="fa-solid fa-circle" style="font-size:0.5rem;"></i></span>
+                                            <strong>Postura registrada</strong>
+                                            <span>{{ \Carbon\Carbon::parse($ocorrencia->data_ocorrencia)->format('d/m/Y') }}</span>
+                                            <span class="variacao-postura">{{ $ocorrencia->quantidade }} {{ \Illuminate\Support\Str::plural('ovo', $ocorrencia->quantidade) }}</span>
                                         @else
                                             <span class="ponto-morte"><i class="fa-solid fa-circle" style="font-size:0.5rem;"></i></span>
                                             <strong>Óbito registrado @if ($ocorrencia->causa) — {{ $ocorrencia->causa }}@endif{{ $ocorrencia->doenca ? ' (' . $ocorrencia->doenca . ')' : '' }}</strong>
@@ -2263,8 +2246,9 @@
                 <button type="button" class="close" onclick="fecharModal()">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
-                <img src="{{ asset('Logo.png') }}" alt="Logo">
-                <p>Adicionar Lote</p>
+                <img src="{{ asset('logo.png') }}" alt="Logo">
+                <h2>Adicionar Lote</h2>
+                <p>Cadastre um novo lote e defina espécie, sexo e quantidade de animais.</p>
             </div>
 
             <form action="{{ route('lote.add') }}" method="POST">
@@ -2288,7 +2272,7 @@
                     </select>
                 </div>
 
-                <label>Selecione um tipo de animal</label>
+                <label for="tipo_animal">Selecione um tipo de animal</label>
                 <div class="input-box">
                     <i class="fa-solid fa-cow"></i>
                     <select id="tipo_animal" name="tipo_animal" required>
@@ -2299,9 +2283,15 @@
                     </select>
                 </div>
 
+                <label for="raca">Raça <span class="dica-campo" style="display:inline; margin:0;">(opcional)</span></label>
+                <div class="input-box">
+                    <i class="fa-solid fa-dna"></i>
+                    <input type="text" id="raca" name="raca" value="{{ old('raca') }}" placeholder="Ex.: Nelore, Holandês, Duroc..." maxlength="100">
+                </div>
+
                 <div class="row">
                     <div class="campo">
-                        <label>Sexo</label>
+                        <label for="sexo">Sexo</label>
                         <div class="input-box">
                             <i class="fa-solid fa-venus-mars"></i>
                             <select id="sexo" name="sexo" required>
@@ -2314,7 +2304,7 @@
                     </div>
 
                     <div class="campo">
-                        <label>Finalidade</label>
+                        <label for="finalidade">Finalidade</label>
                         <div class="input-box">
                             <i class="fa-solid fa-bullseye"></i>
                             <select id="finalidade" name="finalidade" required>
@@ -2349,13 +2339,19 @@
                     </div>
 
                     <div class="campo">
-                        <label>Peso Médio (kg)</label>
+                        <label for="peso_medio">Peso Médio (kg)</label>
                         <div class="input-box">
                             <i class="fa-solid fa-weight-scale"></i>
                             <input type="number" step="0.01" id="peso_medio" name="peso_medio" value="{{ old('peso_medio') }}" placeholder="380.50" required>
                         </div>
                         <small class="dica-campo" id="dica_peso">Selecione o tipo de animal para ver a faixa de peso esperada.</small>
                     </div>
+                </div>
+
+                <label for="data_entrada">Data de Entrada na Fazenda</label>
+                <div class="input-box">
+                    <i class="fa-solid fa-calendar-day" aria-hidden="true"></i>
+                    <input type="date" id="data_entrada" name="data_entrada" value="{{ old('data_entrada', now()->toDateString()) }}" max="{{ now()->toDateString() }}">
                 </div>
 
                 <label for="status">Status do Lote</label>
@@ -2368,12 +2364,31 @@
                     </select>
                 </div>
 
-                <label for="data_entrada">Data Entrada</label>
+                <label for="quantidade_cochos">Quantidade de Cochos</label>
                 <div class="input-box">
-                    <i class="fa-solid fa-calendar"></i>
-                    <input type="date" id="data_entrada" name="data_entrada" value="{{ old('data_entrada') }}" min="{{ $hoje }}" required>
+                    <i class="fa-solid fa-cube"></i>
+                    <input type="number" id="quantidade_cochos" name="quantidade_cochos" min="0" max="100" value="{{ old('quantidade_cochos', 0) }}" placeholder="0" required>
                 </div>
-                <small class="dica-campo">A data não pode ser anterior a {{ \Carbon\Carbon::parse($hoje)->format('d/m/Y') }} (hoje).</small>
+                <small class="dica-campo">Cria automaticamente esse número de cochos pro lote.</small>
+
+                <div class="row">
+                    <div class="campo">
+                        <label for="cocho_capacidade">Capacidade dos Cochos (kg)</label>
+                        <div class="input-box">
+                            <i class="fa-solid fa-bowl-food"></i>
+                            <input type="number" step="0.01" min="0.01" id="cocho_capacidade" name="cocho_capacidade" value="{{ old('cocho_capacidade') }}" placeholder="Ex.: 100" required>
+                        </div>
+                    </div>
+
+                    <div class="campo">
+                        <label for="cocho_nivel_atual">Nível Atual (kg) <span class="dica-campo" style="display:inline; margin:0;">(opcional)</span></label>
+                        <div class="input-box">
+                            <i class="fa-solid fa-weight-scale"></i>
+                            <input type="number" step="0.01" min="0" id="cocho_nivel_atual" name="cocho_nivel_atual" value="{{ old('cocho_nivel_atual') }}" placeholder="Ex.: 100">
+                        </div>
+                    </div>
+                </div>
+                <small class="dica-campo">Já aplica essa capacidade/nível a todos os cochos criados acima.</small>
 
                 <button type="submit" class="submit-btn">Cadastrar Lote</button>
             </form>
@@ -2387,7 +2402,7 @@
                 <button type="button" class="close" onclick="fecharModalEditar()">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
-                <img src="{{ asset('Logo.png') }}" alt="Logo">
+                <img src="{{ asset('logo.png') }}" alt="Logo">
                 <p>Atualizar Lote</p>
             </div>
 
@@ -2397,7 +2412,7 @@
                 <input type="hidden" name="origem_formulario" value="edit">
                 <input type="hidden" id="lote_id_edit" name="lote_id_edit" value="{{ old('lote_id_edit') }}">
 
-                <label>Nome do Lote</label>
+                <label for="edit_nome_lote">Nome do Lote</label>
                 <div class="input-box">
                     <i class="fa-solid fa-layer-group"></i>
                     <input type="text" id="edit_nome_lote" name="nome_lote" required>
@@ -2423,6 +2438,12 @@
                             <option value="{{ $tipo }}">{{ $tipo }}</option>
                         @endforeach
                     </select>
+                </div>
+
+                <label for="edit_raca">Raça <span class="dica-campo" style="display:inline; margin:0;">(opcional)</span></label>
+                <div class="input-box">
+                    <i class="fa-solid fa-dna"></i>
+                    <input type="text" id="edit_raca" name="raca" placeholder="Ex.: Nelore, Holandês, Duroc..." maxlength="100">
                 </div>
 
                 <div class="row">
@@ -2467,7 +2488,7 @@
 
                 <div class="row">
                     <div class="campo">
-                        <label>Quantidade</label>
+                        <label for="edit_quantidade_animais">Quantidade</label>
                         <div class="input-box">
                             <i class="fa-solid fa-paw"></i>
                             <input type="number" id="edit_quantidade_animais" name="quantidade_animais" required>
@@ -2475,13 +2496,19 @@
                     </div>
 
                     <div class="campo">
-                        <label>Peso Médio (kg)</label>
+                        <label for="edit_peso_medio">Peso Médio (kg)</label>
                         <div class="input-box">
                             <i class="fa-solid fa-weight-scale"></i>
                             <input type="number" step="0.01" id="edit_peso_medio" name="peso_medio" required>
                         </div>
                         <small class="dica-campo" id="edit_dica_peso">Selecione o tipo de animal para ver a faixa de peso esperada.</small>
                     </div>
+                </div>
+
+                <label for="edit_data_entrada">Data de Entrada na Fazenda</label>
+                <div class="input-box">
+                    <i class="fa-solid fa-calendar-day" aria-hidden="true"></i>
+                    <input type="date" id="edit_data_entrada" name="data_entrada" max="{{ now()->toDateString() }}">
                 </div>
 
                 <label for="edit_status">Status do Lote</label>
@@ -2494,30 +2521,216 @@
                     </select>
                 </div>
 
-                <label for="edit_data_entrada">Data Entrada</label>
+                <label for="edit_quantidade_cochos">Quantidade de Cochos</label>
                 <div class="input-box">
-                    <i class="fa-solid fa-calendar"></i>
-                    <input type="date" id="edit_data_entrada" name="data_entrada" min="{{ $hoje }}" required>
+                    <i class="fa-solid fa-cube"></i>
+                    <input type="number" id="edit_quantidade_cochos" name="quantidade_cochos" min="0" max="100" required>
                 </div>
-                <small class="dica-campo">A data não pode ser anterior a {{ \Carbon\Carbon::parse($hoje)->format('d/m/Y') }} (hoje).</small>
+                <small class="dica-campo">Aumentar cria cochos novos; diminuir remove os últimos — os que sobrarem mantêm capacidade/nível/sensor já cadastrados.</small>
+
+                <div class="row">
+                    <div class="campo">
+                        <label for="edit_cocho_capacidade">Capacidade dos Cochos Novos (kg)</label>
+                        <div class="input-box">
+                            <i class="fa-solid fa-bowl-food"></i>
+                            <input type="number" step="0.01" min="0.01" id="edit_cocho_capacidade" name="cocho_capacidade" placeholder="Ex.: 100" required>
+                        </div>
+                    </div>
+
+                    <div class="campo">
+                        <label for="edit_cocho_nivel_atual">Nível Atual (kg) <span class="dica-campo" style="display:inline; margin:0;">(opcional)</span></label>
+                        <div class="input-box">
+                            <i class="fa-solid fa-weight-scale"></i>
+                            <input type="number" step="0.01" min="0" id="edit_cocho_nivel_atual" name="cocho_nivel_atual" placeholder="Ex.: 100">
+                        </div>
+                    </div>
+                </div>
+                <small class="dica-campo">Já aplica essa capacidade/nível a todos os cochos criados acima.</small>
 
                 <button type="submit" class="submit-btn">Salvar Alterações</button>
             </form>
         </div>
     </div>
 
-    <!-- MODAL: REGISTRAR ÓBITO -->
-    <div class="modal" id="modalMorte">
-        <div class="modal-card">
-            <div class="modal-top">
-                <button type="button" class="close" onclick="fecharModalMorte()">
-                    <i class="fa-solid fa-xmark"></i>
+    <!-- MODAL: REGISTRAR PARTO (por lote — aumenta a quantidade de animais) -->
+    <div class="modal" id="modalParto">
+        <div class="modal-card ocorr-card ocorr--parto" role="dialog" aria-modal="true" aria-labelledby="tituloParto">
+            <div class="ocorr-topo">
+                <span class="ocorr-icone" aria-hidden="true"><i class="fa-solid fa-baby"></i></span>
+                <div class="ocorr-titulos">
+                    <h2 class="ocorr-titulo" id="tituloParto">Registrar Parto</h2>
+                    <p class="ocorr-sub">As novas crias entram na contagem do lote.</p>
+                </div>
+                <button type="button" class="close" onclick="fecharModalParto()" aria-label="Fechar">
+                    <i class="fa-solid fa-xmark" aria-hidden="true"></i>
                 </button>
-                <img src="{{ asset('Logo.png') }}" alt="Logo">
-                <p>Registrar Óbito</p>
             </div>
 
-            <p class="acao-lote-nome" id="morte_lote_nome"></p>
+            <p class="acao-lote-nome ocorr-lote" id="parto_lote_nome"></p>
+
+            <form id="formParto" method="POST">
+                @csrf
+                <input type="hidden" name="origem_formulario" value="parto">
+                <input type="hidden" id="parto_lote_id" name="lote_id" value="">
+
+                <div class="ocorr-grid">
+                    <div class="campo">
+                        <label for="parto_quantidade">Quantidade de crias nascidas</label>
+                        <div class="input-box">
+                            <i class="fa-solid fa-baby"></i>
+                            <input type="number" id="parto_quantidade" name="quantidade" min="1" step="1" required>
+                        </div>
+                    </div>
+                    <div class="campo">
+                        <label for="parto_data">Data do Parto</label>
+                        <div class="input-box">
+                            <i class="fa-solid fa-calendar"></i>
+                            <input type="date" id="parto_data" name="data_ocorrencia" max="{{ $hoje }}" required>
+                        </div>
+                    </div>
+                </div>
+                <p class="ocorr-info"><i class="fa-solid fa-circle-info" aria-hidden="true"></i> A quantidade de animais do lote é aumentada automaticamente.</p>
+
+                <label for="parto_observacao">Observação (opcional)</label>
+                <div class="input-box">
+                    <i class="fa-solid fa-note-sticky"></i>
+                    <input type="text" id="parto_observacao" name="observacao" maxlength="255">
+                </div>
+
+                <div class="ocorr-acoes">
+                    <button type="button" class="ocorr-cancelar" onclick="fecharModalParto()">Cancelar</button>
+                    <button type="submit" class="submit-btn ocorr-confirmar">
+                        <i class="fa-solid fa-check"></i> Confirmar Parto
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: REGISTRAR ECLOSÃO (só Avicultura — aumenta a quantidade de animais) -->
+    <div class="modal" id="modalEclosao">
+        <div class="modal-card ocorr-card ocorr--eclosao" role="dialog" aria-modal="true" aria-labelledby="tituloEclosao">
+            <div class="ocorr-topo">
+                <span class="ocorr-icone" aria-hidden="true"><i class="fa-solid fa-egg"></i></span>
+                <div class="ocorr-titulos">
+                    <h2 class="ocorr-titulo" id="tituloEclosao">Registrar Eclosão</h2>
+                    <p class="ocorr-sub">Os pintinhos eclodidos entram na contagem do lote.</p>
+                </div>
+                <button type="button" class="close" onclick="fecharModalEclosao()" aria-label="Fechar">
+                    <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+                </button>
+            </div>
+
+            <p class="acao-lote-nome ocorr-lote" id="eclosao_lote_nome"></p>
+
+            <form id="formEclosao" method="POST">
+                @csrf
+                <input type="hidden" name="origem_formulario" value="eclosao">
+                <input type="hidden" id="eclosao_lote_id" name="lote_id" value="">
+
+                <div class="ocorr-grid">
+                    <div class="campo">
+                        <label for="eclosao_quantidade">Quantidade de pintinhos eclodidos</label>
+                        <div class="input-box">
+                            <i class="fa-solid fa-egg"></i>
+                            <input type="number" id="eclosao_quantidade" name="quantidade" min="1" step="1" required>
+                        </div>
+                    </div>
+                    <div class="campo">
+                        <label for="eclosao_data">Data da Eclosão</label>
+                        <div class="input-box">
+                            <i class="fa-solid fa-calendar"></i>
+                            <input type="date" id="eclosao_data" name="data_ocorrencia" max="{{ $hoje }}" required>
+                        </div>
+                    </div>
+                </div>
+                <p class="ocorr-info"><i class="fa-solid fa-circle-info" aria-hidden="true"></i> A quantidade de animais do lote é aumentada automaticamente.</p>
+
+                <label for="eclosao_observacao">Observação (opcional)</label>
+                <div class="input-box">
+                    <i class="fa-solid fa-note-sticky"></i>
+                    <input type="text" id="eclosao_observacao" name="observacao" maxlength="255">
+                </div>
+
+                <div class="ocorr-acoes">
+                    <button type="button" class="ocorr-cancelar" onclick="fecharModalEclosao()">Cancelar</button>
+                    <button type="submit" class="submit-btn ocorr-confirmar">
+                        <i class="fa-solid fa-check"></i> Confirmar Eclosão
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: REGISTRAR POSTURA (só Avicultura — não altera a quantidade de animais) -->
+    <div class="modal" id="modalPostura">
+        <div class="modal-card ocorr-card ocorr--postura" role="dialog" aria-modal="true" aria-labelledby="tituloPostura">
+            <div class="ocorr-topo">
+                <span class="ocorr-icone" aria-hidden="true"><i class="fa-solid fa-egg"></i></span>
+                <div class="ocorr-titulos">
+                    <h2 class="ocorr-titulo" id="tituloPostura">Registrar Postura</h2>
+                    <p class="ocorr-sub">Produção de ovos do dia — não altera a quantidade de aves.</p>
+                </div>
+                <button type="button" class="close" onclick="fecharModalPostura()" aria-label="Fechar">
+                    <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+                </button>
+            </div>
+
+            <p class="acao-lote-nome ocorr-lote" id="postura_lote_nome"></p>
+
+            <form id="formPostura" method="POST">
+                @csrf
+                <input type="hidden" name="origem_formulario" value="postura">
+                <input type="hidden" id="postura_lote_id" name="lote_id" value="">
+
+                <div class="ocorr-grid">
+                    <div class="campo">
+                        <label for="postura_quantidade">Quantidade de ovos do dia</label>
+                        <div class="input-box">
+                            <i class="fa-solid fa-egg"></i>
+                            <input type="number" id="postura_quantidade" name="quantidade" min="1" step="1" required>
+                        </div>
+                    </div>
+                    <div class="campo">
+                        <label for="postura_data">Data da Postura</label>
+                        <div class="input-box">
+                            <i class="fa-solid fa-calendar"></i>
+                            <input type="date" id="postura_data" name="data_ocorrencia" max="{{ $hoje }}" required>
+                        </div>
+                    </div>
+                </div>
+
+                <label for="postura_observacao">Observação (opcional)</label>
+                <div class="input-box">
+                    <i class="fa-solid fa-note-sticky"></i>
+                    <input type="text" id="postura_observacao" name="observacao" maxlength="255">
+                </div>
+
+                <div class="ocorr-acoes">
+                    <button type="button" class="ocorr-cancelar" onclick="fecharModalPostura()">Cancelar</button>
+                    <button type="submit" class="submit-btn ocorr-confirmar">
+                        <i class="fa-solid fa-check"></i> Confirmar Postura
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: REGISTRAR ÓBITO -->
+    <div class="modal" id="modalMorte">
+        <div class="modal-card ocorr-card ocorr--morte" role="dialog" aria-modal="true" aria-labelledby="tituloMorte">
+            <div class="ocorr-topo">
+                <span class="ocorr-icone" aria-hidden="true"><i class="fa-solid fa-heart-crack"></i></span>
+                <div class="ocorr-titulos">
+                    <h2 class="ocorr-titulo" id="tituloMorte">Registrar Óbito</h2>
+                    <p class="ocorr-sub">Os animais saem da contagem ativa do lote.</p>
+                </div>
+                <button type="button" class="close" onclick="fecharModalMorte()" aria-label="Fechar">
+                    <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+                </button>
+            </div>
+
+            <p class="acao-lote-nome ocorr-lote" id="morte_lote_nome"></p>
 
             <form id="formMorte" method="POST" onsubmit="return validarFormMorte()">
                 @csrf
@@ -2548,7 +2761,7 @@
                 <div id="blocoMorteDoencas" hidden>
                     <label>Quantos morreram de cada doença?</label>
                     <div id="morteDoencasLista"></div>
-                    <small class="dica-campo" id="morte_doenca_dica"></small>
+                    <p class="ocorr-info" id="morte_doenca_dica"></p>
                 </div>
 
                 <!-- Demais casos: quantidade única, com doença opcional em lote nunca isolado -->
@@ -2585,25 +2798,31 @@
                     <input type="text" id="morte_observacao" name="observacao" placeholder="Detalhes adicionais" maxlength="255">
                 </div>
 
-                <button type="submit" class="submit-btn btn-confirmar-morte">
-                    <i class="fa-solid fa-check"></i> Confirmar Óbito
-                </button>
+                <div class="ocorr-acoes">
+                    <button type="button" class="ocorr-cancelar" onclick="fecharModalMorte()">Cancelar</button>
+                    <button type="submit" class="submit-btn ocorr-confirmar btn-confirmar-morte">
+                        <i class="fa-solid fa-check"></i> Confirmar Óbito
+                    </button>
+                </div>
             </form>
         </div>
     </div>
 
     <!-- MODAL: REGISTRAR DOENÇA -->
     <div class="modal" id="modalDoenca">
-        <div class="modal-card">
-            <div class="modal-top">
-                <button type="button" class="close" onclick="fecharModalDoenca()">
-                    <i class="fa-solid fa-xmark"></i>
+        <div class="modal-card ocorr-card ocorr--doenca" role="dialog" aria-modal="true" aria-labelledby="tituloDoenca">
+            <div class="ocorr-topo">
+                <span class="ocorr-icone" aria-hidden="true"><i class="fa-solid fa-virus"></i></span>
+                <div class="ocorr-titulos">
+                    <h2 class="ocorr-titulo" id="tituloDoenca">Registrar Doença</h2>
+                    <p class="ocorr-sub">Os animais doentes vão para um lote de isolamento.</p>
+                </div>
+                <button type="button" class="close" onclick="fecharModalDoenca()" aria-label="Fechar">
+                    <i class="fa-solid fa-xmark" aria-hidden="true"></i>
                 </button>
-                <img src="{{ asset('Logo.png') }}" alt="Logo">
-                <p>Registrar Doença</p>
             </div>
 
-            <p class="acao-lote-nome" id="doenca_lote_nome"></p>
+            <p class="acao-lote-nome ocorr-lote" id="doenca_lote_nome"></p>
 
             <form id="formDoenca" method="POST">
                 @csrf
@@ -2629,7 +2848,7 @@
                     </div>
                 </div>
 
-                <small class="dica-campo" id="doenca_destino_dica"></small>
+                <p class="ocorr-info" id="doenca_destino_dica"></p>
 
                 <label for="doenca_observacao">Observação (opcional)</label>
                 <div class="input-box">
@@ -2637,25 +2856,31 @@
                     <input type="text" id="doenca_observacao" name="observacao" placeholder="Ex.: já isolados desde ontem" maxlength="255">
                 </div>
 
-                <button type="submit" class="submit-btn btn-confirmar-doenca">
-                    <i class="fa-solid fa-check"></i> Confirmar Registro
-                </button>
+                <div class="ocorr-acoes">
+                    <button type="button" class="ocorr-cancelar" onclick="fecharModalDoenca()">Cancelar</button>
+                    <button type="submit" class="submit-btn ocorr-confirmar btn-confirmar-doenca">
+                        <i class="fa-solid fa-check"></i> Confirmar Registro
+                    </button>
+                </div>
             </form>
         </div>
     </div>
 
     <!-- MODAL: DEVOLVER AO LOTE (recuperação — só pro lote de origem) -->
     <div class="modal" id="modalRecuperacao">
-        <div class="modal-card">
-            <div class="modal-top">
-                <button type="button" class="close" onclick="fecharModalRecuperacao()">
-                    <i class="fa-solid fa-xmark"></i>
+        <div class="modal-card ocorr-card ocorr--recuperacao" role="dialog" aria-modal="true" aria-labelledby="tituloRecuperacao">
+            <div class="ocorr-topo">
+                <span class="ocorr-icone" aria-hidden="true"><i class="fa-solid fa-house-medical"></i></span>
+                <div class="ocorr-titulos">
+                    <h2 class="ocorr-titulo" id="tituloRecuperacao">Devolver ao Lote</h2>
+                    <p class="ocorr-sub">Animais recuperados voltam para o lote de origem.</p>
+                </div>
+                <button type="button" class="close" onclick="fecharModalRecuperacao()" aria-label="Fechar">
+                    <i class="fa-solid fa-xmark" aria-hidden="true"></i>
                 </button>
-                <img src="{{ asset('Logo.png') }}" alt="Logo">
-                <p>Devolver ao Lote</p>
             </div>
 
-            <p class="acao-lote-nome" id="recuperacao_lote_nome"></p>
+            <p class="acao-lote-nome ocorr-lote" id="recuperacao_lote_nome"></p>
             <p class="recuperacao-destino-fixo" id="recuperacao_destino_fixo"></p>
 
             <form id="formRecuperacao" method="POST" onsubmit="return validarFormRecuperacao()">
@@ -2683,236 +2908,95 @@
                     <input type="text" id="recuperacao_observacao" name="observacao" placeholder="Ex.: liberados pelo veterinário" maxlength="255">
                 </div>
 
-                <button type="submit" class="submit-btn btn-confirmar-recuperacao">
-                    <i class="fa-solid fa-check"></i> Confirmar Retorno
-                </button>
+                <div class="ocorr-acoes">
+                    <button type="button" class="ocorr-cancelar" onclick="fecharModalRecuperacao()">Cancelar</button>
+                    <button type="submit" class="submit-btn ocorr-confirmar btn-confirmar-recuperacao">
+                        <i class="fa-solid fa-check"></i> Confirmar Retorno
+                    </button>
+                </div>
             </form>
         </div>
     </div>
 
-    <!-- MODAL: ADICIONAR ANIMAL (dentro de um lote específico) -->
-    <div class="modal" id="modalAnimal">
-        <div class="modal-card">
-            <div class="modal-top">
-                <button type="button" class="close" onclick="fecharModalPorId('modalAnimal')">
-                    <i class="fa-solid fa-xmark"></i>
+    <!-- MODAL: REGISTRAR/EDITAR ORDENHA (por lote) -->
+    <div class="modal" id="modalOrdenhaLote">
+        <div class="modal-card ocorr-card ocorr--ordenha" role="dialog" aria-modal="true" aria-labelledby="ordenhaLote_titulo">
+            <div class="ocorr-topo">
+                <span class="ocorr-icone" aria-hidden="true"><i class="fa-solid fa-droplet"></i></span>
+                <div class="ocorr-titulos">
+                    <h2 class="ocorr-titulo" id="ordenhaLote_titulo">Registrar Ordenha</h2>
+                    <p class="ocorr-sub">Registre a produção de leite do lote neste turno.</p>
+                </div>
+                <button type="button" class="close" onclick="fecharModalPorId('modalOrdenhaLote')" aria-label="Fechar">
+                    <i class="fa-solid fa-xmark" aria-hidden="true"></i>
                 </button>
-                <img src="{{ asset('Logo.png') }}" alt="Logo">
-                <p>Adicionar Animal</p>
             </div>
 
-            <p class="acao-lote-nome" id="animal_lote_nome"></p>
+            <p class="acao-lote-nome ocorr-lote" id="ordenhaLote_nome"></p>
 
-            <form action="{{ route('animal.add') }}" method="POST">
+            <form id="formOrdenhaLote" method="POST">
                 @csrf
-                <input type="hidden" name="origem_formulario" value="animal">
-                <input type="hidden" id="animal_lote_id" name="lote_id" value="">
-
-                <label for="animal_nome">Nome / Identificação</label>
-                <div class="input-box">
-                    <i class="fa-solid fa-cow"></i>
-                    <input type="text" id="animal_nome" name="nome" placeholder="Ex.: Mimosa" required>
-                </div>
-
-                <label for="animal_identificador">Identificador (brinco)</label>
-                <div class="input-box">
-                    <i class="fa-solid fa-tag"></i>
-                    <input type="text" id="animal_identificador" name="identificador" placeholder="Opcional">
-                </div>
+                <input type="hidden" name="_method" id="ordenhaLote_metodo" value="POST">
+                <input type="hidden" name="origem_formulario" value="ordenha_lote">
+                <input type="hidden" id="ordenhaLote_lote_id" name="lote_id" value="">
+                <input type="hidden" id="ordenhaLote_id" name="ordenha_id" value="">
 
                 <div class="row">
                     <div class="campo">
-                        <label for="animal_sexo">Sexo</label>
-                        <div class="input-box">
-                            <i class="fa-solid fa-venus-mars"></i>
-                            <select id="animal_sexo" name="sexo" required>
-                                <option value="" disabled selected>Selecione...</option>
-                                @foreach ($sexosAnimal as $sexo)
-                                    <option value="{{ $sexo }}">{{ $sexo }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                    </div>
-                    <div class="campo">
-                        <label for="animal_raca">Raça</label>
-                        <div class="input-box">
-                            <i class="fa-solid fa-dna"></i>
-                            <input type="text" id="animal_raca" name="raca" placeholder="Opcional">
-                        </div>
-                    </div>
-                </div>
-
-                <div class="row">
-                    <div class="campo">
-                        <label for="animal_data_nascimento">Data de Nascimento</label>
+                        <label for="ordenhaLote_data">Data</label>
                         <div class="input-box">
                             <i class="fa-solid fa-calendar"></i>
-                            <input type="date" id="animal_data_nascimento" name="data_nascimento" max="{{ $hoje }}" required>
+                            <input type="date" id="ordenhaLote_data" name="data" max="{{ $hoje }}" required>
                         </div>
                     </div>
                     <div class="campo">
-                        <label for="animal_peso">Peso (kg)</label>
-                        <div class="input-box">
-                            <i class="fa-solid fa-weight-scale"></i>
-                            <input type="number" step="0.01" id="animal_peso" name="peso" placeholder="Opcional">
-                        </div>
-                    </div>
-                </div>
-
-                <button type="submit" class="submit-btn">
-                    <i class="fa-solid fa-check"></i> Cadastrar Animal
-                </button>
-            </form>
-        </div>
-    </div>
-
-    <!-- MODAL: REGISTRAR PARTO PREVISTO (por animal) -->
-    <div class="modal" id="modalPartoAnimal">
-        <div class="modal-card">
-            <div class="modal-top">
-                <button type="button" class="close" onclick="fecharModalPorId('modalPartoAnimal')">
-                    <i class="fa-solid fa-xmark"></i>
-                </button>
-                <img src="{{ asset('Logo.png') }}" alt="Logo">
-                <p>Registrar Parto Previsto</p>
-            </div>
-
-            <p class="acao-lote-nome" id="partoAnimal_nome"></p>
-
-            <form id="formPartoAnimal" method="POST">
-                @csrf
-                <input type="hidden" name="origem_formulario" value="parto_animal">
-                <input type="hidden" id="partoAnimal_animal_id" name="animal_id" value="">
-
-                <label for="partoAnimal_data_prevista">Data Prevista do Parto</label>
-                <div class="input-box">
-                    <i class="fa-solid fa-calendar"></i>
-                    <input type="date" id="partoAnimal_data_prevista" name="data_prevista" required>
-                </div>
-
-                <label for="partoAnimal_observacoes">Observações (opcional)</label>
-                <div class="input-box">
-                    <i class="fa-solid fa-note-sticky"></i>
-                    <input type="text" id="partoAnimal_observacoes" name="observacoes" maxlength="255">
-                </div>
-
-                <small class="dica-campo">Depois do parto realizado, uma nova lactação é criada automaticamente — veja o perfil completo do animal.</small>
-
-                <button type="submit" class="submit-btn">
-                    <i class="fa-solid fa-check"></i> Registrar
-                </button>
-            </form>
-        </div>
-    </div>
-
-    <!-- MODAL: REGISTRAR ORDENHA (por animal) -->
-    <div class="modal" id="modalOrdenhaAnimal">
-        <div class="modal-card">
-            <div class="modal-top">
-                <button type="button" class="close" onclick="fecharModalPorId('modalOrdenhaAnimal')">
-                    <i class="fa-solid fa-xmark"></i>
-                </button>
-                <img src="{{ asset('Logo.png') }}" alt="Logo">
-                <p>Registrar Ordenha</p>
-            </div>
-
-            <p class="acao-lote-nome" id="ordenhaAnimal_nome"></p>
-
-            <form id="formOrdenhaAnimal" method="POST">
-                @csrf
-                <input type="hidden" name="origem_formulario" value="ordenha_animal">
-                <input type="hidden" id="ordenhaAnimal_animal_id" name="animal_id" value="">
-                <div class="row">
-                    <div class="campo">
-                        <label for="ordenhaAnimal_data">Data</label>
-                        <div class="input-box">
-                            <i class="fa-solid fa-calendar"></i>
-                            <input type="date" id="ordenhaAnimal_data" name="data" max="{{ $hoje }}" required>
-                        </div>
-                    </div>
-                    <div class="campo">
-                        <label for="ordenhaAnimal_horario">Horário</label>
+                        <label for="ordenhaLote_horario">Horário</label>
                         <div class="input-box">
                             <i class="fa-solid fa-clock"></i>
-                            <input type="time" id="ordenhaAnimal_horario" name="horario" required>
+                            <input type="time" id="ordenhaLote_horario" name="horario" required>
                         </div>
                     </div>
                 </div>
 
-                <label for="ordenhaAnimal_turno">Turno</label>
+                <label for="ordenhaLote_turno">Turno</label>
                 <div class="input-box">
                     <i class="fa-solid fa-sun"></i>
-                    <select id="ordenhaAnimal_turno" name="turno" required>
+                    <select id="ordenhaLote_turno" name="turno" required aria-describedby="ordenhaLote_turnoDica">
                         <option value="" disabled selected>Selecione...</option>
                         @foreach ($turnosOrdenha as $turno)
-                            <option value="{{ $turno }}">{{ $turno }}</option>
+                            <option value="{{ $turno }}">{{ $turno }} (a partir das {{ \App\Support\LoteRegras::INICIO_TURNOS_ORDENHA[$turno] }})</option>
                         @endforeach
                     </select>
                 </div>
+                <p class="ordenha-turno-dica" id="ordenhaLote_turnoDica" aria-live="polite">
+                    O turno acompanha o horário: Manhã a partir das 04:00, Tarde a partir das 12:00, Noite a partir das 18:00.
+                </p>
 
-                <label for="ordenhaAnimal_litros">Quantidade de Leite (litros)</label>
+                <label for="ordenhaLote_litros">Quantidade de Leite (litros)</label>
                 <div class="input-box">
                     <i class="fa-solid fa-droplet"></i>
-                    <input type="number" step="0.01" min="0.01" id="ordenhaAnimal_litros" name="quantidade_litros" placeholder="Ex.: 12.5" required>
+                    <input type="number" step="0.01" min="0.01" id="ordenhaLote_litros" name="quantidade_litros" placeholder="Ex.: 120.5" required>
                 </div>
 
-                <label for="ordenhaAnimal_observacoes">Observações (opcional)</label>
+                <label for="ordenhaLote_observacoes">Observações (opcional)</label>
                 <div class="input-box">
                     <i class="fa-solid fa-note-sticky"></i>
-                    <input type="text" id="ordenhaAnimal_observacoes" name="observacoes" maxlength="255">
+                    <input type="text" id="ordenhaLote_observacoes" name="observacoes" maxlength="255">
                 </div>
 
-                <button type="submit" class="submit-btn">
-                    <i class="fa-solid fa-check"></i> Confirmar Ordenha
-                </button>
+                <div class="ocorr-acoes">
+                    <button type="button" class="ocorr-cancelar" onclick="fecharModalPorId('modalOrdenhaLote')">Cancelar</button>
+                    <button type="submit" class="submit-btn ocorr-confirmar" id="ordenhaLote_submit">
+                        <i class="fa-solid fa-check"></i> Confirmar Ordenha
+                    </button>
+                </div>
             </form>
         </div>
     </div>
 
-    @include('partials.acessibilidade')
-    @include('partials.assistente-ia')
+@endsection
 
-    <!-- WIDGET VLIBRAS -->
-    <div vw class="enabled">
-        <div vw-access-button class="active"></div>
-        <div vw-plugin-wrapper>
-            <div class="vw-plugin-top-wrapper"></div>
-        </div>
-    </div>
-    <script src="https://vlibras.gov.br/app/vlibras-plugin.js"></script>
-    <script>
-        new window.VLibras.Widget('https://vlibras.gov.br/app');
-    </script>
-
-    <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            /* --- SIDEBAR RECOLHÍVEL (mesmo comportamento do Dashboard/Fazendas) --- */
-            const toggleBtn = document.getElementById('toggleMenuBtn');
-            const sidebar = document.getElementById('sidebar');
-            const mainContent = document.querySelector('.main');
-            const sidebarOverlay = document.getElementById('sidebarOverlay');
-
-            if (toggleBtn && sidebar && mainContent) {
-                toggleBtn.addEventListener('click', function() {
-                    if (window.innerWidth > 992) {
-                        sidebar.classList.toggle('collapsed');
-                        mainContent.classList.toggle('expanded');
-                    } else {
-                        sidebar.classList.toggle('active-mobile');
-                        if (sidebarOverlay) sidebarOverlay.classList.toggle('active');
-                    }
-                });
-            }
-
-            if (sidebarOverlay && sidebar) {
-                sidebarOverlay.addEventListener('click', function() {
-                    sidebar.classList.remove('active-mobile');
-                    sidebarOverlay.classList.remove('active');
-                });
-            }
-        });
-    </script>
-
+@push('scripts')
     <script>
         /* --- FINALIDADE DEPENDE DE TIPO DE ANIMAL + SEXO ---
            Nem toda finalidade cabe em toda espécie (ex.: equino vive de
@@ -3178,12 +3262,13 @@
             });
         }
 
-        function abrirModalEditar(id, nome, fazendaId, tipo, finalidade, sexo, idadeMedia, quantidade, peso, data, status) {
+        function abrirModalEditar(id, nome, fazendaId, tipo, finalidade, sexo, idadeMedia, quantidade, peso, status, raca, quantidadeCochos, dataEntrada) {
             document.getElementById('modalEditar').classList.add('active');
 
             document.getElementById('edit_nome_lote').value = nome;
             document.getElementById('edit_fazenda_id').value = fazendaId;
             document.getElementById('edit_tipo_animal').value = tipo;
+            document.getElementById('edit_raca').value = raca || '';
             document.getElementById('edit_sexo').value = sexo;
 
             // Recalcula quais finalidades ficam habilitadas pro tipo/sexo
@@ -3201,8 +3286,15 @@
             document.getElementById('edit_idade_media').value = idadeMedia;
             document.getElementById('edit_quantidade_animais').value = quantidade;
             document.getElementById('edit_peso_medio').value = peso;
-            document.getElementById('edit_data_entrada').value = data;
+            document.getElementById('edit_data_entrada').value = dataEntrada || '';
             document.getElementById('edit_status').value = status || 'Ativo';
+            document.getElementById('edit_quantidade_cochos').value = quantidadeCochos || 0;
+            // Capacidade/Nível Atual não têm um valor "do lote" pra mostrar
+            // (cada cocho já existente pode ter o seu próprio) — sempre
+            // reabre em branco, valendo só se a Quantidade de Cochos acima
+            // for aumentada nesta edição.
+            document.getElementById('edit_cocho_capacidade').value = '';
+            document.getElementById('edit_cocho_nivel_atual').value = '';
             document.getElementById('lote_id_edit').value = id;
 
             atualizarDicaPeso(document.getElementById('edit_tipo_animal'), document.getElementById('edit_dica_peso'));
@@ -3311,6 +3403,63 @@
 
         function fecharModalMorte() {
             document.getElementById('modalMorte').classList.remove('active');
+        }
+
+        function abrirModalParto(botao) {
+            const id = botao.dataset.id;
+            const nome = botao.dataset.nome;
+            const quantidadeAtual = parseInt(botao.dataset.quantidade, 10) || 0;
+
+            document.getElementById('modalParto').classList.add('active');
+            document.getElementById('parto_lote_nome').textContent = nome + ' — ' + quantidadeAtual + (quantidadeAtual == 1 ? ' animal ativo' : ' animais ativos');
+            document.getElementById('parto_quantidade').value = 1;
+            document.getElementById('parto_data').value = '{{ $hoje }}';
+            document.getElementById('parto_observacao').value = '';
+            document.getElementById('parto_lote_id').value = id;
+
+            document.getElementById('formParto').action = '/lote/' + id + '/parto';
+        }
+
+        function fecharModalParto() {
+            document.getElementById('modalParto').classList.remove('active');
+        }
+
+        function abrirModalEclosao(botao) {
+            const id = botao.dataset.id;
+            const nome = botao.dataset.nome;
+            const quantidadeAtual = parseInt(botao.dataset.quantidade, 10) || 0;
+
+            document.getElementById('modalEclosao').classList.add('active');
+            document.getElementById('eclosao_lote_nome').textContent = nome + ' — ' + quantidadeAtual + (quantidadeAtual == 1 ? ' animal ativo' : ' animais ativos');
+            document.getElementById('eclosao_quantidade').value = 1;
+            document.getElementById('eclosao_data').value = '{{ $hoje }}';
+            document.getElementById('eclosao_observacao').value = '';
+            document.getElementById('eclosao_lote_id').value = id;
+
+            document.getElementById('formEclosao').action = '/lote/' + id + '/eclosao';
+        }
+
+        function fecharModalEclosao() {
+            document.getElementById('modalEclosao').classList.remove('active');
+        }
+
+        function abrirModalPostura(botao) {
+            const id = botao.dataset.id;
+            const nome = botao.dataset.nome;
+            const quantidadeAtual = parseInt(botao.dataset.quantidade, 10) || 0;
+
+            document.getElementById('modalPostura').classList.add('active');
+            document.getElementById('postura_lote_nome').textContent = nome + ' — ' + quantidadeAtual + (quantidadeAtual == 1 ? ' animal ativo' : ' animais ativos');
+            document.getElementById('postura_quantidade').value = '';
+            document.getElementById('postura_data').value = '{{ $hoje }}';
+            document.getElementById('postura_observacao').value = '';
+            document.getElementById('postura_lote_id').value = id;
+
+            document.getElementById('formPostura').action = '/lote/' + id + '/postura';
+        }
+
+        function fecharModalPostura() {
+            document.getElementById('modalPostura').classList.remove('active');
         }
 
         // ------------------------------------------------------------
@@ -3463,47 +3612,125 @@
         }
 
         // ------------------------------------------------------------
-        // ANIMAIS DO LOTE — cadastro de animal, parto previsto e ordenha
-        // agora são por animal individual (ver seção "Animais deste Lote"
-        // dentro de "Ver detalhes"). Perfil completo (bezerros, marcar
-        // parto realizado, encerrar lactação, histórico) fica na tela
-        // própria do animal (animal.detalhe).
+        // ORDENHA E LEITE DO LOTE — produção de leite é sempre por LOTE,
+        // nunca por animal individual (ver seção "Ordenha e Leite do Lote"
+        // dentro de "Ver detalhes"). O mesmo modal serve para registrar uma
+        // ordenha nova e para editar uma já existente.
         // ------------------------------------------------------------
         function fecharModalPorId(id) {
             document.getElementById(id).classList.remove('active');
         }
 
-        function abrirModalAnimal(loteId, nomeLote) {
-            document.getElementById('animal_lote_nome').textContent = nomeLote;
-            document.getElementById('animal_lote_id').value = loteId;
-            document.getElementById('animal_nome').value = '';
-            document.getElementById('animal_identificador').value = '';
-            document.getElementById('animal_sexo').value = '';
-            document.getElementById('animal_raca').value = '';
-            document.getElementById('animal_data_nascimento').value = '';
-            document.getElementById('animal_peso').value = '';
-            document.getElementById('modalAnimal').classList.add('active');
+        // ------------------------------------------------------------
+        // TURNO x HORÁRIO — mesma regra do back-end e do banco
+        // (App\Support\LoteRegras::INICIO_TURNOS_ORDENHA): Manhã a partir
+        // das 04:00, Tarde a partir das 12:00, Noite a partir das 18:00 (até
+        // 03:59). Mudar o horário ajusta o turno; escolher um turno que não
+        // bate com o horário leva o horário para o início desse turno.
+        // ------------------------------------------------------------
+        const INICIO_TURNOS_ORDENHA = @json(\App\Support\LoteRegras::INICIO_TURNOS_ORDENHA);
+
+        function turnoPorHorario(hhmm) {
+            if (!hhmm) return '';
+            if (hhmm >= INICIO_TURNOS_ORDENHA['Noite'] || hhmm < INICIO_TURNOS_ORDENHA['Manhã']) return 'Noite';
+            return hhmm >= INICIO_TURNOS_ORDENHA['Tarde'] ? 'Tarde' : 'Manhã';
         }
 
-        function abrirModalPartoAnimal(animalId, nomeAnimal) {
-            document.getElementById('partoAnimal_nome').textContent = nomeAnimal;
-            document.getElementById('partoAnimal_animal_id').value = animalId;
-            document.getElementById('partoAnimal_data_prevista').value = '';
-            document.getElementById('partoAnimal_observacoes').value = '';
-            document.getElementById('formPartoAnimal').action = '/animal/' + animalId + '/parto';
-            document.getElementById('modalPartoAnimal').classList.add('active');
+        function horaAtual() {
+            const agora = new Date();
+            return String(agora.getHours()).padStart(2, '0') + ':' + String(agora.getMinutes()).padStart(2, '0');
         }
 
-        function abrirModalOrdenhaAnimal(animalId, nomeAnimal) {
-            document.getElementById('ordenhaAnimal_nome').textContent = nomeAnimal;
-            document.getElementById('ordenhaAnimal_animal_id').value = animalId;
-            document.getElementById('ordenhaAnimal_data').value = '{{ $hoje }}';
-            document.getElementById('ordenhaAnimal_horario').value = '';
-            document.getElementById('ordenhaAnimal_turno').value = '';
-            document.getElementById('ordenhaAnimal_litros').value = '';
-            document.getElementById('ordenhaAnimal_observacoes').value = '';
-            document.getElementById('formOrdenhaAnimal').action = '/animal/' + animalId + '/ordenha';
-            document.getElementById('modalOrdenhaAnimal').classList.add('active');
+        function atualizarDicaTurno() {
+            const turno = document.getElementById('ordenhaLote_turno').value;
+            const horario = document.getElementById('ordenhaLote_horario').value;
+            const dica = document.getElementById('ordenhaLote_turnoDica');
+            const certo = turnoPorHorario(horario);
+            const faixas = '(Manhã a partir das 04:00, Tarde a partir das 12:00, Noite a partir das 18:00.)';
+            if (!horario || !turno) {
+                dica.innerHTML = 'O turno acompanha o horário: ' + faixas.slice(1, -2) + '.';
+            } else if (turno !== certo) {
+                // Só acontece com dados devolvidos pelo servidor após erro.
+                dica.innerHTML = '⚠ O horário ' + horario + ' é do turno da <strong>' + certo + '</strong>, não da ' + turno + '. ' + faixas;
+            } else {
+                dica.innerHTML = 'Horário ' + horario + ' → turno da <strong>' + turno + '</strong>. ' + faixas;
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const campoHorario = document.getElementById('ordenhaLote_horario');
+            const campoTurno = document.getElementById('ordenhaLote_turno');
+            if (!campoHorario || !campoTurno) return;
+
+            campoHorario.addEventListener('input', function () {
+                const sugerido = turnoPorHorario(campoHorario.value);
+                if (sugerido) campoTurno.value = sugerido;
+                atualizarDicaTurno();
+            });
+
+            campoTurno.addEventListener('change', function () {
+                if (turnoPorHorario(campoHorario.value) !== campoTurno.value) {
+                    campoHorario.value = INICIO_TURNOS_ORDENHA[campoTurno.value] || campoHorario.value;
+                }
+                atualizarDicaTurno();
+            });
+        });
+
+        function abrirModalOrdenhaLote(loteId, nomeLote, ordenhaId, data, horario, turno, litros, observacoes) {
+            const editando = !!ordenhaId;
+
+            document.getElementById('ordenhaLote_nome').textContent = nomeLote;
+            document.getElementById('ordenhaLote_titulo').textContent = editando ? 'Editar Ordenha' : 'Registrar Ordenha';
+            document.getElementById('ordenhaLote_submit').innerHTML =
+                '<i class="fa-solid fa-check"></i> ' + (editando ? 'Salvar Alterações' : 'Confirmar Ordenha');
+
+            // Nova ordenha: já vem com a hora de agora e o turno certo dela.
+            const horarioInicial = editando ? horario : horaAtual();
+            document.getElementById('ordenhaLote_data').value = editando ? data : '{{ $hoje }}';
+            document.getElementById('ordenhaLote_horario').value = horarioInicial;
+            document.getElementById('ordenhaLote_turno').value = editando ? turno : turnoPorHorario(horarioInicial);
+            atualizarDicaTurno();
+            document.getElementById('ordenhaLote_litros').value = editando ? litros : '';
+            document.getElementById('ordenhaLote_observacoes').value = editando ? (observacoes || '') : '';
+            document.getElementById('ordenhaLote_lote_id').value = loteId;
+            document.getElementById('ordenhaLote_id').value = editando ? ordenhaId : '';
+
+            const form = document.getElementById('formOrdenhaLote');
+            document.getElementById('ordenhaLote_metodo').value = editando ? 'PUT' : 'POST';
+            form.action = editando ? ('/lote/' + loteId + '/ordenha/' + ordenhaId) : ('/lote/' + loteId + '/ordenha');
+
+            document.getElementById('modalOrdenhaLote').classList.add('active');
+        }
+
+        function verMaisOrdenhasLote(botao) {
+            const loteId = botao.dataset.loteId;
+            const textoOriginal = botao.textContent;
+            botao.disabled = true;
+            botao.textContent = 'Carregando...';
+
+            fetch('/lote/' + loteId + '/ordenha/historico', {
+                    headers: { 'Accept': 'application/json' },
+                })
+                .then(function(resposta) {
+                    if (resposta.status === 401) {
+                        window.location.href = '{{ route('login.index') }}';
+                        return Promise.reject('nao-autenticado');
+                    }
+                    return resposta.json();
+                })
+                .then(function(dados) {
+                    if (dados.success) {
+                        document.getElementById('ordenhasLote_' + loteId).insertAdjacentHTML('beforeend', dados.html);
+                        botao.remove();
+                    } else {
+                        botao.disabled = false;
+                        botao.textContent = textoOriginal;
+                    }
+                })
+                .catch(function() {
+                    botao.disabled = false;
+                    botao.textContent = textoOriginal;
+                });
         }
 
         // ------------------------------------------------------------
@@ -3625,18 +3852,20 @@
             const modalMorte = document.getElementById('modalMorte');
             const modalDoenca = document.getElementById('modalDoenca');
             const modalRecuperacao = document.getElementById('modalRecuperacao');
-            const modalAnimal = document.getElementById('modalAnimal');
-            const modalPartoAnimal = document.getElementById('modalPartoAnimal');
-            const modalOrdenhaAnimal = document.getElementById('modalOrdenhaAnimal');
+            const modalOrdenhaLote = document.getElementById('modalOrdenhaLote');
+            const modalParto = document.getElementById('modalParto');
+            const modalEclosao = document.getElementById('modalEclosao');
+            const modalPostura = document.getElementById('modalPostura');
 
             if (event.target === modal) fecharModal();
             if (event.target === modalEditar) fecharModalEditar();
             if (event.target === modalMorte) fecharModalMorte();
             if (event.target === modalDoenca) fecharModalDoenca();
             if (event.target === modalRecuperacao) fecharModalRecuperacao();
-            if (event.target === modalAnimal) fecharModalPorId('modalAnimal');
-            if (event.target === modalPartoAnimal) fecharModalPorId('modalPartoAnimal');
-            if (event.target === modalOrdenhaAnimal) fecharModalPorId('modalOrdenhaAnimal');
+            if (event.target === modalOrdenhaLote) fecharModalPorId('modalOrdenhaLote');
+            if (event.target === modalParto) fecharModalParto();
+            if (event.target === modalEclosao) fecharModalEclosao();
+            if (event.target === modalPostura) fecharModalPostura();
         });
 
         /* --- REABRIR O MODAL CERTO QUANDO O CADASTRO/EDIÇÃO FALHA ---
@@ -3661,6 +3890,7 @@
                 document.getElementById('edit_nome_lote').value = OLD_INPUT.nome_lote || '';
                 document.getElementById('edit_fazenda_id').value = OLD_INPUT.fazenda_id || '';
                 document.getElementById('edit_tipo_animal').value = OLD_INPUT.tipo_animal || '';
+                document.getElementById('edit_raca').value = OLD_INPUT.raca || '';
                 document.getElementById('edit_sexo').value = OLD_INPUT.sexo || '';
 
                 atualizarFinalidades(
@@ -3675,6 +3905,9 @@
                 document.getElementById('edit_peso_medio').value = OLD_INPUT.peso_medio || '';
                 document.getElementById('edit_data_entrada').value = OLD_INPUT.data_entrada || '';
                 document.getElementById('edit_status').value = OLD_INPUT.status || 'Ativo';
+                document.getElementById('edit_quantidade_cochos').value = OLD_INPUT.quantidade_cochos || 0;
+                document.getElementById('edit_cocho_capacidade').value = OLD_INPUT.cocho_capacidade || '';
+                document.getElementById('edit_cocho_nivel_atual').value = OLD_INPUT.cocho_nivel_atual || '';
                 document.getElementById('lote_id_edit').value = idEditando;
 
                 atualizarDicaPeso(document.getElementById('edit_tipo_animal'), document.getElementById('edit_dica_peso'));
@@ -3743,40 +3976,53 @@
 
                 document.getElementById('recuperacao_data').value = OLD_INPUT.data_ocorrencia || '{{ $hoje }}';
                 document.getElementById('recuperacao_observacao').value = OLD_INPUT.observacao || '';
-            } else if (ORIGEM_FORMULARIO_ERRO === 'animal') {
+            } else if (ORIGEM_FORMULARIO_ERRO === 'parto') {
                 const loteId = OLD_INPUT.lote_id;
-                const botao = loteId && document.querySelector('button[data-animal-add][data-id="' + loteId + '"]');
+                const botao = loteId && document.querySelector('button[onclick="abrirModalParto(this)"][data-id="' + loteId + '"]');
                 if (!botao) return;
 
-                abrirModalAnimal(loteId, botao.dataset.nome);
+                abrirModalParto(botao);
 
-                document.getElementById('animal_nome').value = OLD_INPUT.nome || '';
-                document.getElementById('animal_identificador').value = OLD_INPUT.identificador || '';
-                document.getElementById('animal_sexo').value = OLD_INPUT.sexo || '';
-                document.getElementById('animal_raca').value = OLD_INPUT.raca || '';
-                document.getElementById('animal_data_nascimento').value = OLD_INPUT.data_nascimento || '';
-                document.getElementById('animal_peso').value = OLD_INPUT.peso || '';
-            } else if (ORIGEM_FORMULARIO_ERRO === 'parto_animal') {
-                const animalId = OLD_INPUT.animal_id;
-                const botao = animalId && document.querySelector('button[data-animal-parto][data-animal-id="' + animalId + '"]');
+                document.getElementById('parto_quantidade').value = OLD_INPUT.quantidade || 1;
+                document.getElementById('parto_data').value = OLD_INPUT.data_ocorrencia || '{{ $hoje }}';
+                document.getElementById('parto_observacao').value = OLD_INPUT.observacao || '';
+            } else if (ORIGEM_FORMULARIO_ERRO === 'eclosao') {
+                const loteId = OLD_INPUT.lote_id;
+                const botao = loteId && document.querySelector('button[onclick="abrirModalEclosao(this)"][data-id="' + loteId + '"]');
                 if (!botao) return;
 
-                abrirModalPartoAnimal(animalId, botao.dataset.animalNome);
+                abrirModalEclosao(botao);
 
-                document.getElementById('partoAnimal_data_prevista').value = OLD_INPUT.data_prevista || '';
-                document.getElementById('partoAnimal_observacoes').value = OLD_INPUT.observacoes || '';
-            } else if (ORIGEM_FORMULARIO_ERRO === 'ordenha_animal') {
-                const animalId = OLD_INPUT.animal_id;
-                const botao = animalId && document.querySelector('button[data-animal-ordenha][data-animal-id="' + animalId + '"]');
+                document.getElementById('eclosao_quantidade').value = OLD_INPUT.quantidade || 1;
+                document.getElementById('eclosao_data').value = OLD_INPUT.data_ocorrencia || '{{ $hoje }}';
+                document.getElementById('eclosao_observacao').value = OLD_INPUT.observacao || '';
+            } else if (ORIGEM_FORMULARIO_ERRO === 'postura') {
+                const loteId = OLD_INPUT.lote_id;
+                const botao = loteId && document.querySelector('button[onclick="abrirModalPostura(this)"][data-id="' + loteId + '"]');
                 if (!botao) return;
 
-                abrirModalOrdenhaAnimal(animalId, botao.dataset.animalNome);
+                abrirModalPostura(botao);
 
-                document.getElementById('ordenhaAnimal_data').value = OLD_INPUT.data || '{{ $hoje }}';
-                document.getElementById('ordenhaAnimal_horario').value = OLD_INPUT.horario || '';
-                document.getElementById('ordenhaAnimal_turno').value = OLD_INPUT.turno || '';
-                document.getElementById('ordenhaAnimal_litros').value = OLD_INPUT.quantidade_litros || '';
-                document.getElementById('ordenhaAnimal_observacoes').value = OLD_INPUT.observacoes || '';
+                document.getElementById('postura_quantidade').value = OLD_INPUT.quantidade || '';
+                document.getElementById('postura_data').value = OLD_INPUT.data_ocorrencia || '{{ $hoje }}';
+                document.getElementById('postura_observacao').value = OLD_INPUT.observacao || '';
+            } else if (ORIGEM_FORMULARIO_ERRO === 'ordenha_lote') {
+                const loteId = OLD_INPUT.lote_id;
+                const botao = loteId && document.querySelector('button[data-ordenha-lote-add][data-id="' + loteId + '"]');
+                if (!botao) return;
+
+                const ordenhaId = OLD_INPUT.ordenha_id || null;
+                abrirModalOrdenhaLote(
+                    loteId, botao.dataset.nome, ordenhaId,
+                    OLD_INPUT.data, OLD_INPUT.horario, OLD_INPUT.turno, OLD_INPUT.quantidade_litros, OLD_INPUT.observacoes
+                );
+
+                document.getElementById('ordenhaLote_data').value = OLD_INPUT.data || '{{ $hoje }}';
+                document.getElementById('ordenhaLote_horario').value = OLD_INPUT.horario || '';
+                document.getElementById('ordenhaLote_turno').value = OLD_INPUT.turno || '';
+                document.getElementById('ordenhaLote_litros').value = OLD_INPUT.quantidade_litros || '';
+                document.getElementById('ordenhaLote_observacoes').value = OLD_INPUT.observacoes || '';
+                atualizarDicaTurno();
             } else {
                 // Formulário de Adicionar: os campos já vêm preenchidos via
                 // old() direto no Blade, só falta atualizar quais opções de
@@ -3795,5 +4041,4 @@
             document.getElementById('modalEditar').classList.add('active');
         }
     </script>
-</body>
-</html>
+@endpush

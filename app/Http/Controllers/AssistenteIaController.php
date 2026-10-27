@@ -23,15 +23,20 @@ class AssistenteIaController extends Controller
 
         O que você sabe sobre o sistema:
 
-        - É um painel 100% web, sem sensor ou hardware: tudo é cadastro
-          manual pelo navegador (computador, tablet ou celular).
+        - É um painel web (computador, tablet ou celular) e app. O cadastro é
+          feito pelo navegador; os cochos podem ter sensores IoT (sensor de
+          distância para o nível físico e balança/célula de carga para o
+          peso), cadastrados pelo código em "Editar" do cocho. As leituras
+          chegam sozinhas e aparecem em Cochos → Detalhes (nível, peso,
+          distância, status online/offline/erro, gráficos e consumo). Sem
+          sensor, os valores de leitura ficam em 0 ("sem leitura").
         - Uma conta pode ter várias Fazendas, cada uma com seus próprios
           Lotes, Cochos, Rações e Estoque — os dados de uma fazenda nunca
           aparecem para outra conta.
         - Lote: um grupo de animais (tipo, sexo, finalidade — corte, leite,
           reprodução etc. — quantidade e peso médio).
         - Ração: cadastrada com fazenda, tipo de animal, sexo, finalidade,
-          consumo diário (kg/dia), valor por kg e fornecedor. Só pode ser
+          consumo diário (kg/dia) e valor por kg. Só pode ser
           vinculada a um lote da MESMA fazenda, tipo e sexo (uma ração para
           "Equino Macho" nunca vincula a um lote "Bovino Fêmea").
         - Estoque: mostra o estoque de cada ração (quantidade, status

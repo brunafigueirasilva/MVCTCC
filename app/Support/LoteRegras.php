@@ -50,6 +50,40 @@ class LoteRegras
      */
     public const SEXOS_COM_FEMEA = ['Fêmea', 'Misto'];
 
+    /** Turnos de ordenha aceitos ao registrar produção de leite de um lote. */
+    public const TURNOS_ORDENHA = ['Manhã', 'Tarde', 'Noite'];
+
+    /**
+     * Horário em que cada turno de ordenha começa (HH:MM). Cada turno vai
+     * até o início do próximo — a Noite atravessa a meia-noite e termina às
+     * 04:00 (ordenha à 01:00 ainda é da noite). A mesma regra existe no
+     * banco (CHECK em ordenhas, migration 2026_10_19_120000) e na tela de
+     * Lotes (o turno é sugerido a partir do horário).
+     */
+    public const INICIO_TURNOS_ORDENHA = [
+        'Manhã' => '04:00',
+        'Tarde' => '12:00',
+        'Noite' => '18:00',
+    ];
+
+    /** Turno ao qual um horário ("HH:MM" ou "HH:MM:SS") pertence. */
+    public static function turnoPorHorario(string $horario): string
+    {
+        $hhmm = substr($horario, 0, 5);
+
+        if ($hhmm >= self::INICIO_TURNOS_ORDENHA['Noite'] || $hhmm < self::INICIO_TURNOS_ORDENHA['Manhã']) {
+            return 'Noite';
+        }
+
+        return $hhmm >= self::INICIO_TURNOS_ORDENHA['Tarde'] ? 'Tarde' : 'Manhã';
+    }
+
+    /** Se o lote pode ter ordenha: espécie leiteira e com fêmeas (nunca "Macho"). */
+    public static function loteAceitaOrdenha(?string $tipoAnimal, ?string $sexo): bool
+    {
+        return self::tipoTemOrdenha($tipoAnimal) && in_array($sexo, self::SEXOS_COM_FEMEA, true);
+    }
+
     public const IDADES_MEDIAS = ['0-6 meses', '6-12 meses', '1-2 anos', '2-3 anos', 'Acima de 3 anos'];
 
     public const STATUS = ['Ativo', 'Inativo', 'Encerrado'];
@@ -183,6 +217,65 @@ class LoteRegras
             self::tiposAnimais(),
             fn ($tipo) => self::tipoTemOrdenha($tipo)
         ));
+    }
+
+    /**
+     * Espécies que não têm "parto" no sentido usado aqui — Avicultura
+     * (galinha) põe ovos, não pare. Todas as demais espécies do sistema são
+     * mamíferos e podem ter parto registrado no lote.
+     */
+    public const ESPECIES_SEM_PARTO = ['Avicultura'];
+
+    /** Se a espécie do lote pode ter parto registrado (ver ESPECIES_SEM_PARTO). */
+    public static function tipoTemParto(?string $tipoAnimal): bool
+    {
+        return $tipoAnimal !== null && !in_array($tipoAnimal, self::ESPECIES_SEM_PARTO, true);
+    }
+
+    /** Todas as espécies que têm parto (ver tipoTemParto()). */
+    public static function tiposComParto(): array
+    {
+        return array_values(array_filter(
+            self::tiposAnimais(),
+            fn ($tipo) => self::tipoTemParto($tipo)
+        ));
+    }
+
+    /**
+     * Só a Avicultura põe ovos — é o espelho de ESPECIES_SEM_PARTO: a única
+     * espécie que não pare é justamente a única que tem postura.
+     */
+    public const ESPECIE_COM_POSTURA = 'Avicultura';
+
+    /** Se a espécie do lote põe ovos (só Avicultura, ver ESPECIE_COM_POSTURA). */
+    public static function tipoTemPostura(?string $tipoAnimal): bool
+    {
+        return $tipoAnimal === self::ESPECIE_COM_POSTURA;
+    }
+
+    /** Todas as espécies que têm postura (ver tipoTemPostura()) — hoje só Avicultura. */
+    public static function tiposComPostura(): array
+    {
+        return [self::ESPECIE_COM_POSTURA];
+    }
+
+    /**
+     * Avicultura não tem "parto" — o equivalente é "eclosão": os ovos
+     * postos (ver ESPECIE_COM_POSTURA) chocam e viram pintinhos, que
+     * aumentam a quantidade de animais do lote, no lugar do parto.
+     */
+    public const ESPECIE_COM_ECLOSAO = 'Avicultura';
+
+    /** Se a espécie do lote tem eclosão registrada (só Avicultura, ver ESPECIE_COM_ECLOSAO). */
+    public static function tipoTemEclosao(?string $tipoAnimal): bool
+    {
+        return $tipoAnimal === self::ESPECIE_COM_ECLOSAO;
+    }
+
+    /** Todas as espécies que têm eclosão (ver tipoTemEclosao()) — hoje só Avicultura. */
+    public static function tiposComEclosao(): array
+    {
+        return [self::ESPECIE_COM_ECLOSAO];
     }
 
     /** Faixa de peso (['min' => ..., 'max' => ...]) da espécie, se definida. */

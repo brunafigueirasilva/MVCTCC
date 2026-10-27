@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Cocho;
 use App\Support\LoteRegras;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
@@ -21,17 +22,39 @@ class LoteRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return session()->has('usuario_id');
+        if (!session()->has('usuario_id')) {
+            return false;
+        }
+
+        // Edição: lote de outra conta (ou inexistente) é 404 ANTES da
+        // validação — senão os erros de campo revelariam que o id existe.
+        $id = $this->route('id');
+        if ($id !== null) {
+            $donoDoLote = \App\Models\Lote::whereKey($id)
+                ->whereHas('fazenda', fn ($q) => $q->where('cadastro_id', session('usuario_id')))
+                ->exists();
+            abort_unless($donoDoLote, 404);
+        }
+
+        return true;
     }
 
     /**
      * Sem sessão, o padrão do FormRequest seria abortar com 403 cru — todo
      * o resto do sistema, ao perder a sessão, redireciona pra tela de
      * login (ver exigirLogin() nos outros Controllers). Mantém o mesmo
-     * comportamento aqui em vez de uma página de erro genérica.
+     * comportamento aqui em vez de uma página de erro genérica. Na API
+     * (JSON) responde 401, que é o que o app espera pra voltar ao login.
      */
     protected function failedAuthorization()
     {
+        if ($this->expectsJson()) {
+            throw new HttpResponseException(response()->json([
+                'success' => false,
+                'message' => 'Não autenticado.',
+            ], 401));
+        }
+
         throw new HttpResponseException(redirect()->route('login.index'));
     }
 
@@ -46,6 +69,11 @@ class LoteRequest extends FormRequest
             $this->merge([
                 'peso_medio' => str_replace(',', '.', (string) $this->input('peso_medio')),
             ]);
+        }
+
+        $capacidade = str_replace(',', '.', (string) $this->input('cocho_capacidade', ''));
+        if ($capacidade === '' || (is_numeric($capacidade) && (float) $capacidade <= 0)) {
+            $this->merge(['cocho_capacidade' => Cocho::CAPACIDADE_PADRAO]);
         }
     }
 
@@ -74,6 +102,12 @@ class LoteRequest extends FormRequest
             ],
 
             'tipo_animal' => ['required', Rule::in(LoteRegras::tiposAnimais())],
+
+            // Texto livre e opcional (ex.: "Nelore", "Holandês", "Duroc") —
+            // a raça varia demais entre espécies pra virar uma lista fixa
+            // como tipo_animal/finalidade/idade_media.
+            'raca' => ['nullable', 'string', 'max:100'],
+
             'sexo' => ['required', Rule::in(LoteRegras::SEXOS)],
 
             // A compatibilidade real (tipo de animal + sexo) é checada no
@@ -85,19 +119,30 @@ class LoteRequest extends FormRequest
 
             'quantidade_animais' => ['required', 'integer', 'min:1', 'max:100000'],
 
+            // Obrigatório (0 = sem cocho nenhum ainda é uma resposta válida,
+            // só não pode vir em branco) — LoteController::sincronizarCochos()
+            // cria/remove os cochos automaticamente pra bater com este
+            // número, então não existe cadastro manual de cocho individual
+            // mais.
+            'quantidade_cochos' => ['required', 'integer', 'min:0', 'max:100'],
+
+            // Capacidade obrigatória — só vale pros cochos CRIADOS agora por
+            // sincronizarCochos() (quantidade_cochos aumentando); cochos que
+            // já existiam mantêm a capacidade/nível que já tinham, mesmo que
+            // este campo venha preenchido aqui numa edição. Nível atual
+            // continua opcional (sem valor, os cochos novos nascem com
+            // nível 0, pra abastecer depois). Mesmas regras usadas na edição
+            // individual (CochoController::update).
+            // Opcional: vazio ou 0 (o app Flutter envia 0 por padrão) vira a
+            // capacidade padrão do sistema, Cocho::CAPACIDADE_PADRAO (100 kg)
+            // — ver prepareForValidation().
+            'cocho_capacidade' => ['required', 'numeric', 'gt:0'],
+            'cocho_nivel_atual' => ['nullable', 'numeric', 'min:0', 'lte:cocho_capacidade'],
+
             'peso_medio' => ['required', 'numeric', 'gt:0'],
 
-            // "after_or_equal:today" usa a data atual do SERVIDOR (Carbon,
-            // no fuso configurado em config/app.php) — nunca o relógio do
-            // computador de quem está preenchendo o formulário. Só se aplica
-            // ao CADASTRO (não dá pra criar um lote com entrada no passado);
-            // na EDIÇÃO o campo já vem preenchido com a data real (possivel-
-            // mente passada) do lote, então exigir "hoje ou futuro" aqui
-            // travava a edição de qualquer lote que não tivesse entrado
-            // hoje, mesmo mudando um campo sem relação com a data.
-            'data_entrada' => $this->route('id')
-                ? ['required', 'date']
-                : ['required', 'date', 'after_or_equal:today'],
+            // Quando o lote entrou na fazenda (opcional; padrão: hoje).
+            'data_entrada' => ['nullable', 'date', 'before_or_equal:today'],
 
             'status' => ['nullable', Rule::in(LoteRegras::STATUS)],
         ];
@@ -121,13 +166,22 @@ class LoteRequest extends FormRequest
             'quantidade_animais.integer' => 'A quantidade de animais deve ser um número inteiro.',
             'quantidade_animais.min' => 'A quantidade de animais deve ser de pelo menos 1.',
             'quantidade_animais.max' => 'Quantidade de animais muito alta — confira o valor informado.',
+            'quantidade_cochos.required' => 'Informe a quantidade de cochos (0 se este lote ainda não tiver nenhum).',
+            'quantidade_cochos.integer' => 'A quantidade de cochos deve ser um número inteiro.',
+            'quantidade_cochos.min' => 'A quantidade de cochos não pode ser negativa.',
+            'quantidade_cochos.max' => 'Quantidade de cochos muito alta — confira o valor informado.',
+            'cocho_capacidade.required' => 'Informe a capacidade dos cochos.',
+            'cocho_capacidade.numeric' => 'A capacidade dos cochos deve ser um número.',
+            'cocho_capacidade.gt' => 'A capacidade dos cochos deve ser maior que zero.',
+            'cocho_nivel_atual.numeric' => 'O nível atual dos cochos deve ser um número.',
+            'cocho_nivel_atual.min' => 'O nível atual dos cochos não pode ser negativo.',
+            'cocho_nivel_atual.lte' => 'O nível atual dos cochos não pode ser maior que a capacidade informada.',
             'peso_medio.required' => 'Informe o peso médio do lote.',
             'peso_medio.numeric' => 'O peso médio deve ser um número (use apenas dígitos, ponto ou vírgula).',
             'peso_medio.gt' => 'O peso médio deve ser maior que zero.',
-            'data_entrada.required' => 'Informe a data de entrada.',
-            'data_entrada.date' => 'Data de entrada inválida.',
-            'data_entrada.after_or_equal' => 'A data de cadastro não pode ser anterior à data atual.',
             'status.in' => 'Status inválido.',
+            'data_entrada.date' => 'Data de entrada inválida.',
+            'data_entrada.before_or_equal' => 'A data de entrada não pode estar no futuro.',
         ];
     }
 
@@ -137,8 +191,12 @@ class LoteRequest extends FormRequest
             'nome_lote' => 'nome do lote',
             'fazenda_id' => 'fazenda',
             'tipo_animal' => 'tipo de animal',
+            'raca' => 'raça',
             'idade_media' => 'idade média',
             'quantidade_animais' => 'quantidade de animais',
+            'quantidade_cochos' => 'quantidade de cochos',
+            'cocho_capacidade' => 'capacidade dos cochos',
+            'cocho_nivel_atual' => 'nível atual dos cochos',
             'peso_medio' => 'peso médio',
             'data_entrada' => 'data de entrada',
         ];

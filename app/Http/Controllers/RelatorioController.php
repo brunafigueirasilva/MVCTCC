@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\ResolveFazendaSelecionada;
 use Illuminate\Http\Request;
 use App\Models\Cadastro;
 use App\Models\DesempenhoLote;
@@ -9,16 +10,14 @@ use App\Models\Fazenda;
 use App\Models\Lote;
 use App\Models\Racao;
 use App\Models\LoteConsumoSnapshot;
-use App\Models\Relatorio;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 
 class RelatorioController extends Controller
 {
-    // Preço médio de referência por kg de ração (mesmo valor usado no Dashboard,
-    // já que não existe um campo de preço por ração cadastrado no sistema).
-    private const PRECO_MEDIO_KG = 3.5;
+    use ResolveFazendaSelecionada;
+
 
     // Quantidade de lotes exibidos de início no "Ranking de Lotes por
     // Desempenho"; o restante só é carregado ao clicar em "Ver mais" —
@@ -48,6 +47,11 @@ class RelatorioController extends Controller
         return Racao::whereIn('fazenda_id', $this->fazendaIdsDoUsuario());
     }
 
+    // A autenticação em si (sessão válida) já é garantida pelo middleware
+    // 'auth.cadastro' aplicado ao grupo de rotas (ver routes/web.php) — cobre
+    // /relatorios, /relatorio-pdf e /relatorios/ranking igualmente, incluindo
+    // este último que antes não tinha checagem nenhuma.
+
     public function listar(Request $request)
     {
         $cadastroLogado = Cadastro::find(session('usuario_id'));
@@ -76,8 +80,8 @@ class RelatorioController extends Controller
 
         return LoteConsumoSnapshot::with(['lote.fazenda', 'racao'])
             ->whereIn('lote_id', $this->lotesDoUsuario()->pluck('id'))
-            ->when($request->filled('fazenda'), function ($query) use ($request) {
-                $query->whereHas('lote', fn ($q) => $q->where('fazenda_id', $request->fazenda));
+            ->when($request->filled('fazenda_id'), function ($query) use ($request) {
+                $query->whereHas('lote', fn ($q) => $q->where('fazenda_id', $request->fazenda_id));
             })
             ->when($request->filled('lote') && $request->lote !== 'todos', function ($query) use ($request) {
                 $query->where('lote_id', $request->lote);
@@ -122,10 +126,86 @@ class RelatorioController extends Controller
     }
 
     /**
+     * Unidade Produtiva selecionada — mesmo comportamento do Dashboard e do
+     * Plano Alimentar (CadastroController::dashboard / PlanoController::
+     * renderizarTela), com persistência em sessão via
+     * ResolveFazendaSelecionada: só aceita uma fazenda que pertença ao
+     * usuário logado, e se ele tiver só uma cadastrada, ela já vem
+     * selecionada sem exigir escolha manual. O valor resolvido é
+     * normalizado de volta pro Request ($fazenda_id), pra qualquer método
+     * que leia $request->fazenda_id depois (filtrarConsumo, rankingJson...)
+     * sempre enxergar o mesmo valor já validado, sem duplicar esta lógica.
+     */
+    private function resolverFazendaSelecionada(Request $request, Collection $fazendas): ?int
+    {
+        $fazendaSelecionadaId = $this->resolverFazendaSelecionadaComSessao($request, $fazendas);
+
+        $request->merge(['fazenda_id' => $fazendaSelecionadaId]);
+
+        return $fazendaSelecionadaId;
+    }
+
+    /**
+     * Estrutura vazia do relatório — mesmo formato de montarDadosRelatorio(),
+     * usada sem nenhuma Unidade Produtiva selecionada (e mais de uma
+     * cadastrada). Nenhuma consulta de consumo/lote/ranking roda nesse
+     * caso: a tela só mostra o seletor e o estado inicial pedindo a escolha.
+     */
+    private function dadosRelatorioVazios(Collection $fazendas): array
+    {
+        return [
+            'fazendas' => $fazendas,
+            'fazendaSelecionadaId' => null,
+            'lotes' => collect(),
+            'racoes' => collect(),
+            'categoriasAnimais' => collect(),
+            'labelsDatas' => collect(),
+            'valoresConsumo' => collect(),
+            'labelsLotes' => collect(),
+            'kgPorLote' => collect(),
+            'custoPorLote' => collect(),
+            'loteMaiorConsumo' => null,
+            'labelsGastos' => collect(),
+            'valoresGastos' => collect(),
+            'dadosRadarLotes' => [],
+            'totalConsumoKg' => 0.0,
+            'custoTotalEstimado' => 0.0,
+            'consumoMedioDiario' => 0.0,
+            'melhorLote' => 'N/D',
+            'eficienciaMedia' => 0,
+            'filtrosAplicados' => [],
+            'statCards' => [
+                'consumo' => ['valor' => 0.0, 'variacao' => null],
+                'custo' => ['valor' => 0.0, 'variacao' => null],
+                'mediaDiaria' => ['valor' => 0.0, 'variacao' => null],
+                'porKgVivo' => ['valor' => null, 'variacao' => null],
+                'eficiencia' => ['valor' => 0, 'variacao' => null],
+            ],
+            'resumoPorCategoria' => collect(),
+            'evolucaoHistorica' => ['labels' => [], 'valores' => [], 'temDados' => false],
+            'rankingLotesExibidos' => collect(),
+            'rankingLotesTotal' => 0,
+            'rankingLotesCompleto' => collect(),
+            'periodoLabel' => '—',
+        ];
+    }
+
+    /**
      * Mesma semântica do CadastroController::variacaoPercentual() (usado no
      * Dashboard) — null quando não há base de comparação (evita fabricar um
      * "+infinito%"), 0.0 quando os dois períodos estão zerados.
      */
+    /**
+     * Custo de um conjunto de registros de consumo pelo preço cadastrado de
+     * CADA ração (racaos.valor_kg) — mesmo cálculo da API usada pelo app.
+     * Antes a web multiplicava tudo por um preço médio fixo de R$ 3,50/kg,
+     * e web e app mostravam custos diferentes para os mesmos dados.
+     */
+    private function custoDe(Collection $snapshots): float
+    {
+        return round((float) $snapshots->sum(fn ($s) => (float) $s->consumo_kg * (float) ($s->racao?->valor_kg ?? 0)), 2);
+    }
+
     private function variacaoPercentual(float $atual, float $anterior): ?float
     {
         if ($anterior <= 0) {
@@ -149,6 +229,8 @@ class RelatorioController extends Controller
 
         $consumoPorLoteId = $consumoPeriodo->groupBy('lote_id')
             ->map(fn ($grupo) => (float) $grupo->sum('consumo_kg'));
+        $custoPorLoteId = $consumoPeriodo->groupBy('lote_id')
+            ->map(fn ($grupo) => $this->custoDe($grupo));
 
         $maxPeso = (float) $lotesEscopados->max('peso_medio') ?: 1;
         $maxConsumo = (float) $consumoPorLoteId->max() ?: 1;
@@ -168,10 +250,10 @@ class RelatorioController extends Controller
             ->map(fn ($grupo) => (float) $grupo->first()->eficiencia_alimentar);
         $melhorFcrReal = $fcrRealPorLoteId->isNotEmpty() ? $fcrRealPorLoteId->min() : null;
 
-        return $lotesEscopados->map(function ($lote) use ($consumoPorLoteId, $maxPeso, $maxConsumo, $fcrRealPorLoteId, $melhorFcrReal) {
+        return $lotesEscopados->map(function ($lote) use ($consumoPorLoteId, $custoPorLoteId, $maxPeso, $maxConsumo, $fcrRealPorLoteId, $melhorFcrReal) {
             $consumoLote = (float) ($consumoPorLoteId[$lote->id] ?? 0);
             $consumoPorAnimal = $lote->quantidade_animais > 0 ? $consumoLote / $lote->quantidade_animais : 0;
-            $custoLote = round($consumoLote * self::PRECO_MEDIO_KG, 2);
+            $custoLote = (float) ($custoPorLoteId[$lote->id] ?? 0);
 
             $ganhoPeso = (int) round(($lote->peso_medio / $maxPeso) * 100);
             $consumoScore = (int) round(($consumoLote / $maxConsumo) * 100);
@@ -198,6 +280,7 @@ class RelatorioController extends Controller
                 'tipo_animal' => $lote->tipo_animal,
                 'peso_medio' => (float) $lote->peso_medio,
                 'consumo_total' => $consumoLote,
+                'custo_total' => $custoLote,
                 'scores' => $scores,
                 'eficiencia_media' => (int) round(array_sum($scores) / count($scores)),
             ];
@@ -243,7 +326,7 @@ class RelatorioController extends Controller
         return $metricas->sortByDesc('eficiencia_media')->values()
             ->map(function ($m, $indice) use ($consumoAtualPorLoteId, $consumoAnteriorPorLoteId, $diasComRegistroAtual) {
                 $consumoMedioDia = round($m->consumo_total / $diasComRegistroAtual, 1);
-                $custoMedioDia = round($consumoMedioDia * self::PRECO_MEDIO_KG, 2);
+                $custoMedioDia = round($m->custo_total / $diasComRegistroAtual, 2);
                 $consumoAtualLote = (float) ($consumoAtualPorLoteId[$m->id] ?? 0);
                 $consumoAnteriorLote = (float) ($consumoAnteriorPorLoteId[$m->id] ?? 0);
 
@@ -277,10 +360,13 @@ class RelatorioController extends Controller
 
         $consumoPorLoteId = $consumoPeriodo->groupBy('lote_id')
             ->map(fn ($grupo) => (float) $grupo->sum('consumo_kg'));
+        $custoPorLoteId = $consumoPeriodo->groupBy('lote_id')
+            ->map(fn ($grupo) => $this->custoDe($grupo));
 
         return $lotesEscopados->groupBy('tipo_animal')
-            ->map(function ($lotesDoTipo, $tipo) use ($consumoPorLoteId, $iconesPorTipo, $labelPlural) {
+            ->map(function ($lotesDoTipo, $tipo) use ($consumoPorLoteId, $custoPorLoteId, $iconesPorTipo, $labelPlural) {
                 $consumoTotal = $lotesDoTipo->sum(fn ($lote) => $consumoPorLoteId[$lote->id] ?? 0);
+                $custoTotal = $lotesDoTipo->sum(fn ($lote) => $custoPorLoteId[$lote->id] ?? 0);
 
                 return (object) [
                     'tipo' => $tipo,
@@ -288,7 +374,7 @@ class RelatorioController extends Controller
                     'icone' => $iconesPorTipo[$tipo] ?? 'fa-paw',
                     'quantidade_lotes' => $lotesDoTipo->count(),
                     'consumo_total' => round($consumoTotal, 1),
-                    'custo_total' => round($consumoTotal * self::PRECO_MEDIO_KG, 2),
+                    'custo_total' => round($custoTotal, 2),
                 ];
             })
             ->sortByDesc('consumo_total')
@@ -303,9 +389,31 @@ class RelatorioController extends Controller
      */
     private function montarDadosRelatorio(Request $request): array
     {
+        // Datas do filtro: inválidas ou invertidas viravam erro 500 no
+        // Carbon::parse() (ou um período vazio sem explicação).
+        $request->validate([
+            'data_inicio' => ['nullable', 'date'],
+            'data_fim' => ['nullable', 'date', 'after_or_equal:data_inicio'],
+        ], [
+            'data_inicio.date' => 'Data inicial inválida.',
+            'data_fim.date' => 'Data final inválida.',
+            'data_fim.after_or_equal' => 'A data final não pode ser anterior à data inicial.',
+        ]);
+
         $fazendas = Fazenda::where('cadastro_id', session('usuario_id'))->orderBy('nome_fazenda')->get();
-        $lotes = $this->lotesDoUsuario()->get();
-        $racoes = $this->racoesDoUsuario()->get();
+
+        // Unidade Produtiva: mesmo comportamento do Dashboard/Plano
+        // Alimentar — sem fazenda selecionada (e mais de uma cadastrada),
+        // nenhum indicador/gráfico/tabela roda cálculo nenhum, evitando
+        // misturar consumo/lote/ração de unidades diferentes.
+        $fazendaSelecionadaId = $this->resolverFazendaSelecionada($request, $fazendas);
+
+        if (!$fazendaSelecionadaId) {
+            return $this->dadosRelatorioVazios($fazendas);
+        }
+
+        $lotes = $this->lotesDoUsuario()->where('fazenda_id', $fazendaSelecionadaId)->get();
+        $racoes = $this->racoesDoUsuario()->where('fazenda_id', $fazendaSelecionadaId)->get();
 
         // Categorias de animal realmente cadastradas (antes o filtro tinha
         // uma lista fixa no HTML — incluindo "Suíno" com acento, que nunca
@@ -349,8 +457,11 @@ class RelatorioController extends Controller
 
         $labelsLotes = $porLote->keys()->values();
         $kgPorLote = $porLote->values();
-        $custoPorLote = $porLote
-            ->map(fn ($kg) => round($kg * self::PRECO_MEDIO_KG, 2))
+        $custoPorNomeLote = $consumo
+            ->groupBy(fn ($s) => $s->lote->nome_lote ?? 'Sem lote')
+            ->map(fn ($grupo) => $this->custoDe($grupo));
+        $custoPorLote = $porLote->keys()
+            ->map(fn ($nome) => (float) ($custoPorNomeLote[$nome] ?? 0))
             ->values();
         $loteMaiorConsumo = $labelsLotes->first();
 
@@ -368,13 +479,12 @@ class RelatorioController extends Controller
             ? $porRacao->map(fn ($kg) => round(($kg / $totalKgRacao) * 100, 1))->values()
             : collect();
 
-        // Lotes em escopo (fazenda/lote/categoria) usados pro radar, ranking
-        // e resumo por categoria — igual ao filtro já aplicado nos planos,
-        // só que aqui inclui lotes SEM nenhum consumo no período também
-        // (pra "Lotes Ativos" e "Resumo por Categoria" não esconderem lote
-        // nenhum).
+        // Lotes em escopo (lote/categoria, dentro da Unidade Produtiva já
+        // selecionada em $lotes) usados pro radar, ranking e resumo por
+        // categoria — igual ao filtro já aplicado nos planos, só que aqui
+        // inclui lotes SEM nenhum consumo no período também (pra "Lotes
+        // Ativos" e "Resumo por Categoria" não esconderem lote nenhum).
         $lotesEscopados = $lotes
-            ->when($request->filled('fazenda'), fn ($c) => $c->where('fazenda_id', (int) $request->fazenda))
             ->when($request->filled('lote') && $request->lote !== 'todos', fn ($c) => $c->where('id', (int) $request->lote))
             ->when($request->filled('categoria_animal'), fn ($c) => $c->where('tipo_animal', $request->categoria_animal))
             ->values();
@@ -406,8 +516,8 @@ class RelatorioController extends Controller
         // comparável", diferente dos gráficos/ranking/resumo acima.
         $totalConsumoKg = (float) $consumoAtual->sum('consumo_kg');
         $totalConsumoKgAnterior = (float) $consumoAnterior->sum('consumo_kg');
-        $custoTotalEstimado = round($totalConsumoKg * self::PRECO_MEDIO_KG, 2);
-        $custoTotalAnterior = round($totalConsumoKgAnterior * self::PRECO_MEDIO_KG, 2);
+        $custoTotalEstimado = $this->custoDe($consumoAtual);
+        $custoTotalAnterior = $this->custoDe($consumoAnterior);
 
         // $consumoMedioDiario (usado só no PDF) continua sobre o histórico
         // completo — o relatório exportado é o retrato geral, não a janela
@@ -419,7 +529,7 @@ class RelatorioController extends Controller
         $eficienciaMedia = $metricasAtual->isNotEmpty() ? (int) round($metricasAtual->avg('eficiencia_media')) : 0;
         $eficienciaMediaAnterior = $metricasAnterior->isNotEmpty() ? (int) round($metricasAnterior->avg('eficiencia_media')) : 0;
 
-        $melhorLote = $rankingLotesCompleto->first()->nome_lote ?? ($labelsLotes->first() ?? 'N/D');
+        $melhorLote = $rankingLotesCompleto->first()?->nome_lote ?? ($labelsLotes->first() ?? 'N/D');
 
         // Média Diária e Consumo por kg Vivo — mesmas fórmulas usadas nos
         // cards do topo do Plano Alimentar (só que aqui sobre a janela
@@ -470,6 +580,7 @@ class RelatorioController extends Controller
 
         return compact(
             'fazendas',
+            'fazendaSelecionadaId',
             'lotes',
             'racoes',
             'categoriasAnimais',
@@ -506,11 +617,6 @@ class RelatorioController extends Controller
     private function descreverFiltros(Request $request, $fazendas, $lotes, $racoes): array
     {
         $itens = [];
-
-        if ($request->filled('fazenda')) {
-            $nome = optional($fazendas->firstWhere('id', (int) $request->fazenda))->nome_fazenda;
-            $itens[] = ['chave' => 'fazenda', 'label' => 'Fazenda: ' . ($nome ?? '—')];
-        }
 
         if ($request->filled('lote') && $request->lote !== 'todos') {
             $nome = optional($lotes->firstWhere('id', (int) $request->lote))->nome_lote;
@@ -582,6 +688,13 @@ class RelatorioController extends Controller
     {
         $dados = $this->montarDadosRelatorio($request);
 
+        // Sem Unidade Produtiva selecionada não existe "resto do ranking"
+        // pra buscar — montarDadosRelatorio() já mergeou de volta no
+        // Request um fazenda_id null nesse caso (ver resolverFazendaSelecionada).
+        if (!$request->filled('fazenda_id')) {
+            return response()->json(['success' => true, 'html' => '']);
+        }
+
         // montarDadosRelatorio() já devolve só a página inicial do ranking
         // (rankingLotesExibidos); recalcula o conjunto completo aqui só pra
         // fatiar o restante — mesmo custo de query que a tela já paga.
@@ -594,7 +707,7 @@ class RelatorioController extends Controller
         $consumoAnterior = $this->filtrarConsumo($request, $inicioAnterior->toDateString(), $fimAnterior->toDateString());
 
         $lotes = $this->lotesDoUsuario()->get()
-            ->when($request->filled('fazenda'), fn ($c) => $c->where('fazenda_id', (int) $request->fazenda))
+            ->when($request->filled('fazenda_id'), fn ($c) => $c->where('fazenda_id', (int) $request->fazenda_id))
             ->when($request->filled('lote') && $request->lote !== 'todos', fn ($c) => $c->where('id', (int) $request->lote))
             ->when($request->filled('categoria_animal'), fn ($c) => $c->where('tipo_animal', $request->categoria_animal))
             ->values();
@@ -611,82 +724,83 @@ class RelatorioController extends Controller
         ]);
     }
 
-// FORMULÁRIO CADASTRAR
-// O cadastro/edição de relatórios acontece na própria tela de listagem.
-public function cadastrar()
-{
-    return redirect()->route('relatorio.listar');
-}
+    /**
+     * Análises e conclusões do PDF, geradas a partir dos indicadores que a
+     * tela já calcula (statCards, ranking, evolução histórica) — nunca
+     * texto solto/inventado. Cada frase só entra quando o dado que a
+     * embasa existir e for relevante (ex.: variação pequena não vira
+     * alerta, lote "pior" só é citado se a eficiência de fato preocupar).
+     */
+    private function gerarAnalises(array $dados): array
+    {
+        $analises = [];
 
-// FORMULÁRIO ATUALIZAR
-public function atualizar($id)
-{
-    Relatorio::findOrFail($id);
+        $statCards = $dados['statCards'] ?? [];
+        $variacaoConsumo = $statCards['consumo']['variacao'] ?? null;
+        $variacaoCusto = $statCards['custo']['variacao'] ?? null;
+        $eficienciaMedia = $statCards['eficiencia']['valor'] ?? 0;
+        $ranking = $dados['rankingLotesCompleto'] ?? collect();
 
-    return redirect()->route('relatorio.listar');
-}
+        if ($variacaoConsumo !== null) {
+            if ($variacaoConsumo > 5) {
+                $analises[] = 'O consumo total de ração subiu ' . number_format($variacaoConsumo, 1, ',', '.') . '% em relação ao período anterior — vale confirmar se o aumento acompanha o crescimento do rebanho ou se indica desperdício.';
+            } elseif ($variacaoConsumo < -5) {
+                $analises[] = 'O consumo total de ração caiu ' . number_format(abs($variacaoConsumo), 1, ',', '.') . '% em relação ao período anterior.';
+            } else {
+                $analises[] = 'O consumo total de ração se manteve estável em relação ao período anterior (variação de ' . number_format($variacaoConsumo, 1, ',', '.') . '%).';
+            }
+        }
 
-// SALVAR
-public function salvar(Request $request)
-{
-    $request->validate([
-        'lote_id' => 'required|exists:lotes,id',
-        'data_relatorio' => 'required|date',
-        'quantidade_animais' => 'required|integer',
-        'peso_medio' => 'required|numeric',
-        'consumo_total' => 'required|numeric',
-        'observacoes' => 'nullable|string',
-    ]);
+        if ($variacaoCusto !== null && abs($variacaoCusto) > 5) {
+            $analises[] = $variacaoCusto > 0
+                ? 'O custo estimado com ração subiu ' . number_format($variacaoCusto, 1, ',', '.') . '% no período — acompanhe se o volume consumido é o principal motivo.'
+                : 'O custo estimado com ração caiu ' . number_format(abs($variacaoCusto), 1, ',', '.') . '% no período, resultado positivo de eficiência ou redução de consumo.';
+        }
 
-    Relatorio::create($request->only([
-        'lote_id',
-        'data_relatorio',
-        'quantidade_animais',
-        'peso_medio',
-        'consumo_total',
-        'observacoes',
-    ]));
+        if ($eficienciaMedia >= 80) {
+            $analises[] = "A eficiência média dos lotes está excelente ({$eficienciaMedia}%), indicando bom aproveitamento da ração fornecida.";
+        } elseif ($eficienciaMedia >= 60) {
+            $analises[] = "A eficiência média dos lotes está em nível bom ({$eficienciaMedia}%), com espaço para otimização.";
+        } else {
+            $analises[] = "A eficiência média dos lotes está abaixo do ideal ({$eficienciaMedia}%) e merece atenção.";
+        }
 
-    return redirect()->route('relatorio.listar')
-        ->with('success', 'Relatório cadastrado com sucesso!');
-}
+        $lotesAbaixoDoEsperado = $ranking->where('eficiencia', '<', 60)->count();
+        if ($lotesAbaixoDoEsperado > 0) {
+            $analises[] = $lotesAbaixoDoEsperado === 1
+                ? '1 lote está com eficiência abaixo de 60% e deve ser priorizado na revisão do plano alimentar.'
+                : "{$lotesAbaixoDoEsperado} lotes estão com eficiência abaixo de 60% e devem ser priorizados na revisão do plano alimentar.";
+        }
 
-// UPDATE
-public function update(Request $request, $id)
-{
-    $request->validate([
-        'lote_id' => 'required|exists:lotes,id',
-        'data_relatorio' => 'required|date',
-        'quantidade_animais' => 'required|integer',
-        'peso_medio' => 'required|numeric',
-        'consumo_total' => 'required|numeric',
-        'observacoes' => 'nullable|string',
-    ]);
+        $destaqueMelhor = $dados['destaqueMelhor'] ?? null;
+        if ($destaqueMelhor) {
+            $analises[] = "O lote com melhor desempenho é \"{$destaqueMelhor->nome_lote}\", com {$destaqueMelhor->eficiencia}% de eficiência e " . number_format($destaqueMelhor->consumo_medio_dia, 1, ',', '.') . ' kg/dia de consumo médio — pode servir de referência de manejo para os demais.';
+        }
 
-    $relatorio = Relatorio::findOrFail($id);
+        $destaquePior = $dados['destaquePior'] ?? null;
+        if ($destaquePior && $destaquePior->eficiencia < 60) {
+            $analises[] = "O lote \"{$destaquePior->nome_lote}\" apresenta a menor eficiência do período ({$destaquePior->eficiencia}%) — recomenda-se revisar o plano alimentar e verificar a saúde do lote.";
+        }
 
-    $relatorio->update($request->only([
-        'lote_id',
-        'data_relatorio',
-        'quantidade_animais',
-        'peso_medio',
-        'consumo_total',
-        'observacoes',
-    ]));
+        $evolucao = $dados['evolucaoHistorica'] ?? null;
+        if ($evolucao && ($evolucao['temDados'] ?? false)) {
+            $valores = $evolucao['valores'];
+            $primeiro = (float) ($valores[0] ?? 0);
+            $ultimo = (float) (end($valores) ?: 0);
+            if ($primeiro > 0) {
+                $variacaoHistorica = round((($ultimo - $primeiro) / $primeiro) * 100, 1);
+                if (abs($variacaoHistorica) > 5) {
+                    $analises[] = $variacaoHistorica > 0
+                        ? 'Na comparação dos últimos 6 meses, o consumo mensal cresceu ' . number_format($variacaoHistorica, 1, ',', '.') . '%, uma tendência de longo prazo a acompanhar.'
+                        : 'Na comparação dos últimos 6 meses, o consumo mensal recuou ' . number_format(abs($variacaoHistorica), 1, ',', '.') . '%.';
+                } else {
+                    $analises[] = 'Nos últimos 6 meses, o consumo mensal se manteve relativamente estável.';
+                }
+            }
+        }
 
-    return redirect()->route('relatorio.listar')
-        ->with('success', 'Relatório atualizado com sucesso!');
-}
-
-// DELETE
-public function delete($id)
-{
-    $relatorio = Relatorio::findOrFail($id);
-    $relatorio->delete();
-
-    return redirect()->route('relatorio.listar')
-        ->with('success', 'Relatório excluído com sucesso!');
-}
+        return $analises;
+    }
 
     /**
      * O dompdf não consegue carregar a logo por asset()/URL de forma
@@ -696,7 +810,7 @@ public function delete($id)
      */
     private function logoBase64(): ?string
     {
-        $caminho = public_path('agrifarm-removebg-preview.png');
+        $caminho = public_path('agrifarm_oficial.png');
 
         if (!file_exists($caminho)) {
             return null;
@@ -748,6 +862,13 @@ public function delete($id)
         $dados['gastos'] = collect($dados['labelsGastos'])
             ->map(fn ($nome, $i) => ['nome' => $nome, 'percentual' => $dados['valoresGastos'][$i] ?? 0])
             ->values();
+
+        // Destaques (mesma regra de exibição da tela — só aparece com pelo
+        // menos 2 lotes no ranking, ver relatorio.blade.php).
+        $dados['destaqueMelhor'] = $dados['rankingLotesCompleto']->count() >= 2 ? $dados['rankingLotesCompleto']->first() : null;
+        $dados['destaquePior'] = $dados['rankingLotesCompleto']->count() >= 2 ? $dados['rankingLotesCompleto']->last() : null;
+
+        $dados['analises'] = $this->gerarAnalises($dados);
 
         $pdf = Pdf::loadView('pdf.relatorioPDF', $dados)->setPaper('a4', 'landscape');
 

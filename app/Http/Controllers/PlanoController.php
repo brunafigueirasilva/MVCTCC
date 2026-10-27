@@ -2,22 +2,27 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\ResolveFazendaSelecionada;
 use Illuminate\Http\Request;
 use App\Models\Cadastro;
 use App\Models\DesempenhoLote;
 use App\Models\Fazenda;
 use App\Models\Lote;
 use App\Models\LoteConsumoSnapshot;
+use App\Models\Plano;
 use App\Models\Racao;
+use App\Services\ConsumoLoteService;
+use App\Support\CompatibilidadeRacao;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 class PlanoController extends Controller
 {
-    // Preço médio de referência por kg de ração (mesmo valor usado no
-    // Dashboard/Relatórios, já que não existe um campo de preço por ração
-    // cadastrado no sistema).
-    private const PRECO_MEDIO_KG = 3.5;
+    /** Períodos (dias) da Conversão Alimentar — os mesmos chips na web e no app. */
+    public const PERIODOS_CONVERSAO = [7, 15, 30, 60, 90];
+
+    use ResolveFazendaSelecionada;
 
     // Quantidade de lotes exibidos de início no card "Consumo por Lote -
     // Plano Diário"; o restante só é carregado ao clicar em "Consultar
@@ -49,14 +54,8 @@ class PlanoController extends Controller
         return Racao::whereIn('fazenda_id', $this->fazendaIdsDoUsuario());
     }
 
-    private function exigirLogin()
-    {
-        if (!session()->has('usuario_id')) {
-            return redirect()->route('login.index');
-        }
-
-        return null;
-    }
+    // A autenticação em si (sessão válida) já é garantida pelo middleware
+    // 'auth.cadastro' aplicado ao grupo de rotas (ver routes/web.php).
 
     /**
      * Rações compatíveis com um lote: mesma fazenda, mesmo tipo de animal
@@ -68,36 +67,10 @@ class PlanoController extends Controller
      */
     private function racoesCompativeisComLote($lote, $racoes)
     {
-        return $racoes->filter(function ($racao) use ($lote) {
-            if ($racao->fazenda_id !== $lote->fazenda_id) {
-                return false;
-            }
-
-            if ($racao->tipo !== $lote->tipo_animal) {
-                return false;
-            }
-
-            if ($racao->sexo && $lote->sexo
-                && $racao->sexo !== 'Misto' && $lote->sexo !== 'Misto'
-                && $racao->sexo !== $lote->sexo) {
-                return false;
-            }
-
-            return true;
-        })->values();
-    }
-
-    /**
-     * Ids de ração já vinculados a lotes do usuário (lote_id => racao_id,
-     * só os que têm vínculo) — usado pra tirar da lista de "vincular
-     * ração" as rações que já estão em uso em OUTRO lote (uma ração só
-     * deve alimentar o cálculo de consumo/estoque de um lote por vez;
-     * deixar vincular a dois lotes ao mesmo tempo contaria o mesmo
-     * consumo/estoque duas vezes).
-     */
-    private function mapaRacaoPorLote(): Collection
-    {
-        return $this->lotesDoUsuario()->whereNotNull('racao_id')->pluck('racao_id', 'id');
+        // Regra única (também usada pela API e pelas validações): mesma
+        // fazenda, ração ativa, mesmo tipo de animal, sexo e finalidade
+        // compatíveis — ver App\Support\CompatibilidadeRacao.
+        return CompatibilidadeRacao::filtrar($lote, collect($racoes));
     }
 
     /**
@@ -159,6 +132,50 @@ class PlanoController extends Controller
         return null;
     }
 
+    /** Plano ATIVO de cada lote (planos.ativo), por lote_id. */
+    private function planosAtivosPorLote(Collection $loteIds): Collection
+    {
+        return Plano::whereIn('lote_id', $loteIds)->where('ativo', true)->latest('data_inicio')->get()
+            ->unique('lote_id')->keyBy('lote_id');
+    }
+
+    /**
+     * Consumo diário PLANEJADO de um lote — a MESMA regra da API usada pelo
+     * app (Plano::consumoDiarioPrevisto): kg por animal por dia do plano
+     * ativo × animais do lote hoje. Antes a web usava sempre o número fixo
+     * "consumo (kg/dia)" da ração, que ignora quantos animais o lote tem
+     * (o app e a web mostravam consumos diferentes para o mesmo lote).
+     * Lote vinculado sem plano por animal (vínculos antigos) cai no valor da
+     * ração, sinalizado em 'fonte' para a tela explicar.
+     *
+     * @return array{total: float, por_animal: ?float, fonte: string}
+     */
+    private function consumoPlanejadoDoLote($lote, Racao $racao, ?Plano $plano): array
+    {
+        $animais = (int) ($lote->quantidade_animais ?? 0);
+
+        if ($plano && (int) $plano->racao_id === (int) $racao->id && $plano->quantidade_recomendada > 0) {
+            return [
+                'total' => round($plano->quantidade_recomendada * $animais, 1),
+                'por_animal' => (float) $plano->quantidade_recomendada,
+                'fonte' => 'por_animal',
+            ];
+        }
+
+        $total = round((float) $racao->consumo, 1);
+
+        return ['total' => $total, 'por_animal' => $animais > 0 ? round($total / $animais, 2) : null, 'fonte' => 'racao'];
+    }
+
+    /** Divide o total do dia em manhã/tarde/noite que somam exatamente o total. */
+    private function dividirEmTratos(float $total): array
+    {
+        $manha = round($total / 3, 1);
+        $tarde = round($total / 3, 1);
+
+        return [$manha, $tarde, round($total - $manha - $tarde, 1)];
+    }
+
     /**
      * Monta o card "Consumo por Lote - Plano Diário" direto da ração
      * vinculada a cada lote. O consumo diário (kg/dia, sempre um número
@@ -173,9 +190,9 @@ class PlanoController extends Controller
             ? $racoes->where('id', (int) $racaoId)->values()
             : $racoes;
 
-        $racaoPorLote = $this->mapaRacaoPorLote();
+        $planosAtivos = $this->planosAtivosPorLote($lotesDados->pluck('id'));
 
-        return $lotesDados->map(function ($lote) use ($racoesFiltradas, $racoes, $racaoPorLote) {
+        return $lotesDados->map(function ($lote) use ($racoesFiltradas, $racoes, $planosAtivos) {
             $racao = $this->racaoVinculadaAoLote($lote, $racoesFiltradas);
             $quantidadeAnimais = (int) ($lote->quantidade_animais ?? 0);
 
@@ -184,16 +201,12 @@ class PlanoController extends Controller
                 // estimativa da ração compatível (quando não é ambígua),
                 // só pra tabela não ficar zerada; o status/badge continua
                 // exigindo o vínculo explícito (ver statusRacaoParaLote()).
+                // Essa sugestão NUNCA entra no histórico de consumo.
                 $racaoSugerida = $this->racaoSugeridaParaLote($lote, $racoesFiltradas);
 
                 if ($racaoSugerida) {
-                    $consumoDia = (int) $racaoSugerida->consumo;
-                    $base = intdiv($consumoDia, 3);
-                    $resto = $consumoDia % 3;
-                    $porcaoManha = $base + ($resto >= 1 ? 1 : 0);
-                    $porcaoTarde = $base + ($resto >= 2 ? 1 : 0);
-                    $porcaoNoite = $base;
-                    $totalDia = $porcaoManha + $porcaoTarde + $porcaoNoite;
+                    $totalDia = round((float) $racaoSugerida->consumo, 1);
+                    [$porcaoManha, $porcaoTarde, $porcaoNoite] = $this->dividirEmTratos($totalDia);
                 } else {
                     $porcaoManha = $porcaoTarde = $porcaoNoite = $totalDia = 0;
                 }
@@ -212,17 +225,13 @@ class PlanoController extends Controller
                     'status_class' => 'status-warning',
                     'status_texto' => 'Sem ração vinculada',
                     'icon' => 'fa-link-slash',
-                    'detalhes' => $this->montarDetalhesLote($lote, null, $racoes, $quantidadeAnimais, null, $racaoPorLote),
+                    'detalhes' => $this->montarDetalhesLote($lote, null, $racoes, $quantidadeAnimais, null),
                 ];
             }
 
-            $consumoDia = (int) $racao->consumo;
-            $base = intdiv($consumoDia, 3);
-            $resto = $consumoDia % 3;
-            $porcaoManha = $base + ($resto >= 1 ? 1 : 0);
-            $porcaoTarde = $base + ($resto >= 2 ? 1 : 0);
-            $porcaoNoite = $base;
-            $totalDia = $porcaoManha + $porcaoTarde + $porcaoNoite;
+            $planejado = $this->consumoPlanejadoDoLote($lote, $racao, $planosAtivos->get($lote->id));
+            $totalDia = $planejado['total'];
+            [$porcaoManha, $porcaoTarde, $porcaoNoite] = $this->dividirEmTratos($totalDia);
 
             [$statusClass, $statusTexto, $icon] = $this->statusRacaoParaLote($racao);
 
@@ -242,7 +251,8 @@ class PlanoController extends Controller
                 'icon' => $icon,
                 'detalhes' => $this->montarDetalhesLote($lote, $racao, $racoes, $quantidadeAnimais, [
                     'manha' => $porcaoManha, 'tarde' => $porcaoTarde, 'noite' => $porcaoNoite, 'total' => $totalDia,
-                ], $racaoPorLote),
+                    'por_animal' => $planejado['por_animal'], 'fonte' => $planejado['fonte'],
+                ]),
             ];
         });
     }
@@ -252,14 +262,8 @@ class PlanoController extends Controller
      * ver cadastroplano.blade.php) e lido pelo JS ao abrir o modal de
      * detalhes/vincular ração — nada fixo, tudo calculado por lote.
      */
-    private function montarDetalhesLote($lote, $racao, $racoes, $quantidadeAnimais, ?array $porcoes = null, ?Collection $racaoPorLote = null)
+    private function montarDetalhesLote($lote, $racao, $racoes, $quantidadeAnimais, ?array $porcoes = null)
     {
-        // Rações já vinculadas a OUTRO lote não entram na lista de opções
-        // pra vincular — cada ração só deve alimentar o cálculo de
-        // consumo/estoque de um lote por vez. A ração já vinculada a ESTE
-        // lote continua na lista (pra aparecer pré-selecionada no <select>).
-        $racaoPorLote ??= $this->mapaRacaoPorLote();
-        $idsEmUsoPorOutros = $racaoPorLote->except($lote->id)->values();
 
         return [
             'lote_id' => $lote->id,
@@ -272,10 +276,12 @@ class PlanoController extends Controller
             'racao' => $racao ? [
                 'id' => $racao->id,
                 'nome_racao' => $racao->nome_racao,
-                'fornecedor' => $racao->fornecedor,
                 'valor_kg' => $racao->valor_kg,
                 'consumo_total_dia' => $porcoes['total'],
-                'consumo_por_animal' => $quantidadeAnimais > 0 ? round($porcoes['total'] / $quantidadeAnimais, 2) : null,
+                'consumo_por_animal' => $porcoes['por_animal'] ?? ($quantidadeAnimais > 0 ? round($porcoes['total'] / $quantidadeAnimais, 2) : null),
+                // 'por_animal' = kg/animal/dia do plano × animais (regra do app);
+                // 'racao' = vínculo antigo, sem quantidade por animal definida.
+                'fonte_consumo' => $porcoes['fonte'] ?? 'racao',
                 'distribuicao' => [
                     ['periodo' => 'Manhã', 'horario' => '08:00', 'quantidade' => $porcoes['manha']],
                     ['periodo' => 'Tarde', 'horario' => '14:00', 'quantidade' => $porcoes['tarde']],
@@ -285,8 +291,8 @@ class PlanoController extends Controller
                 'dias_restantes_estoque' => $racao->diasRestantesEstoque(),
                 'status_estoque' => $racao->statusEstoque(),
             ] : null,
+            // Todas as compatíveis (a mesma ração pode alimentar vários lotes).
             'racoes_compativeis' => $this->racoesCompativeisComLote($lote, $racoes)
-                ->reject(fn ($r) => $idsEmUsoPorOutros->contains($r->id))
                 ->map(fn ($r) => [
                     'id' => $r->id,
                     'nome_racao' => $r->nome_racao,
@@ -356,9 +362,11 @@ class PlanoController extends Controller
             return round(((float) $snapshotsDoLote->avg('consumo_kg')) / $pesoVivo, 3);
         };
 
-        return $lotesDados->map(function ($lote) use ($racoesFiltradas, $snapshotsAtual, $snapshotsAnterior, $mediaPorAnimalPeriodo, $mediaPorKgVivoPeriodo, $ultimaPesagemPorLote) {
+        $planosAtivos = $this->planosAtivosPorLote($loteIds);
+
+        return $lotesDados->map(function ($lote) use ($racoesFiltradas, $snapshotsAtual, $snapshotsAnterior, $mediaPorAnimalPeriodo, $mediaPorKgVivoPeriodo, $ultimaPesagemPorLote, $planosAtivos) {
             $racao = $this->racaoVinculadaAoLote($lote, $racoesFiltradas);
-            $consumoDiario = $racao ? (int) $racao->consumo : 0;
+            $consumoDiario = $racao ? $this->consumoPlanejadoDoLote($lote, $racao, $planosAtivos->get($lote->id))['total'] : 0;
             $quantidadeAnimais = (int) ($lote->quantidade_animais ?? 0);
             $pesoMedio = (float) ($lote->peso_medio ?? 0);
             $pesoVivoTotal = $pesoMedio * $quantidadeAnimais;
@@ -391,7 +399,14 @@ class PlanoController extends Controller
                 'tem_pesagem'          => (bool) $ultimaPesagem,
                 'data_ultima_pesagem'  => $ultimaPesagem?->data_registro,
                 'ganho_peso_kg'        => $ultimaPesagem?->ganho_peso_kg,
+                'racao_fornecida_kg'   => $ultimaPesagem?->consumo_kg,
                 'conversao_real'       => $temConversaoReal ? $ultimaPesagem->eficiencia_alimentar : null,
+                // De onde veio o consumo dessa conversão: 'sensor' (medido —
+                // a única "real" de fato), 'fornecido' (ração colocada nos
+                // cochos) ou 'plano' (estimativa). Ver ConsumoLoteService.
+                'fonte_consumo'        => $temConversaoReal ? $ultimaPesagem->fonte_consumo : null,
+                'rotulo_fonte_consumo' => $temConversaoReal ? $ultimaPesagem->rotuloFonteConsumo() : null,
+                'conversao_eh_medida'  => $temConversaoReal && $ultimaPesagem->conversaoEhReal(),
             ];
         });
     }
@@ -466,15 +481,24 @@ class PlanoController extends Controller
         $hoje = today()->toDateString();
 
         foreach ($lotesDashboardCompleto as $lote) {
-            LoteConsumoSnapshot::updateOrCreate(
-                ['lote_id' => $lote->lote_id, 'data' => $hoje],
-                [
-                    'racao_id' => $lote->racao_id,
-                    'quantidade_animais' => $lote->quantidade_animais,
-                    'consumo_kg' => $lote->total_dia,
-                    'status_class' => $lote->status_class,
-                ]
-            );
+            // whereDate (em vez de updateOrCreate com 'data' => 'Y-m-d'): o
+            // cast "date" grava "Y-m-d 00:00:00", e só o DATE do MySQL
+            // ignora a hora na comparação — em outros bancos (ex.: SQLite
+            // dos testes) a linha de hoje não era achada e o INSERT
+            // duplicado estourava a chave única (lote_id, data).
+            $snapshot = LoteConsumoSnapshot::where('lote_id', $lote->lote_id)->whereDate('data', $hoje)->first()
+                ?? new LoteConsumoSnapshot(['lote_id' => $lote->lote_id, 'data' => $hoje]);
+
+            // Lote sem ração vinculada grava consumo ZERO: a tabela do plano
+            // mostra uma sugestão pra ajudar a escolher, mas ela não é o plano
+            // do lote — antes entrava no histórico (e daí em Relatórios e na
+            // conversão alimentar) como se fosse consumo do lote.
+            $snapshot->fill([
+                'racao_id' => $lote->racao_id,
+                'quantidade_animais' => $lote->quantidade_animais,
+                'consumo_kg' => $lote->tem_racao ? $lote->total_dia : 0,
+                'status_class' => $lote->status_class,
+            ])->save();
         }
     }
 
@@ -485,6 +509,39 @@ class PlanoController extends Controller
             ->whereBetween('data', [$inicio->toDateString(), $fim->toDateString()])
             ->when($racaoId, fn ($q) => $q->where('racao_id', (int) $racaoId))
             ->get();
+    }
+
+    /**
+     * Ponto de entrada usado pelo comando agendado (ver
+     * App\Console\Commands\CapturarSnapshotsPlanoAlimentar) — grava o
+     * snapshot de HOJE de TODOS os lotes de TODOS os usuários, sem depender
+     * de sessão nem de alguém abrir a tela de Plano Alimentar naquele dia.
+     * Sem isso, um dia sem visita à tela virava um buraco no histórico de
+     * consumo ("Últimos 7 Dias", "Resumo Mensal" e a soma de consumo entre
+     * duas pesagens usada na Conversão Alimentar real).
+     */
+    public function capturarSnapshotsGlobal(): void
+    {
+        $todosLotes = Lote::all();
+        $racoes = Racao::all();
+
+        $this->capturarSnapshotsDeHoje($this->montarLotesDashboardAutomatico($todosLotes, $racoes));
+    }
+
+    /**
+     * Mesma ideia de capturarSnapshotsGlobal(), mas escopada só às fazendas
+     * do usuário DA SESSÃO ATUAL — usada em requisições normais (Dashboard,
+     * ver CadastroController::dashboard()), onde rodar a varredura GLOBAL
+     * (todos os usuários do sistema) a cada carregamento de página seria um
+     * desperdício e um acoplamento desnecessário entre contas. A varredura
+     * verdadeiramente global fica só para o comando agendado.
+     */
+    public function capturarSnapshotsDoUsuario(): void
+    {
+        $todosLotes = $this->lotesDoUsuario()->get();
+        $racoes = $this->racoesDoUsuario()->get();
+
+        $this->capturarSnapshotsDeHoje($this->montarLotesDashboardAutomatico($todosLotes, $racoes));
     }
 
     /** Mesma semântica do CadastroController/RelatorioController::variacaoPercentual(). */
@@ -521,12 +578,21 @@ class PlanoController extends Controller
             ? (int) round($lotesComRacao / $lotesDashboard->count() * 100)
             : null;
         $loteMaiorConsumo = $lotesDashboard->where('tem_racao', true)->sortByDesc('total_dia')->first();
-        $totalDiario = round((float) $lotesDashboard->sum('total_dia'), 1);
-        $custoDiario = round($totalDiario * self::PRECO_MEDIO_KG, 2);
+
+        // Custo pelo preço cadastrado de CADA ração (o mesmo cálculo da API
+        // usada pelo app) — antes era um preço médio fixo de R$ 3,50/kg.
+        $precoPorRacao = $racoes->pluck('valor_kg', 'id');
+        $custoSnapshot = fn ($s) => (float) $s->consumo_kg * (float) ($precoPorRacao[$s->racao_id] ?? 0);
+
+        // Só lotes com ração VINCULADA entram no plano diário — a sugestão
+        // mostrada nos lotes sem vínculo não é plano de ninguém.
+        $lotesVinculados = $lotesDashboard->where('tem_racao', true);
+        $totalDiario = round((float) $lotesVinculados->sum('total_dia'), 1);
+        $custoDiario = round((float) $lotesVinculados->sum(fn ($l) => $l->total_dia * (float) ($precoPorRacao[$l->racao_id] ?? 0)), 2);
 
         // Janela usada pelo gráfico "Últimos 7 Dias".
         $snapshots7Dias = $this->snapshotsFiltrados($loteIds, $racaoId, today()->subDays(6), today());
-        $ultimos7Dias = collect(range(6, 0))->map(function ($i) use ($snapshots7Dias) {
+        $ultimos7Dias = collect(range(6, 0))->map(function ($i) use ($snapshots7Dias, $custoSnapshot) {
             $dia = today()->subDays($i);
             $doDia = $snapshots7Dias->filter(fn ($s) => $s->data->isSameDay($dia));
             $consumo = (int) $doDia->sum('consumo_kg');
@@ -539,7 +605,7 @@ class PlanoController extends Controller
                     ? 'Hoje ' . $dia->format('d')
                     : ucfirst($dia->locale('pt_BR')->isoFormat('ddd')) . ' ' . $dia->format('d'),
                 'consumo' => $consumo,
-                'custo' => round($consumo * self::PRECO_MEDIO_KG, 2),
+                'custo' => round((float) $doDia->sum($custoSnapshot), 2),
                 'por_animal' => $animais > 0 ? round($consumo / $animais, 3) : 0,
                 'eficiencia' => $comRegistro > 0 ? (int) round($saudaveis / $comRegistro * 100) : 0,
             ];
@@ -569,7 +635,7 @@ class PlanoController extends Controller
         $diasNoMes = $inicioMes->daysInMonth;
 
         $totalRacaoMesNum = (float) $snapshotsMes->sum('consumo_kg');
-        $custoTotalMesNum = round($totalRacaoMesNum * self::PRECO_MEDIO_KG, 2);
+        $custoTotalMesNum = round((float) $snapshotsMes->sum($custoSnapshot), 2);
         $mediaDiariaMesNum = round($totalRacaoMesNum / $diasNoMes, 1);
 
         // Maior/menor consumo do mês: dias reais a partir dos snapshots —
@@ -648,6 +714,24 @@ class PlanoController extends Controller
             'loteMaiorConsumo'    => $loteMaiorConsumo,
 
             'distribuicaoRacoes' => $distribuicaoRacoes,
+
+            // Mesmos números acima, sem formatação de tela: os campos de
+            // texto ("4.440", "11.199,00") e os gráficos em JSON-string são
+            // para a Blade — no app, "4.440" virava 4,44 kg. A API (GET
+            // /api/plano) lê estes dois blocos.
+            'consumo7Dias' => [
+                'labels' => $labels7Dias->all(),
+                'valores_kg' => $valores7Dias->map(fn ($kg) => (float) $kg)->all(),
+                'total_kg' => round((float) $valores7Dias->sum(), 1),
+            ],
+            'resumoMensal' => [
+                'mes' => $referenciaMes->format('Y-m'),
+                'labels' => $labelsMensal,
+                'valores_kg' => $valoresMensal,
+                'total_kg' => round($totalRacaoMesNum, 1),
+                'custo_total' => $custoTotalMesNum,
+                'media_diaria_kg' => $mediaDiariaMesNum,
+            ],
         ];
     }
 
@@ -665,18 +749,15 @@ class PlanoController extends Controller
     }
 
     /**
-     * Traduz os filtros ativos (Fazenda/Lote/Ração) em rótulos legíveis
-     * para os "chips" do modal de Filtros Avançados — mesmo padrão do
-     * RacaoController/EstoqueController/CochoController.
+     * Traduz os filtros ativos (Lote/Ração) em rótulos legíveis para os
+     * "chips" do modal de Filtros Avançados — mesmo padrão do
+     * RacaoController/EstoqueController/CochoController. A Fazenda não
+     * entra mais aqui: virou a Unidade Produtiva selecionada no topo da
+     * tela (mesmo padrão do Dashboard), não um filtro removível.
      */
     private function descreverFiltros(array $filtros, $fazendas, $lotes, $racaos): array
     {
         $itens = [];
-
-        if (!empty($filtros['fazenda_id'])) {
-            $nome = optional($fazendas->firstWhere('id', (int) $filtros['fazenda_id']))->nome_fazenda;
-            $itens[] = ['chave' => 'fazenda_id', 'label' => 'Fazenda: ' . ($nome ?? '—')];
-        }
 
         if (!empty($filtros['lote_id'])) {
             $nome = optional($lotes->firstWhere('id', (int) $filtros['lote_id']))->nome_lote;
@@ -691,28 +772,51 @@ class PlanoController extends Controller
         return $itens;
     }
 
-    // listar() e cadastrar() renderizam exatamente a mesma tela. Os
-    // filtros (Fazenda/Lote/Ração) escopam só o que o dashboard mostra —
-    // o modal de Filtros Avançados sempre lista TODOS os lotes/rações do
-    // usuário (via $todosLotes/$racaos), senão o filtro se
-    // auto-restringiria.
+    // listar() e cadastrar() renderizam exatamente a mesma tela.
+    //
+    // Unidade Produtiva: mesmo padrão/comportamento do Dashboard
+    // (CadastroController::dashboard) — a fazenda escolhida na barra do
+    // topo passa a ser o limite de tudo que a tela mostra e calcula (Lote,
+    // Plano Alimentar, Ração, consumo). Sem fazenda selecionada (e mais de
+    // uma cadastrada), a tela não roda nenhum cálculo em cima de dados de
+    // outra unidade — ela nem entra na lista de opções do filtro de Lote —
+    // e mostra o estado inicial pedindo pra escolher uma. Com uma única
+    // fazenda cadastrada, ela já vem selecionada, sem exigir escolha manual.
     private function renderizarTela(Request $request)
     {
-        $filtros = $request->only(['fazenda_id', 'lote_id', 'racao_id']);
-
-        $todosLotes = $this->lotesDoUsuario()->with('fazenda')->orderBy('nome_lote')->get();
-        $racaos = $this->racoesDoUsuario()->with('fazenda')->orderBy('nome_racao')->get();
         $fazendas = Fazenda::where('cadastro_id', session('usuario_id'))->orderBy('nome_fazenda')->get();
         $cadastroLogado = Cadastro::find(session('usuario_id'));
 
-        // Captura o snapshot de hoje com o conjunto COMPLETO de lotes (sem
-        // nenhum filtro da tela aplicado) — precisa rodar antes de filtrar
-        // $lotes, senão um filtro de Ração ativo corromperia o histórico
-        // dos lotes que ficaram de fora dele.
-        $this->capturarSnapshotsDeHoje($this->montarLotesDashboardAutomatico($todosLotes, $racaos));
+        // Captura o snapshot de HOJE com o conjunto COMPLETO de lotes do
+        // usuário (todas as fazendas) — é uma tarefa de integridade de
+        // histórico independente da Unidade Produtiva escolhida agora na
+        // tela; escopar isso à seleção atual criaria buracos no consumo
+        // das demais fazendas sempre que a tela for aberta com outra
+        // selecionada (ver também o comando agendado
+        // plano:capturar-snapshots, que cobre os dias sem ninguém abrir a
+        // tela nenhuma vez).
+        $todosLotesDoUsuario = $this->lotesDoUsuario()->with('fazenda')->get();
+        $todasRacoesDoUsuario = $this->racoesDoUsuario()->get();
+        $this->capturarSnapshotsDeHoje($this->montarLotesDashboardAutomatico($todosLotesDoUsuario, $todasRacoesDoUsuario));
+
+        // Mesma fazenda selecionada (persistida em sessão) do Dashboard —
+        // se já foi escolhida por lá, essa tela já abre nela.
+        $fazendaSelecionadaId = $this->resolverFazendaSelecionadaComSessao($request, $fazendas);
+
+        // Sem Unidade Produtiva selecionada, $todosLotes/$racaos ficam
+        // vazios (não "de todas as fazendas") — nenhuma tabela, gráfico ou
+        // filtro da tela mistura lote/ração de uma unidade que não é a
+        // escolhida.
+        $todosLotes = $fazendaSelecionadaId
+            ? $todosLotesDoUsuario->where('fazenda_id', (int) $fazendaSelecionadaId)->sortBy('nome_lote')->values()
+            : collect();
+        $racaos = $fazendaSelecionadaId
+            ? $todasRacoesDoUsuario->where('fazenda_id', (int) $fazendaSelecionadaId)->sortBy('nome_racao')->values()
+            : collect();
+
+        $filtros = $request->only(['lote_id', 'racao_id']);
 
         $lotes = $todosLotes
-            ->when(!empty($filtros['fazenda_id']), fn ($c) => $c->where('fazenda_id', (int) $filtros['fazenda_id']))
             ->when(!empty($filtros['lote_id']), fn ($c) => $c->where('id', (int) $filtros['lote_id']))
             ->values();
 
@@ -732,10 +836,10 @@ class PlanoController extends Controller
         });
         $mesSelecionado = $dash['mesReferencia'] ?? now()->format('Y-m');
 
-        // Período da seção de Conversão Alimentar (7/30/90 dias) — só essa
+        // Período da seção de Conversão Alimentar (7/15/30/60/90 dias) — só essa
         // seção usa esse filtro; o resto da tela (Consumo por Lote, Resumo
         // Mensal) continua com seus próprios períodos fixos.
-        $periodoConversao = in_array((int) $request->query('periodo_conversao'), [7, 30, 90], true)
+        $periodoConversao = in_array((int) $request->query('periodo_conversao'), self::PERIODOS_CONVERSAO, true)
             ? (int) $request->query('periodo_conversao')
             : 7;
 
@@ -752,6 +856,7 @@ class PlanoController extends Controller
                 'todosLotes',
                 'racaos',
                 'fazendas',
+                'fazendaSelecionadaId',
                 'cadastroLogado',
                 'filtros',
                 'filtrosAplicados',
@@ -803,20 +908,12 @@ class PlanoController extends Controller
     // LISTAR
     public function listar(Request $request)
     {
-        if ($redirect = $this->exigirLogin()) {
-            return $redirect;
-        }
-
         return $this->renderizarTela($request);
     }
 
     // TELA CADASTRAR
     public function cadastrar(Request $request)
     {
-        if ($redirect = $this->exigirLogin()) {
-            return $redirect;
-        }
-
         return $this->renderizarTela($request);
     }
 
@@ -826,10 +923,6 @@ class PlanoController extends Controller
     // página.
     public function lotesConsumoJson(Request $request)
     {
-        if ($redirect = $this->exigirLogin()) {
-            return $redirect;
-        }
-
         $filtros = $request->only(['fazenda_id', 'lote_id', 'racao_id']);
 
         $lotes = $this->lotesDoUsuario()
@@ -855,10 +948,6 @@ class PlanoController extends Controller
     // inicial — respeitando os mesmos filtros (Fazenda/Lote/Ração).
     public function conversoesAlimentaresJson(Request $request)
     {
-        if ($redirect = $this->exigirLogin()) {
-            return $redirect;
-        }
-
         $filtros = $request->only(['fazenda_id', 'lote_id', 'racao_id']);
 
         $lotes = $this->lotesDoUsuario()
@@ -867,7 +956,7 @@ class PlanoController extends Controller
             ->get();
 
         $racoes = $this->racoesDoUsuario()->get();
-        $periodoConversao = in_array((int) $request->query('periodo_conversao'), [7, 30, 90], true)
+        $periodoConversao = in_array((int) $request->query('periodo_conversao'), self::PERIODOS_CONVERSAO, true)
             ? (int) $request->query('periodo_conversao')
             : 7;
         $conversoes = $this->montarConversaoAlimentarAutomatica($lotes, $racoes, $filtros['racao_id'] ?? null, $periodoConversao);
@@ -880,16 +969,36 @@ class PlanoController extends Controller
         ]);
     }
 
+    /**
+     * "Voltar para a página atual" mais confiável que back(): back() usa a
+     * última URL vista via GET guardada na sessão — mas os fetch() de
+     * "Consultar Lotes"/"Consultar mais Conversões" (chamadas AJAX sem o
+     * cabeçalho X-Requested-With que o Laravel checa pra NÃO contar uma
+     * requisição como "página vista") também atualizam essa mesma URL.
+     * Resultado: registrar uma pesagem ou vincular uma ração logo depois de
+     * usar um desses botões "Consultar..." mandava de volta pro endpoint
+     * JSON puro (a tela nunca reaparecia — só o JSON cru). $destino vem de
+     * um campo oculto preenchido no navegador com a URL real da tela no
+     * momento em que o modal foi aberto (ver cadastroplano.blade.php); só é
+     * aceito se apontar para este mesmo site, nunca para um domínio externo.
+     */
+    private function voltarParaTela(Request $request)
+    {
+        $destino = $request->input('pagina_atual');
+
+        if ($destino && str_starts_with($destino, url('/'))) {
+            return redirect($destino);
+        }
+
+        return redirect()->route('plano.listar');
+    }
+
     // VINCULAR RAÇÃO: liga (ou troca, ou remove) o vínculo explícito entre
     // um lote e uma ração, a partir do modal de detalhes da tela de Plano
     // Alimentar. Um único form serve os três casos — vincular, trocar e
     // "— Nenhuma —" (remover o vínculo).
     public function vincularRacao(Request $request, $loteId)
     {
-        if ($redirect = $this->exigirLogin()) {
-            return $redirect;
-        }
-
         $lote = $this->lotesDoUsuario()->findOrFail($loteId);
         $racoes = $this->racoesDoUsuario()->get();
         $compativeis = $this->racoesCompativeisComLote($lote, $racoes);
@@ -897,32 +1006,43 @@ class PlanoController extends Controller
         $racaoId = $request->input('racao_id');
 
         if ($racaoId !== null && $racaoId !== '' && !$compativeis->pluck('id')->contains((int) $racaoId)) {
-            return back()
-                ->withErrors(['racao_id' => 'Selecione uma ração compatível com este lote (mesma fazenda, tipo e sexo).'])
+            return $this->voltarParaTela($request)
+                ->withErrors(['racao_id' => CompatibilidadeRacao::MENSAGEM])
                 ->withInput();
         }
 
-        // Mesma regra aplicada na lista de opções do modal (ver
-        // montarDetalhesLote): uma ração já vinculada a OUTRO lote não pode
-        // ser escolhida de novo aqui — nunca confia só no que o JS deixou
-        // de mostrar, valida de novo no servidor.
-        if ($racaoId !== null && $racaoId !== '') {
-            $jaVinculadaAOutroLote = $this->mapaRacaoPorLote()
-                ->except($lote->id)
-                ->contains((int) $racaoId);
+        // A mesma ração PODE alimentar vários lotes (como na fazenda de
+        // verdade e como a API do app já permitia). A antiga trava "uma ração
+        // por lote" existia porque o consumo era um número fixo da ração e
+        // seria contado em dobro; agora cada lote tem o próprio consumo (kg
+        // por animal × animais) e os dias de estoque somam os lotes que usam
+        // a ração (Racao::consumoDiarioReferencia).
 
-            if ($jaVinculadaAOutroLote) {
-                return back()
-                    ->withErrors(['racao_id' => 'Esta ração já está vinculada a outro lote.'])
-                    ->withInput();
-            }
+        $dados = $request->validate([
+            'quantidade_por_animal' => ['nullable', 'numeric', 'gt:0', 'max:999'],
+        ], [
+            'quantidade_por_animal.gt' => 'Informe quanto cada animal deve comer por dia (maior que zero).',
+            'quantidade_por_animal.max' => 'A quantidade por animal parece alta demais — confira o valor (kg por animal por dia).',
+        ]);
+
+        // Vincular = plano ativo do lote (o MESMO registro "planos" que o app
+        // cria pela API): ração + kg por animal por dia. Antes a web só
+        // gravava lotes.racao_id e o consumo ficava preso ao número fixo da
+        // ração; agora o consumo do lote acompanha a quantidade de animais.
+        if (!$racaoId) {
+            DB::transaction(fn () => Plano::encerrarDoLote($lote));
+
+            return $this->voltarParaTela($request)->with('success', 'Vínculo de ração removido do lote. O plano alimentar dele foi encerrado.');
         }
 
-        $lote->update(['racao_id' => $racaoId ?: null]);
+        $plano = DB::transaction(fn () => Plano::ativarParaLote(
+            $lote,
+            $racoes->firstWhere('id', (int) $racaoId),
+            isset($dados['quantidade_por_animal']) ? (float) $dados['quantidade_por_animal'] : null
+        ));
 
-        return back()->with('success', $racaoId
-            ? 'Ração vinculada ao lote com sucesso!'
-            : 'Vínculo de ração removido do lote.');
+        return $this->voltarParaTela($request)->with('success', 'Plano salvo: ' . number_format($plano->quantidade_recomendada, 2, ',', '.')
+            . ' kg por animal por dia → ' . number_format($plano->consumoDiarioPrevisto(), 1, ',', '.') . " kg/dia para o lote {$lote->nome_lote}.");
     }
 
     // REGISTRAR PESAGEM: checkpoint de peso médio do lote, usado pra
@@ -934,10 +1054,6 @@ class PlanoController extends Controller
     // inventa um número pra isso).
     public function registrarPesagem(Request $request, $loteId)
     {
-        if ($redirect = $this->exigirLogin()) {
-            return $redirect;
-        }
-
         $lote = $this->lotesDoUsuario()->findOrFail($loteId);
 
         $validado = $request->validate([
@@ -955,30 +1071,51 @@ class PlanoController extends Controller
         // ordem — uma data anterior à última já registrada corromperia essa
         // sequência, então o formulário não aceita "voltar no tempo".
         if ($ultimaPesagem && $dataRegistro->lte($ultimaPesagem->data_registro)) {
-            return back()
+            return $this->voltarParaTela($request)
                 ->withErrors(['data' => 'A data precisa ser posterior à última pesagem registrada (' . $ultimaPesagem->data_registro->format('d/m/Y') . ').'])
                 ->withInput();
         }
 
         $pesoNovo = (float) $validado['peso_medio_kg'];
-        $quantidadeAnimais = (int) ($lote->quantidade_animais ?? 0);
+        $quantidadeAnimaisAtual = (int) ($lote->quantidade_animais ?? 0);
 
         $ganhoPesoKg = 0.0;
         $consumoKg = 0.0;
         $custoRs = 0.0;
+        $fonteConsumo = null;
         $eficienciaAlimentar = 0.0;
 
         if ($ultimaPesagem) {
-            $pesoAnterior = (float) ($lote->peso_medio ?? 0);
+            // Fonte da verdade é o PRÓPRIO histórico de pesagens, nunca o
+            // Lote.peso_medio atual — esse campo pode ter sido reeditado
+            // livremente pela tela de Gestão de Lotes (fora do fluxo de
+            // Pesagem), o que corromperia o "peso anterior" sem deixar
+            // rastro. Lotes com pesagem antiga (antes destas colunas
+            // existirem) caem no fallback do peso do próprio Lote, só
+            // dessa vez.
+            $pesoAnterior = (float) ($ultimaPesagem->peso_medio_kg ?: $lote->peso_medio ?? 0);
+            $quantidadeAnimaisAnterior = (int) ($ultimaPesagem->quantidade_animais ?: $quantidadeAnimaisAtual);
 
-            if ($pesoAnterior > 0 && $quantidadeAnimais > 0) {
-                $ganhoPesoKg = round(($pesoNovo - $pesoAnterior) * $quantidadeAnimais, 2);
+            // Ganho total do lote no período: usa a MÉDIA entre a
+            // quantidade de animais de cada ponta, pra o cálculo continuar
+            // correto mesmo quando nasceram, morreram ou saíram animais do
+            // lote entre as duas pesagens (sem isso, um lote que perdeu
+            // metade dos animais no meio do período teria o ganho total
+            // subestimado pela metade).
+            $quantidadeMedia = ($quantidadeAnimaisAnterior + $quantidadeAnimaisAtual) / 2;
+
+            if ($pesoAnterior > 0 && $quantidadeMedia > 0) {
+                $ganhoPesoKg = round(($pesoNovo - $pesoAnterior) * $quantidadeMedia, 2);
             }
 
-            $consumoKg = (float) LoteConsumoSnapshot::where('lote_id', $lote->id)
-                ->whereBetween('data', [$ultimaPesagem->data_registro->toDateString(), $dataRegistro->toDateString()])
-                ->sum('consumo_kg');
-            $custoRs = round($consumoKg * self::PRECO_MEDIO_KG, 2);
+            // Consumo do período (última pesagem, esta pesagem] da fonte mais
+            // confiável: sensores → ração colocada nos cochos → plano. Antes
+            // somava sempre o PLANO (estimativa) e contava o dia da pesagem
+            // anterior duas vezes; o custo usava um preço fixo de R$ 3,50.
+            $consumo = app(ConsumoLoteService::class)->noPeriodo($lote, $ultimaPesagem->data_registro, $dataRegistro);
+            $consumoKg = $consumo['kg'];
+            $custoRs = $consumo['custo'];
+            $fonteConsumo = $consumo['fonte'];
 
             // FCR (kg ração / kg ganho) só faz sentido com ganho positivo —
             // perda de peso ou estagnação ficam visíveis pelo próprio
@@ -989,20 +1126,36 @@ class PlanoController extends Controller
             }
         }
 
-        DesempenhoLote::updateOrCreate(
-            ['lote_id' => $lote->id, 'data_registro' => $dataRegistro->toDateString()],
-            [
-                'consumo_kg' => $consumoKg,
-                'custo_rs' => $custoRs,
-                'ganho_peso_kg' => $ganhoPesoKg,
-                'eficiencia_alimentar' => $eficienciaAlimentar,
-            ]
-        );
+        // whereDate pelo mesmo motivo de capturarSnapshotsDeHoje().
+        $desempenho = DesempenhoLote::where('lote_id', $lote->id)->whereDate('data_registro', $dataRegistro->toDateString())->first()
+            ?? new DesempenhoLote(['lote_id' => $lote->id, 'data_registro' => $dataRegistro->toDateString()]);
+
+        $desempenho->fill([
+            'peso_medio_kg' => $pesoNovo,
+            'quantidade_animais' => $quantidadeAnimaisAtual,
+            'consumo_kg' => $consumoKg,
+            'fonte_consumo' => $fonteConsumo,
+            'custo_rs' => $custoRs,
+            'ganho_peso_kg' => $ganhoPesoKg,
+            'eficiencia_alimentar' => $eficienciaAlimentar,
+        ])->save();
 
         $lote->update(['peso_medio' => $pesoNovo]);
 
-        return back()->with('success', $ultimaPesagem
-            ? 'Pesagem registrada! Conversão alimentar do período atualizada.'
-            : 'Primeira pesagem registrada — a conversão alimentar aparece a partir da próxima.');
+        // Mensagem diz o que aconteceu e, quando falta algo, o que fazer.
+        if (!$ultimaPesagem) {
+            $mensagem = 'Primeira pesagem registrada. A conversão alimentar aparece a partir da próxima pesagem.';
+        } elseif ($fonteConsumo === null) {
+            $mensagem = 'Pesagem registrada, mas não há consumo registrado no período — abasteça os cochos do lote '
+                . '(ou vincule uma ração no plano) para calcular a conversão alimentar.';
+        } elseif ($ganhoPesoKg <= 0) {
+            $mensagem = 'Pesagem registrada. O lote não ganhou peso no período, então não há conversão alimentar para calcular.';
+        } else {
+            $mensagem = 'Pesagem registrada! Conversão alimentar do período: '
+                . number_format($eficienciaAlimentar, 2, ',', '.') . ' kg de ração por kg ganho ('
+                . mb_strtolower(DesempenhoLote::ROTULOS_FONTE[$fonteConsumo]) . ').';
+        }
+
+        return $this->voltarParaTela($request)->with('success', $mensagem);
     }
 }

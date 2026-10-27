@@ -32,60 +32,18 @@
             });
         }
 
-        // ─── REVELAÇÃO DE TÍTULOS (efeito letra por letra) E CARDS AO ENTRAR NA TELA ───
-        function splitChars(el) {
-            // Cada letra vira um <span class="char"> pra animar (charRise/
-            // charGlow), mas as letras de uma mesma palavra ficam agrupadas
-            // num wrapper "word-nowrap" — sem isso, o navegador trata cada
-            // span de letra como uma caixa própria e pode quebrar a linha
-            // no meio de uma palavra (ex.: "AgriFarm" virando "A" / "griFarm"
-            // em telas estreitas). Espaços entre palavras continuam como
-            // texto normal, então a quebra de linha entre palavras keeps
-            // funcionando normalmente.
-            const wrap = (node) => {
-                if (node.nodeType === Node.TEXT_NODE) {
-                    const frag = document.createDocumentFragment();
-                    const tokens = node.textContent.match(/\S+|\s+/g) || [];
-                    tokens.forEach((token) => {
-                        if (/^\s+$/.test(token)) {
-                            frag.appendChild(document.createTextNode(token));
-                            return;
-                        }
-                        const wordWrap = document.createElement('span');
-                        wordWrap.className = 'word-nowrap';
-                        for (const char of token) {
-                            const s = document.createElement('span');
-                            s.className = 'char';
-                            s.textContent = char;
-                            wordWrap.appendChild(s);
-                        }
-                        frag.appendChild(wordWrap);
-                    });
-                    node.parentNode.replaceChild(frag, node);
-                } else if (node.nodeType === Node.ELEMENT_NODE) {
-                    Array.from(node.childNodes).forEach(wrap);
-                }
-            };
-            Array.from(el.childNodes).forEach(wrap);
-        }
-
-        function animateTitle(el) {
-            el.querySelectorAll('.char').forEach((c, i) => {
-                c.style.animationDelay = (i * 0.028) + 's';
-            });
-            el.classList.add('revealed');
-        }
-        document.querySelectorAll('.section-title.reveal-title').forEach(el => splitChars(el));
-
+        // ─── REVELAÇÃO DAS TAGS DE SEÇÃO E CARDS AO ENTRAR NA TELA ───
+        // Títulos de seção ficam como texto simples, sem efeito letra por
+        // letra — só a tag de seção aparece ao entrar na tela.
         const revealObs = new IntersectionObserver((entries) => {
             entries.forEach(e => {
                 if (e.isIntersecting) {
-                    e.target.classList.contains('reveal-title') ? animateTitle(e.target) : e.target.classList.add('revealed');
+                    e.target.classList.add('revealed');
                     revealObs.unobserve(e.target);
                 }
             });
         }, { threshold: 0.2 });
-        document.querySelectorAll('.reveal-title, .reveal-tag').forEach(el => revealObs.observe(el));
+        document.querySelectorAll('.reveal-tag').forEach(el => revealObs.observe(el));
 
         const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
         const hasFinePointer = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
@@ -102,7 +60,17 @@
                 }
             });
         }, { threshold: 0.1 });
-        document.querySelectorAll('.benefit-card, .diff-card, .step-card, .data-card, .member, .faq-item, .sol-feat, .mini-stat, .solucao-card, .impacto-box').forEach((el, i) => {
+        // Movimento reduzido: os cards já aparecem prontos (sem fade).
+        if (!prefersReducedMotion) document.querySelectorAll('.benefit-card, .diff-card, .step-card, .data-card, .member, .faq-item, .sol-feat, .mini-stat, .solucao-card, .impacto-box').forEach((el, i) => {
+            // Navegação por Tab: o card (ou um botão dentro dele) que recebe
+            // foco aparece na hora — antes o foco caía num card ainda
+            // invisível (opacity 0) até a animação de entrada terminar.
+            el.addEventListener('focusin', () => {
+                el.style.transition = 'none';
+                el.style.opacity = '1';
+                el.style.transform = 'none';
+                cardObs.unobserve(el);
+            });
             el.style.opacity = '0';
             // Entrada com leve perspectiva 3D (rotateX) além do fade-up já
             // existente — some assim que o tilt (abaixo) assume o controle
@@ -153,7 +121,8 @@
             let ticking = false;
             const applyScrollParallax = () => {
                 const offset = Math.min(window.scrollY, heroEl.offsetHeight) * 0.35;
-                if (heroVideo) heroVideo.style.transform = `translateY(${offset}px) scale(1.08)`;
+                // Sem scale(): ampliar o vídeo deixava a imagem embaçada.
+                if (heroVideo) heroVideo.style.transform = `translate3d(0, ${offset}px, 0)`;
                 if (heroGlow) heroGlow.style.transform = `translateY(${offset * 0.6}px)`;
                 ticking = false;
             };
@@ -232,8 +201,19 @@
         // padrão JÁ é o design original escuro (nenhuma regra CSS própria
         // pra ele). O interruptor vira um Escuro/Claro simples: marcado
         // (padrão, já vem assim) = design original; desmarcado = Tema Claro
-        // (body.light-theme). Reaproveita a mesma chave "theme" que o
-        // painel compartilhado já salva no localStorage ('dark'/'light'/'contrast').
+        // (body.light-theme).
+        //
+        // Chave PRÓPRIA da landing page ("landingTheme"), separada da
+        // "theme" que o painel de acessibilidade usa no sistema interno
+        // (Dashboard etc.) — lá "light" é o PADRÃO (inclusive gravado
+        // automaticamente pra quem nunca escolheu nada, ao sincronizar com
+        // o servidor). Reaproveitar a mesma chave aqui fazia a landing page
+        // inteira (incluindo o rodapé) cair no Tema Claro sempre que o
+        // usuário só tivesse o padrão do sistema interno salvo — nunca
+        // tinha escolhido "Tema Claro" nesta página de verdade. Resultado:
+        // logo na primeira visita a página já abria fora do modo escuro
+        // padrão, e olhava para o rodapé nesse estado do jeito errado (o
+        // "Tema Claro" daqui ainda não cobre todo elemento do rodapé).
         const chkDarkMode = document.getElementById('chkDarkMode');
         const chkHighContrast = document.getElementById('chkHighContrast');
         if (chkDarkMode && chkHighContrast) {
@@ -241,14 +221,16 @@
                 document.body.classList.toggle('light-theme', ativo);
             }
 
-            const salvo = localStorage.getItem('theme');
+            const salvo = localStorage.getItem('landingTheme');
             if (salvo === null) {
                 chkDarkMode.checked = true;
             }
             aplicarTemaClaro(salvo === 'light');
 
             chkDarkMode.addEventListener('change', function () {
-                aplicarTemaClaro(!this.checked);
+                const claro = !this.checked;
+                aplicarTemaClaro(claro);
+                localStorage.setItem('landingTheme', claro ? 'light' : 'dark');
             });
 
             chkHighContrast.addEventListener('change', function () {
@@ -258,13 +240,32 @@
     });
 
     // ─── MENU MOBILE ───
+    // aria-expanded/aria-label do ☰ acompanham o menu (leitor de tela
+    // anuncia "expandido/recolhido"); Esc fecha e devolve o foco ao ☰.
+    function sincronizarBotaoMenu(aberto) {
+        const botao = document.querySelector('.hamburger');
+        if (!botao) return;
+        botao.setAttribute('aria-expanded', aberto ? 'true' : 'false');
+        botao.setAttribute('aria-label', aberto ? 'Fechar menu' : 'Abrir menu');
+    }
+
     function toggleMenu() {
-        document.getElementById('mobile-menu').classList.toggle('open');
+        const aberto = document.getElementById('mobile-menu').classList.toggle('open');
+        sincronizarBotaoMenu(aberto);
     }
 
     function closeMenu() {
         document.getElementById('mobile-menu').classList.remove('open');
+        sincronizarBotaoMenu(false);
     }
+
+    document.addEventListener('keydown', function (e) {
+        const menu = document.getElementById('mobile-menu');
+        if (e.key !== 'Escape' || !menu || !menu.classList.contains('open')) return;
+        const focoNoMenu = menu.contains(document.activeElement);
+        closeMenu();
+        if (focoNoMenu) document.querySelector('.hamburger')?.focus();
+    });
 </script>
 
 <!-- VLibras: widget oficial do governo federal que traduz o conteúdo da
@@ -293,5 +294,5 @@
 </div>
 <script src="https://vlibras.gov.br/app/vlibras-plugin.js"></script>
 <script>
-    new window.VLibras.Widget('https://vlibras.gov.br/app');
+    if (window.VLibras) new window.VLibras.Widget('https://vlibras.gov.br/app'); // CDN do governo fora do ar/bloqueado: segue sem o widget
 </script>

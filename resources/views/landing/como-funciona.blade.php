@@ -19,7 +19,7 @@
     <section id="como-funciona">
         <div class="container">
             <span class="section-tag reveal-tag">Processo Técnico</span>
-            <h2 class="section-title reveal-title">Como o sistema opera</h2>
+            <h1 class="section-title reveal-title"><i class="fa-solid fa-gears accent titulo-icone" aria-hidden="true"></i> Como o sistema opera</h1>
             <div class="steps">
                 <div class="step-row">
                     <div class="step-card">

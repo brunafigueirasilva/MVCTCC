@@ -12,7 +12,6 @@ class LoteOcorrencia extends Model
         'causa',
         'doenca',
         'quantidade',
-        'quantidade_litros',
         'quantidade_antes',
         'quantidade_depois',
         'lote_destino_id',
@@ -20,9 +19,11 @@ class LoteOcorrencia extends Model
         'observacao',
     ];
 
+    // Produção de leite fica em "ordenhas" (por lote), não aqui. A data sai
+    // como "2026-10-05" no JSON — no formato ISO com "Z" o app podia mostrar
+    // o dia anterior por causa do fuso (UTC-3).
     protected $casts = [
-        'data_ocorrencia' => 'date',
-        'quantidade_litros' => 'float',
+        'data_ocorrencia' => 'date:Y-m-d',
     ];
 
     public function lote()

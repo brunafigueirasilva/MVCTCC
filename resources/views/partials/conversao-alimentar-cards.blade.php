@@ -31,14 +31,14 @@
             </div>
         </div>
 
-        <!-- Métrica 3: Consumo Diário (direto da ração vinculada) -->
+        <!-- Métrica 3: Consumo Diário PLANEJADO (ração vinculada) -->
         <div class="ca-item">
             <div class="ca-icon-wrapper bg-green-light">
                 <i class="fa-solid fa-bucket text-green"></i>
             </div>
             <div class="ca-info">
-                <span class="ca-label">Consumo Diário</span>
-                <span class="ca-value">{{ number_format($conversao->consumo_diario, 1, ',', '.') }} kg</span>
+                <span class="ca-label">Consumo Planejado</span>
+                <span class="ca-value">{{ number_format($conversao->consumo_diario, 2, ',', '.') }} kg/dia</span>
             </div>
         </div>
 
@@ -59,15 +59,17 @@
         </div>
     </div>
 
-    <!-- Métrica principal: Conversão Alimentar (kg de ração / kg de peso vivo) -->
+    <!-- Consumo planejado por kg de peso vivo (NÃO é conversão alimentar:
+         conversão é ração ÷ GANHO de peso — ver o bloco abaixo). Antes este
+         número era chamado de "Conversão Alimentar". -->
     <div class="ca-hero">
         <div class="ca-hero-icon">
             <i class="fa-solid fa-arrow-trend-up" aria-hidden="true"></i>
         </div>
         <div class="ca-hero-info">
             <span class="ca-hero-label">
-                Conversão Alimentar
-                <button type="button" class="tooltip-icon" aria-label="O que é conversão alimentar?" aria-expanded="false" data-tooltip-text="Conversão alimentar é o consumo diário (kg/dia) cadastrado na ração vinculada, dividido pelo peso vivo total do lote (peso médio × quantidade de animais). Quanto menor o valor, mais eficiente é o lote no aproveitamento da ração.">
+                Ração por kg de peso vivo
+                <button type="button" class="tooltip-icon" aria-label="O que é ração por kg de peso vivo?" aria-expanded="false" data-tooltip-text="Consumo diário planejado (kg/dia da ração vinculada) dividido pelo peso vivo total do lote (peso médio × quantidade de animais). Mostra quanto de ração o plano dá por kg de animal por dia — é uma meta do plano, não um resultado medido.">
                     <i class="fa-regular fa-circle-question" aria-hidden="true"></i>
                 </button>
             </span>
@@ -88,17 +90,33 @@
         </div>
         <div class="ca-hero-info">
             <span class="ca-hero-label">
-                Conversão Real (FCR)
-                <button type="button" class="tooltip-icon" aria-label="O que é conversão alimentar real?" aria-expanded="false" data-tooltip-text="Kg de ração consumidos dividido pelo kg de peso ganho entre as duas últimas pesagens registradas do lote. Quanto menor, mais eficiente. Só aparece a partir da segunda pesagem.">
+                Conversão Alimentar
+                <button type="button" class="tooltip-icon" aria-label="O que é conversão alimentar?" aria-expanded="false" data-tooltip-text="Ração consumida dividida pelo peso ganho entre as duas últimas pesagens do lote (kg de ração por kg ganho). Quanto menor, mais eficiente. O consumo vem da melhor fonte disponível: sensores dos cochos (real), ração colocada nos cochos (aproximada) ou plano alimentar (estimativa).">
                     <i class="fa-regular fa-circle-question" aria-hidden="true"></i>
                 </button>
             </span>
             <span class="ca-hero-value">
                 {{ $conversao->conversao_real !== null ? number_format($conversao->conversao_real, 2, ',', '.') . ' kg/kg' : '—' }}
             </span>
-            @if ($conversao->tem_pesagem)
+            @if ($conversao->conversao_real !== null)
+                {{-- Origem do número sempre visível (texto, não só cor). --}}
+                <span class="ca-fonte ca-fonte-{{ $conversao->fonte_consumo }}">
+                    <i class="fa-solid {{ $conversao->conversao_eh_medida ? 'fa-gauge-high' : ($conversao->fonte_consumo === 'fornecido' ? 'fa-truck-ramp-box' : 'fa-clipboard-list') }}" aria-hidden="true"></i>
+                    {{ $conversao->rotulo_fonte_consumo }}
+                </span>
                 <span class="ca-hero-sub">
-                    Ganho de {{ number_format($conversao->ganho_peso_kg, 1, ',', '.') }} kg desde {{ $conversao->data_ultima_pesagem->format('d/m/Y') }}
+                    Período até {{ $conversao->data_ultima_pesagem->format('d/m/Y') }}: ganho de {{ number_format($conversao->ganho_peso_kg, 1, ',', '.') }} kg com {{ number_format($conversao->racao_fornecida_kg, 1, ',', '.') }} kg de ração
+                </span>
+            @elseif ($conversao->tem_pesagem)
+                <span class="ca-hero-sub">
+                    Última pesagem em {{ $conversao->data_ultima_pesagem->format('d/m/Y') }}.
+                    @if (($conversao->ganho_peso_kg ?? 0) < 0 || (($conversao->ganho_peso_kg ?? 0) == 0 && ($conversao->racao_fornecida_kg ?? 0) > 0))
+                        O lote não ganhou peso no período, então não há conversão para calcular.
+                    @elseif (($conversao->racao_fornecida_kg ?? 0) <= 0 && ($conversao->ganho_peso_kg ?? 0) > 0)
+                        Não houve consumo registrado no período — abasteça os cochos do lote para calcular a conversão.
+                    @else
+                        Registre a próxima pesagem para calcular a conversão.
+                    @endif
                 </span>
             @else
                 <span class="ca-hero-sub">Registre a primeira pesagem para começar a medir</span>

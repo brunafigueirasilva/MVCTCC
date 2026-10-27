@@ -10,8 +10,7 @@ return new class extends Migration
     {
         Schema::create('ordenhas', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('animal_id')->constrained('animais')->cascadeOnDelete();
-            $table->foreignId('lactacao_id')->constrained('lactacoes')->cascadeOnDelete();
+            $table->foreignId('lote_id')->constrained('lotes')->cascadeOnDelete();
             $table->date('data');
             $table->time('horario');
             $table->string('turno');
@@ -20,6 +19,8 @@ return new class extends Migration
                 ->constrained('cadastros')->nullOnDelete();
             $table->string('observacoes')->nullable();
             $table->timestamps();
+
+            $table->index(['lote_id', 'data']);
         });
     }
 
