@@ -45,9 +45,7 @@
         }, { threshold: 0.2 });
         document.querySelectorAll('.reveal-tag').forEach(el => revealObs.observe(el));
 
-        const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        const hasFinePointer = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
-        const tiltSelector = '.benefit-card, .diff-card, .step-card, .data-card, .member, .faq-item, .sol-feat, .mini-stat, .stat-card, .solucao-card, .impacto-box';
+        const prefersReducedMotion = document.documentElement.classList.contains('ui-movimento-reduzido');
 
         const cardObs = new IntersectionObserver((entries) => {
             entries.forEach(e => {
@@ -55,6 +53,9 @@
                     setTimeout(() => {
                         e.target.style.opacity = '1';
                         e.target.style.transform = 'translateY(0) rotateX(0deg)';
+                        // Fim da entrada: devolve o controle ao CSS (elevação
+                        // no hover), sem deixar transform/transição presos.
+                        setTimeout(() => { e.target.style.transform = ''; e.target.style.opacity = ''; e.target.style.transition = ''; }, 650);
                     }, parseInt(e.target.dataset.delay || 0));
                     cardObs.unobserve(e.target);
                 }
@@ -72,35 +73,16 @@
                 cardObs.unobserve(el);
             });
             el.style.opacity = '0';
-            // Entrada com leve perspectiva 3D (rotateX) além do fade-up já
-            // existente — some assim que o tilt (abaixo) assume o controle
-            // do transform no primeiro mousemove sobre o card.
+            // Entrada com leve perspectiva 3D (rotateX) além do fade-up.
             el.style.transform = prefersReducedMotion ? 'none' : 'translateY(24px) rotateX(8deg)';
             el.style.transition = 'opacity 0.6s cubic-bezier(0.16,1,0.3,1), transform 0.6s cubic-bezier(0.16,1,0.3,1)';
             el.dataset.delay = (i % 4) * 100;
             cardObs.observe(el);
         });
 
-        // ─── TILT 3D NOS CARDS (mouse) ───
-        // Só liga com mouse de verdade (não touch) e sem "prefers-reduced-motion".
-        // Reavalia body.high-contrast a cada movimento (o usuário pode ligar o
-        // Alto Contraste em tempo real pelo painel, sem recarregar a página).
-        if (hasFinePointer && !prefersReducedMotion) {
-            document.querySelectorAll(tiltSelector).forEach((card) => {
-                card.addEventListener('mousemove', (e) => {
-                    if (document.body.classList.contains('high-contrast')) return;
-                    const rect = card.getBoundingClientRect();
-                    const px = (e.clientX - rect.left) / rect.width - 0.5;
-                    const py = (e.clientY - rect.top) / rect.height - 0.5;
-                    const rotY = px * 10;
-                    const rotX = py * -10;
-                    card.style.transform = `perspective(900px) rotateX(${rotX}deg) rotateY(${rotY}deg) translateY(-4px) scale(1.015)`;
-                });
-                card.addEventListener('mouseleave', () => {
-                    card.style.transform = '';
-                });
-            });
-        }
+        // (Inclinação 3D dos cards que seguia o mouse removida: nenhuma
+        // animação acompanha a posição do cursor. O hover continua só com
+        // a elevação definida no CSS.)
 
         // ─── NAVBAR: ESTADO "ROLADO" ───
         const navEl = document.querySelector('nav');
@@ -110,7 +92,7 @@
             window.addEventListener('scroll', updateNavScrolled, { passive: true });
         }
 
-        // ─── HERO: PARALLAX DE SCROLL + MOUSE-PARALLAX NOS ORBS ───
+        // ─── HERO: PARALLAX DE SCROLL ───
         // Só existe na página inicial (projetovideo.blade.php) — as demais
         // páginas não têm #hero, então este bloco simplesmente não faz nada nelas.
         const heroEl = document.getElementById('hero');
@@ -133,19 +115,8 @@
                 }
             }, { passive: true });
 
-            if (hasFinePointer) {
-                heroEl.addEventListener('mousemove', (e) => {
-                    const rect = heroEl.getBoundingClientRect();
-                    const mx = ((e.clientX - rect.left) / rect.width - 0.5) * 2;
-                    const my = ((e.clientY - rect.top) / rect.height - 0.5) * 2;
-                    heroEl.style.setProperty('--mx', mx.toFixed(3));
-                    heroEl.style.setProperty('--my', my.toFixed(3));
-                });
-                heroEl.addEventListener('mouseleave', () => {
-                    heroEl.style.setProperty('--mx', 0);
-                    heroEl.style.setProperty('--my', 0);
-                });
-            }
+            // (Parallax dos orbs que seguia o mouse removido — só a rolagem
+            // move o fundo.)
         }
 
         // ─── CONTADOR ANIMADO NOS NÚMEROS DE DESTAQUE ───
@@ -292,7 +263,5 @@
         <div class="vw-plugin-top-wrapper"></div>
     </div>
 </div>
-<script src="https://vlibras.gov.br/app/vlibras-plugin.js"></script>
-<script>
-    if (window.VLibras) new window.VLibras.Widget('https://vlibras.gov.br/app'); // CDN do governo fora do ar/bloqueado: segue sem o widget
-</script>
+{{-- Assíncrono: não segura o DOMContentLoaded da página esperando o CDN do governo (scripts async ainda terminam antes do "load", que o widget usa). Se o CDN falhar, segue sem o widget. --}}
+    <script src="https://vlibras.gov.br/app/vlibras-plugin.js" async onload="if (window.VLibras) new window.VLibras.Widget('https://vlibras.gov.br/app');"></script>

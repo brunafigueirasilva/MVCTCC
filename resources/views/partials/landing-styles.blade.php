@@ -1,3 +1,4 @@
+    @include('partials.ui-core')
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -125,7 +126,7 @@
            aparecendo (opacity), só sem o deslocamento/rotação. As classes
            JS (.tilt-active, .hero-orb, .nav-scrolled) são as mesmas usadas
            pelos efeitos novos abaixo; ver partials/landing-scripts.blade.php. */
-        @media (prefers-reduced-motion: reduce) {
+        html.ui-movimento-reduzido { /* antes: @media (prefers-reduced-motion) — agora só a opção do painel desliga */
             /* Fora a intro de abertura (#splash), o card do gráfico
                (.lote-chart) e as letras dos títulos (.section-title): são as
                animações principais da landing, pedidas explicitamente, e com
@@ -761,7 +762,8 @@
         }
 
         /* --mx/--my: escritos pelo listener de mousemove em #hero (ver
-           landing-scripts.blade.php), de -1 a 1. Cada orb reage numa
+           landing-scripts.blade.php), de -1 a 1 — listener removido: os orbs
+           ficam parados (nada acompanha o mouse). Cada orb reagia numa
            intensidade/direção diferente pra dar sensação de profundidade
            em camadas (parallax de mouse), não de bloco único se movendo. */
         .hero-orb--green {

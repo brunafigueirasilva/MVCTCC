@@ -573,13 +573,15 @@
             </div>
           </div>
 
-            <!-- GRÁFICO "ANIMAIS POR LOTE" — dados reais (CadastroController::animaisPorLote),
-                 desenhado em SVG e animado pelo script no fim da página. -->
+            <!-- CARD "ANIMAIS POR LOTE" — vitrine da landing com DADOS FIXOS de
+                 demonstração (não consulta o banco), desenhado em SVG e animado
+                 pelo script no fim da página. -->
             <aside class="lote-chart" aria-labelledby="loteChartTitulo">
+                <span class="lote-chart-reflexo-area" aria-hidden="true"><span class="lote-chart-reflexo"></span></span>
                 <div class="lote-chart-head">
                     <span class="lote-chart-icone" aria-hidden="true"><i class="fa-solid fa-chart-pie"></i></span>
                     <div>
-                        <h2 id="loteChartTitulo">Animais por Lote <span class="lote-ao-vivo" title="Atualiza sozinho" aria-hidden="true"></span></h2>
+                        <h2 id="loteChartTitulo">Animais por Lote <span class="lote-ao-vivo" aria-hidden="true"></span></h2>
                         <p>Distribuição do total de animais entre os lotes cadastrados.</p>
                     </div>
                 </div>
@@ -838,15 +840,19 @@
         width: 100%;
         max-width: 440px;
         justify-self: end;
-        padding: 18px;
-        border-radius: 20px;
-        background: linear-gradient(145deg, rgba(20, 70, 34, .45), rgba(6, 28, 13, .6));
-        border: 1px solid rgba(111, 211, 79, .3);
-        backdrop-filter: blur(8px);
-        -webkit-backdrop-filter: blur(8px);
+        padding: 20px;
+        border-radius: 24px;
+        /* Card sólido (sem backdrop-filter sobre o vídeo — era o que deixava
+           a página pesada e impedia animar a borda). */
+        background:
+            radial-gradient(120% 80% at 100% 0%, rgba(111, 211, 79, .16), transparent 55%),
+            radial-gradient(90% 70% at 0% 100%, rgba(47, 191, 107, .12), transparent 60%),
+            linear-gradient(160deg, #134a29 0%, #0c3119 55%, #08230f 100%);
+        border: 1px solid rgba(143, 224, 90, .22);
         box-shadow:
-            0 0 0 1px rgba(255, 255, 255, .04) inset,
-            0 24px 60px rgba(0, 0, 0, .35);
+            0 1px 0 rgba(255, 255, 255, .08) inset,
+            0 30px 70px -20px rgba(0, 0, 0, .65),
+            0 12px 24px -12px rgba(0, 0, 0, .5);
         color: #eef8f0;
         /* Escondido até a vinheta subir — aí ganha "entrou" (ver o script
            do gráfico) e sobe crescendo. Só opacity/transform: leve. */
@@ -915,6 +921,114 @@
         0%, 100% { opacity: .45; }
         50% { opacity: 1; }
     }
+
+    /* ── CARD ANIMADO (vitrine) — tudo em transform/opacity ou em camadas
+       pequenas; nada acompanha o mouse. ── */
+
+    /* Flutua de leve depois de entrar ("translate" separado do transform
+       usado na entrada, então as duas animações não brigam). */
+    .lote-chart.entrou {
+        animation: loteCardEntra 1.3s cubic-bezier(.16, 1, .3, 1) forwards,
+                   loteFlutua 6s ease-in-out 1.4s infinite;
+    }
+    @keyframes loteFlutua {
+        0%, 100% { translate: 0 0; }
+        50% { translate: 0 -6px; }
+    }
+
+    /* Luz percorrendo a borda sem parar (agora leve: card sem desfoque). */
+    .lote-chart.entrou::before { animation: loteBorda 5s linear infinite; }
+    @keyframes loteBorda { to { --lote-ang: 660deg; } }
+
+    /* Reflexo diagonal que atravessa o card de tempos em tempos (recortado
+       na própria camada — o card não corta o brilho externo dele). */
+    .lote-chart-reflexo-area { position: absolute; inset: 0; border-radius: inherit; overflow: hidden; pointer-events: none; z-index: 2; }
+    .lote-chart-reflexo {
+        position: absolute;
+        inset: -40% auto -40% -60%;
+        width: 45%;
+        z-index: 2;
+        pointer-events: none;
+        background: linear-gradient(100deg, transparent 20%, rgba(214, 255, 184, .10) 45%, rgba(255, 255, 255, .16) 50%, rgba(214, 255, 184, .10) 55%, transparent 80%);
+        transform: translateX(0) rotate(12deg);
+        opacity: 0;
+    }
+    .lote-chart.entrou .lote-chart-reflexo { animation: loteReflexo 7s cubic-bezier(.45, 0, .2, 1) 2s infinite; }
+    @keyframes loteReflexo {
+        0% { transform: translateX(0) rotate(12deg); opacity: 0; }
+        6% { opacity: 1; }
+        28% { transform: translateX(420%) rotate(12deg); opacity: 0; }
+        100% { transform: translateX(420%) rotate(12deg); opacity: 0; }
+    }
+
+    /* Ícone do cabeçalho: gira de leve a cada poucos segundos. */
+    .lote-chart.entrou .lote-chart-icone i { display: inline-block; animation: loteIcone 6s cubic-bezier(.34, 1.4, .64, 1) 2.5s infinite; }
+    @keyframes loteIcone {
+        0%, 70%, 100% { transform: rotate(0deg) scale(1); }
+        78% { transform: rotate(-24deg) scale(1.12); }
+        88% { transform: rotate(8deg) scale(1); }
+    }
+    .lote-chart-icone { box-shadow: 0 0 0 0 rgba(111, 211, 79, .4); }
+    .lote-chart.entrou .lote-chart-icone { animation: loteIconeHalo 3.2s ease-out 1.6s infinite; }
+    @keyframes loteIconeHalo {
+        0% { box-shadow: 0 0 0 0 rgba(111, 211, 79, .45); }
+        70%, 100% { box-shadow: 0 0 0 10px rgba(111, 211, 79, 0); }
+    }
+
+    /* Rosca: halo respirando e régua girando devagar. */
+    .lote-chart.entrou .lote-donut-aura { animation: loteAura 4s ease-in-out infinite; }
+    @keyframes loteAura {
+        0%, 100% { opacity: .55; transform: scale(.94); }
+        50% { opacity: 1; transform: scale(1.06); }
+    }
+    #loteMarcas { transform-origin: 60px 60px; animation: loteGira 60s linear infinite reverse; }
+
+    /* Número do centro "pulsa" quando volta a mostrar o total. */
+    #loteCentroQtd { font-size: .62rem; letter-spacing: -.01em; }
+    .lote-donut-centro:not(.mostrando-lote) .centro-total strong { animation: loteTotalPop .6s cubic-bezier(.34, 1.56, .64, 1); }
+    @keyframes loteTotalPop { from { transform: scale(.82); opacity: .4; } }
+
+    /* Barras da legenda: brilho correndo (cada uma num tempo). */
+    .lote-legenda .barra i { position: relative; overflow: hidden; }
+    .lote-legenda .barra i::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .55), transparent);
+        transform: translateX(-100%);
+        animation: loteBarraBrilho 2.8s ease-in-out infinite;
+    }
+    .lote-legenda li:nth-child(2) .barra i::after { animation-delay: .35s; }
+    .lote-legenda li:nth-child(3) .barra i::after { animation-delay: .7s; }
+    .lote-legenda li:nth-child(4) .barra i::after { animation-delay: 1.05s; }
+    .lote-legenda li:nth-child(5) .barra i::after { animation-delay: 1.4s; }
+    @keyframes loteBarraBrilho { 0%, 35% { transform: translateX(-100%); } 75%, 100% { transform: translateX(100%); } }
+
+    /* Hover no card (sem seguir o mouse): sobe um pouco e a borda acende. */
+    .lote-chart { transition: box-shadow .4s cubic-bezier(.16, 1, .3, 1), border-color .4s ease; }
+    .lote-chart:hover {
+        border-color: rgba(143, 224, 90, .45);
+        box-shadow:
+            0 1px 0 rgba(255, 255, 255, .1) inset,
+            0 40px 80px -24px rgba(0, 0, 0, .7),
+            0 0 40px -6px rgba(111, 211, 79, .35);
+    }
+
+    /* Redesenho periódico: o card dá uma "respirada" enquanto a rosca recomeça. */
+    .lote-chart.replay .lote-donut svg { animation: loteRecomeca .7s cubic-bezier(.65, 0, .35, 1); }
+    @keyframes loteRecomeca { 50% { transform: rotate(-25deg) scale(.92); } }
+
+    /* Reduzir animações (painel de acessibilidade): card estático. */
+    html.ui-movimento-reduzido .lote-chart.entrou,
+    html.ui-movimento-reduzido .lote-chart.entrou::before,
+    html.ui-movimento-reduzido .lote-chart-reflexo,
+    html.ui-movimento-reduzido .lote-chart-icone,
+    html.ui-movimento-reduzido .lote-chart-icone i,
+    html.ui-movimento-reduzido .lote-donut-aura,
+    html.ui-movimento-reduzido #loteMarcas,
+    html.ui-movimento-reduzido .lote-legenda .barra i::after { animation: none !important; }
+    html.ui-movimento-reduzido .lote-chart.entrou { opacity: 1; transform: none; }
+    html.ui-movimento-reduzido .lote-chart-reflexo { display: none; }
 
     .lote-chart-head {
         display: flex;
@@ -1542,8 +1656,8 @@
 <script>
     // Gráfico "Animais por Lote": rosca em SVG (uma <circle> por fatia,
     // desenhada com stroke-dasharray/dashoffset — as transições CSS de
-    // .lote-fatia animam a entrada e qualquer atualização). Dados reais do
-    // backend (CadastroController::animaisPorLote), reconsultados a cada 30s.
+    // .lote-fatia animam a entrada e qualquer atualização). DADOS FIXOS de
+    // demonstração (vitrine da landing — não consulta o banco).
     //
     // Interação:
     //  - passar o mouse numa fatia/legenda: fatia salta, centro mostra o lote
@@ -1580,12 +1694,21 @@
             ['#a8742c', '#e8b45c'],
             ['#2fa38a', '#8fe3c8'],
         ];
-        const URL_DADOS = @json(route('projeto.animaisPorLote'));
         const fmt = new Intl.NumberFormat('pt-BR');
         const fmtDec = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 1 });
 
-        let dados = @json($animaisPorLote);
-        let assinaturaAtual = JSON.stringify(dados);
+        // Dados fixos do card (vitrine): mesmos números em toda visita.
+        const dados = {
+            total: 367,
+            fazenda: 'demo',
+            lotes: [
+                { nome: 'Lote A2 - Bovino', quantidade: 120, percentual: 33, detalhes: { lote: 'Lote A2', especie: 'Bovino', raca: 'Holandesa', finalidade: 'Leite', sexo: 'Fêmeas', idade_media: '3 anos e 2 meses', peso_medio: 520, cochos: 4, dias_no_sistema: 214 } },
+                { nome: 'Lote A1 - Bovino', quantidade: 80, percentual: 22, detalhes: { lote: 'Lote A1', especie: 'Bovino', raca: 'Nelore', finalidade: 'Corte', sexo: 'Machos', idade_media: '2 anos', peso_medio: 410, cochos: 3, dias_no_sistema: 180 } },
+                { nome: 'Lote C1 - Avicultura', quantidade: 80, percentual: 22, detalhes: { lote: 'Lote C1', especie: 'Avicultura', raca: 'Isa Brown', finalidade: 'Postura', sexo: 'Fêmeas', idade_media: '8 meses', peso_medio: 2.1, cochos: 2, dias_no_sistema: 96 } },
+                { nome: 'Lote D1 - Caprino', quantidade: 40, percentual: 11, detalhes: { lote: 'Lote D1', especie: 'Caprino', raca: 'Saanen', finalidade: 'Leite', sexo: 'Fêmeas', idade_media: '2 anos e 4 meses', peso_medio: 55, cochos: 2, dias_no_sistema: 150 } },
+                { nome: 'Outros', quantidade: 47, percentual: 13, detalhes: { agrupados: 3, peso_medio: 180, cochos: 3, especies: [ { especie: 'Ovino', animais: 22 }, { especie: 'Suíno', animais: 15 }, { especie: 'Equino', animais: 10 } ] } },
+            ],
+        };
         let iniciado = false;
         let instantaneo = false;
         let hover = -1;
@@ -1661,7 +1784,8 @@
 
             const lote = lotes()[foco];
             if (lote) {
-                $('loteCentroNome').textContent = lote.nome;
+                // Nome curto no centro ("Lote A2"): o completo não cabe na rosca.
+                $('loteCentroNome').textContent = (lote.detalhes && lote.detalhes.lote) || lote.nome;
                 $('loteCentroPct').textContent = lote.percentual + '%';
                 $('loteCentroQtd').textContent = fmt.format(lote.quantidade) + ' animais';
             }
@@ -1678,10 +1802,18 @@
             const s = document.createElement('small'); s.textContent = i === selecionado ? 'Clique para fechar' : 'Clique para ver detalhes';
             tooltip.append(b, q, p, s);
 
-            const caixa = donut.getBoundingClientRect();
-            const escala = caixa.width / donut.offsetWidth || 1; // página tem zoom de 90%
-            tooltip.style.left = ((evento.clientX - caixa.left) / escala) + 'px';
-            tooltip.style.top = ((evento.clientY - caixa.top) / escala) + 'px';
+            // Posição FIXA no meio da fatia (calculada pelos dados), nunca na
+            // posição do mouse — nenhum elemento acompanha o cursor. A rosca
+            // começa no topo e segue no sentido horário (rotate(-90) no SVG).
+            const todos = lotes();
+            const totalAnimais = todos.reduce((soma, l) => soma + (Number(l.quantidade) || 0), 0) || 1;
+            const antes = todos.slice(0, i).reduce((soma, l) => soma + (Number(l.quantidade) || 0), 0);
+            const meio = (antes + (Number(lote.quantidade) || 0) / 2) / totalAnimais;
+            const angulo = meio * 2 * Math.PI - Math.PI / 2;
+            const x = 60 + RAIO * Math.cos(angulo);
+            const y = 60 + RAIO * Math.sin(angulo);
+            tooltip.style.left = (x / 120 * donut.offsetWidth) + 'px';
+            tooltip.style.top = (y / 120 * donut.offsetHeight) + 'px';
             tooltip.classList.add('visivel');
         }
 
@@ -1819,7 +1951,6 @@
                     fatia.style.strokeDasharray = `0 ${CIRC}`;
                     fatia.style.strokeDashoffset = -CIRC * (acumulado / (total || 1));
                     fatia.addEventListener('mouseenter', (e) => { entrar(i); mostrarTooltip(i, e); });
-                    fatia.addEventListener('mousemove', (e) => mostrarTooltip(i, e));
                     fatia.addEventListener('mouseleave', sair);
                     fatia.addEventListener('click', (e) => { selecionar(i); mostrarTooltip(i, e); });
                     grupo.insertBefore(fatia, grupo.children[i] || null);
@@ -1934,20 +2065,29 @@
             hover = -1; // o ciclo não "prende" o mouse
         }
 
-        async function atualizar() {
-            if (document.hidden) return;
-            try {
-                const resposta = await fetch(URL_DADOS, { headers: { 'Accept': 'application/json' } });
-                if (!resposta.ok) return;
-                const novos = await resposta.json();
-                const assinatura = JSON.stringify(novos);
-                if (assinatura === assinaturaAtual) return;
-                assinaturaAtual = assinatura;
-                dados = novos;
-                render(dados);
-            } catch (e) {
-                // Sem rede: mantém o gráfico com os últimos dados válidos.
-            }
+        // A cada ~18 s (sem ninguém interagindo) a rosca se redesenha do
+        // zero: fatias recolhem e voltam em sequência, barras e números contam
+        // de novo — o card nunca fica "parado" na vitrine.
+        function replay() {
+            if (hover >= 0 || selecionado >= 0 || document.hidden) return;
+            if (document.documentElement.classList.contains('ui-movimento-reduzido')) return;
+            Array.from(grupo.children).forEach((f) => { f.style.transform = ''; f.classList.remove('ativa'); f.style.strokeDasharray = '0 ' + CIRC; });
+            Array.from(rotulos.children).forEach((r) => { r.classList.remove('visivel'); r.style.transform = ''; });
+            Array.from(legenda.children).forEach((li) => {
+                li.classList.remove('ativa');
+                li.querySelector('.barra i').style.width = '0';
+                li.dataset.qtd = '0';
+                li.dataset.pct = '0';
+            });
+            centro.classList.remove('mostrando-lote');
+            grupo.classList.remove('tem-ativa');
+            totalEl.dataset.valor = '0';
+            card.classList.remove('replay');
+            void card.offsetWidth;
+            card.classList.add('replay');
+            iniciado = false;
+            indiceCiclo = -1;
+            setTimeout(() => render(dados), 700);
         }
 
         // Entrada do card: começa escondido e entra quando a vinheta começa a
@@ -1962,12 +2102,9 @@
             entrou = true;
             card.classList.add('entrou');
             setTimeout(() => render(dados), 450);
-            setInterval(atualizar, 15000);
-            // Voltou para a página (histórico do navegador ou outra aba):
-            // busca de novo na hora — lote criado/editado/excluído aparece já.
-            window.addEventListener('pageshow', (e) => { if (e.persisted) atualizar(); });
-            document.addEventListener('visibilitychange', () => { if (!document.hidden) atualizar(); });
-            setTimeout(() => setInterval(ciclo, 3200), 3600);
+            // Destaque automático percorre os lotes; redesenho completo a cada ~18 s.
+            setTimeout(() => setInterval(ciclo, 2600), 3000);
+            setInterval(replay, 18000);
         }
 
         if (document.getElementById('splash')) {
@@ -2007,7 +2144,7 @@
 
         let salvo = null;
         try { salvo = localStorage.getItem(CHAVE); } catch (e) { /* sem armazenamento */ }
-        const reduzir = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const reduzir = document.documentElement.classList.contains('ui-movimento-reduzido');
         if (salvo === '1' || (salvo === null && reduzir)) {
             video.removeAttribute('autoplay');
             definir(true, false);

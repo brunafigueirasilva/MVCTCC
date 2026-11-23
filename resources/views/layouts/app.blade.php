@@ -5,7 +5,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('title', 'AgriFarm')</title>
+    <meta name="theme-color" content="#123f22">
+    {{-- Conexões antecipadas com os CDNs usados em toda tela interna. --}}
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+    <link rel="dns-prefetch" href="https://vlibras.gov.br">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    {{-- Menu lateral recolhido no desktop (preferência salva): aplicado antes
+         do primeiro desenho, sem o menu abrir e fechar a cada página. --}}
+    <script>
+        // Telas internas: na troca de página a raiz só faz fade (o conteúdo
+        // entra em cascata pelo ui-motion).
+        document.documentElement.classList.add('ui-shell');
+        try {
+            if (localStorage.getItem('agrifarm:sidebar') === 'recolhida') document.documentElement.classList.add('ui-sidebar-recolhida');
+        } catch (e) { /* armazenamento bloqueado: menu aberto, como sempre */ }
+    </script>
+    @include('partials.ui-core')
 
     <style>
         /* ==========================================================================
@@ -67,7 +82,10 @@
         }
 
         .sidebar, .main {
-            transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, transform 0.2s ease, left 0.3s ease, width 0.3s ease, margin 0.3s ease, filter 0.25s ease;
+            transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, transform 0.2s ease, left 0.3s ease, filter 0.25s ease;
+            /* (margin/width do conteúdo NÃO são animados: recalculariam o layout da
+               página a cada quadro. O deslize é feito com transform — FLIP em
+               partials/ui-motion.) */
         }
 
         /* Ver partials/acessibilidade.blade.php: com o painel aberto, o
@@ -377,6 +395,16 @@
         body.dark-theme .alertas-modal-empty.erro i { background: rgba(239, 68, 68, 0.14); color: #fca5a5; }
 
         .alertas-modal-loading i { font-size: 1.5rem; color: var(--text-secundario); }
+
+        .alertas-modal-skeleton { display: flex; flex-direction: column; gap: 10px; }
+        .alertas-modal-skeleton-item {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            padding: 14px 16px;
+            border-radius: 14px;
+            border: 1px solid var(--surface-muted-border);
+        }
 
         @media (max-width: 480px) {
             .alertas-modal { width: 94%; }
@@ -724,7 +752,7 @@
             transition: transform 0.18s ease;
         }
 
-        @media (prefers-reduced-motion: reduce) {
+        html.ui-movimento-reduzido { /* antes: @media (prefers-reduced-motion) — agora só a opção do painel desliga */
             .menu a, .menu i { transition: background-color 0.18s ease, color 0.18s ease; }
             .menu a:hover { transform: none; }
             .menu a:hover i { animation: none; }
@@ -788,7 +816,7 @@
             outline-offset: 2px;
         }
 
-        @media (prefers-reduced-motion: reduce) {
+        html.ui-movimento-reduzido { /* antes: @media (prefers-reduced-motion) — agora só a opção do painel desliga */
             .sidebar-logout-btn, .sidebar-logout-btn i { transition: none; }
             .sidebar-logout-btn:hover, .sidebar-logout-btn:hover i { transform: none; }
         }
@@ -955,7 +983,7 @@
             color: #000000 !important;
         }
 
-        @media (prefers-reduced-motion: reduce) {
+        html.ui-movimento-reduzido { /* antes: @media (prefers-reduced-motion) — agora só a opção do painel desliga */
             body .floating-notifications-btn,
             body .sidebar-toggle-btn { transition: none; }
             body .floating-notifications-btn:hover,
@@ -1338,7 +1366,7 @@
             body.high-contrast .mobile-busca input { color: #ffff00; }
         }
 
-        @media (prefers-reduced-motion: reduce) {
+        html.ui-movimento-reduzido { /* antes: @media (prefers-reduced-motion) — agora só a opção do painel desliga */
             body[data-mobile-shell] .mobile-menu-overlay,
             .mobile-bottom-nav i { transition: none; }
         }
@@ -1559,7 +1587,7 @@
                 {{-- width/height = proporção real: reserva o espaço antes de a
                      imagem carregar (sem "pulo" do layout e sem o link com
                      largura 0, que deixava o foco do teclado invisível). --}}
-                <img src="{{ asset('agrifarm_oficial.png') }}" alt="AgriFarm" width="1252" height="362">
+                <img src="{{ asset('otimizado/marca/agrifarm_oficial.webp') }}" alt="AgriFarm" width="1252" height="362">
             </a>
         </header>
         <!-- Fundo escurecido atrás do menu lateral aberto (clicar fecha). -->
@@ -1575,7 +1603,7 @@
     <!-- ================= DRAWER LATERAL (verde, global) ================= -->
     <div class="sidebar" id="sidebar" role="navigation" aria-label="Menu principal">
         <div class="sidebar-brand">
-            <img src="{{ asset('agrifarm_oficial.png') }}" alt="AgriFarm" class="sidebar-logo" width="1252" height="362">
+            <img src="{{ asset('otimizado/marca/agrifarm_oficial.webp') }}" alt="AgriFarm" class="sidebar-logo" width="1252" height="362">
         </div>
 
         <a href="{{ route('perfil') }}" class="user-profile" title="Meu perfil">
@@ -1603,42 +1631,52 @@
             <a href="{{ route('cadastro.index') }}" class="{{ request()->routeIs('cadastro.index') ? 'active' : '' }}" @if (request()->routeIs('cadastro.index')) aria-current="page" @endif>
                 <i class="fa-solid fa-chart-line"></i>
                 <span>Dashboard Avançado</span>
+                <span class="ui-menu-indicador" aria-hidden="true"></span>
             </a>
             <a href="{{ route('fazenda.listar') }}" class="{{ request()->routeIs('fazenda.*') ? 'active' : '' }}" @if (request()->routeIs('fazenda.*')) aria-current="page" @endif>
                 <i class="fa-solid fa-location-dot"></i>
                 <span>Gestão de Fazendas</span>
+                <span class="ui-menu-indicador" aria-hidden="true"></span>
             </a>
             <a href="{{ route('lote.listar') }}" class="{{ request()->routeIs('lote.*') ? 'active' : '' }}" @if (request()->routeIs('lote.*')) aria-current="page" @endif>
                 <i class="fa-solid fa-layer-group"></i>
                 <span>Gestão de Lotes</span>
+                <span class="ui-menu-indicador" aria-hidden="true"></span>
             </a>
             <a href="{{ route('ordenha.listar') }}" class="{{ request()->routeIs('ordenha.*') ? 'active' : '' }}" @if (request()->routeIs('ordenha.*')) aria-current="page" @endif>
                 <i class="fa-solid fa-droplet"></i>
                 <span>Ordenha e Leite</span>
+                <span class="ui-menu-indicador" aria-hidden="true"></span>
             </a>
             <a href="{{ route('cocho.listar') }}" class="{{ request()->routeIs('cocho.*') ? 'active' : '' }}" @if (request()->routeIs('cocho.*')) aria-current="page" @endif>
                 <i class="fa-solid fa-cube"></i>
                 <span>Gestão de Cochos</span>
+                <span class="ui-menu-indicador" aria-hidden="true"></span>
             </a>
             <a href="{{ route('racao.listar') }}" class="{{ request()->routeIs('racao.*') ? 'active' : '' }}" @if (request()->routeIs('racao.*')) aria-current="page" @endif>
                 <i class="fa-solid fa-wheat-awn"></i>
                 <span>Gestão de Rações</span>
+                <span class="ui-menu-indicador" aria-hidden="true"></span>
             </a>
             <a href="{{ route('estoque.listar') }}" class="{{ request()->routeIs('estoque.*') ? 'active' : '' }}" @if (request()->routeIs('estoque.*')) aria-current="page" @endif>
                 <i class="fa-solid fa-box"></i>
                 <span>Nível de Estoque</span>
+                <span class="ui-menu-indicador" aria-hidden="true"></span>
             </a>
             <a href="{{ route('plano.listar') }}" class="{{ request()->routeIs('plano.*') ? 'active' : '' }}" @if (request()->routeIs('plano.*')) aria-current="page" @endif>
                 <i class="fa-solid fa-clipboard-list"></i>
                 <span>Plano Alimentar</span>
+                <span class="ui-menu-indicador" aria-hidden="true"></span>
             </a>
             <a href="{{ route('relatorio.listar') }}" class="{{ request()->routeIs('relatorio.*') ? 'active' : '' }}" @if (request()->routeIs('relatorio.*')) aria-current="page" @endif>
                 <i class="fa-regular fa-file-lines"></i>
                 <span>Relatório Avançado</span>
+                <span class="ui-menu-indicador" aria-hidden="true"></span>
             </a>
             <a href="{{ route('perfil') }}" class="{{ request()->routeIs('perfil*') ? 'active' : '' }}" @if (request()->routeIs('perfil*')) aria-current="page" @endif>
                 <i class="fa-solid fa-user-gear"></i>
                 <span>Meu Perfil</span>
+                <span class="ui-menu-indicador" aria-hidden="true"></span>
             </a>
         </div>
 
@@ -1672,11 +1710,20 @@
                 <i class="fa-solid fa-xmark" aria-hidden="true"></i>
             </button>
         </div>
-        <div class="modal-body" id="alertasModalBody">
-            <div class="alertas-modal-loading">
-                <i class="fa-solid fa-circle-notch fa-spin" aria-hidden="true"></i>
-                Carregando alertas...
+        <div class="modal-body" id="alertasModalBody" aria-busy="true">
+            {{-- Skeleton no formato dos alertas enquanto o resumo carrega. --}}
+            <div class="alertas-modal-skeleton" aria-hidden="true">
+                @for ($i = 0; $i < 3; $i++)
+                    <div class="alertas-modal-skeleton-item">
+                        <span class="ui-skeleton" style="width:34px;height:34px;border-radius:10px;flex-shrink:0;"></span>
+                        <span style="flex:1;display:flex;flex-direction:column;gap:8px;">
+                            <span class="ui-skeleton" style="height:12px;width:{{ [70, 55, 62][$i] }}%;"></span>
+                            <span class="ui-skeleton" style="height:10px;width:92%;"></span>
+                        </span>
+                    </div>
+                @endfor
             </div>
+            <p class="a11y-sr-only">Carregando alertas...</p>
         </div>
     </div>
 
@@ -1745,10 +1792,8 @@
             <div class="vw-plugin-top-wrapper"></div>
         </div>
     </div>
-    <script src="https://vlibras.gov.br/app/vlibras-plugin.js"></script>
-    <script>
-        if (window.VLibras) new window.VLibras.Widget('https://vlibras.gov.br/app'); // CDN do governo fora do ar/bloqueado: segue sem o widget
-    </script>
+    {{-- Assíncrono: não segura o DOMContentLoaded da página esperando o CDN do governo (scripts async ainda terminam antes do "load", que o widget usa). Se o CDN falhar, segue sem o widget. --}}
+    <script src="https://vlibras.gov.br/app/vlibras-plugin.js" async onload="if (window.VLibras) new window.VLibras.Widget('https://vlibras.gov.br/app');"></script>
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
@@ -1810,13 +1855,25 @@
                 }
             };
 
-            if (sidebar && modoGaveta()) fecharSidebar();
+            // Desktop: lembra se o usuário recolheu o menu (o <head> já
+            // aplicou a classe html.ui-sidebar-recolhida antes do desenho;
+            // aqui só sincronizamos ícone, aria e "inert").
+            const CHAVE_SIDEBAR = 'agrifarm:sidebar';
+            const preferenciaRecolhida = function () {
+                try { return localStorage.getItem(CHAVE_SIDEBAR) === 'recolhida'; } catch (e) { return false; }
+            };
+            const salvarPreferenciaSidebar = function (recolhida) {
+                document.documentElement.classList.toggle('ui-sidebar-recolhida', recolhida);
+                try { localStorage.setItem(CHAVE_SIDEBAR, recolhida ? 'recolhida' : 'aberta'); } catch (e) { /* bloqueado */ }
+            };
+
+            if (sidebar && (modoGaveta() || preferenciaRecolhida())) fecharSidebar();
 
             if (sidebar && shellMobile) {
                 // Girou a tela / redimensionou: no celular fecha a gaveta; de
-                // volta ao desktop, o menu volta aberto como sempre foi.
+                // volta ao desktop, o menu volta como o usuário deixou.
                 const aoMudarTamanho = function () {
-                    if (mqGaveta.matches) fecharSidebar(); else abrirSidebar();
+                    if (mqGaveta.matches || preferenciaRecolhida()) fecharSidebar(); else abrirSidebar();
                 };
                 if (mqGaveta.addEventListener) mqGaveta.addEventListener('change', aoMudarTamanho);
                 else if (mqGaveta.addListener) mqGaveta.addListener(aoMudarTamanho);
@@ -1839,6 +1896,9 @@
                     } else {
                         fecharSidebar();
                     }
+                    // Só no desktop vira preferência (no celular a gaveta
+                    // sempre começa fechada).
+                    if (!modoGaveta()) salvarPreferenciaSidebar(sidebar.classList.contains('collapsed'));
                 });
             }
 
@@ -2078,6 +2138,7 @@
 
             const renderizarAlertasModal = function (alertas) {
                 if (!alertasModalBody) return;
+                alertasModalBody.removeAttribute('aria-busy');
 
                 if (!alertas.length) {
                     alertasModalBody.innerHTML = '<div class="alertas-modal-empty">'
@@ -2143,6 +2204,7 @@
                     .catch(function () {
                         if (alertasModalSubtitulo) alertasModalSubtitulo.textContent = 'Erro ao carregar';
                         if (alertasModalBody) {
+                            alertasModalBody.removeAttribute('aria-busy');
                             alertasModalBody.innerHTML = '<div class="alertas-modal-empty erro">'
                                 + '<i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>'
                                 + '<div>Não foi possível carregar os alertas agora.</div>'
@@ -2178,7 +2240,10 @@
                     botao.disabled = true;
                     if (botao.tagName === 'BUTTON' && !botao.dataset.textoOriginal) {
                         botao.dataset.textoOriginal = botao.innerHTML;
-                        botao.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin" aria-hidden="true"></i> ' + (botao.dataset.textoEnviando || 'Salvando…');
+                        // Largura travada: o botão não "encolhe" ao trocar o texto.
+                        botao.style.minWidth = botao.offsetWidth + 'px';
+                        botao.setAttribute('aria-busy', 'true');
+                        botao.innerHTML = '<span class="ui-spinner" aria-hidden="true"></span> ' + (botao.dataset.textoEnviando || 'Salvando…');
                     }
                 });
             };
@@ -2190,6 +2255,8 @@
                     botao.innerHTML = botao.dataset.textoOriginal;
                     delete botao.dataset.textoOriginal;
                     botao.disabled = false;
+                    botao.removeAttribute('aria-busy');
+                    botao.style.minWidth = '';
                 });
             };
 

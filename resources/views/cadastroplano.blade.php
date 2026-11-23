@@ -773,7 +773,7 @@ body.high-contrast .tooltip-popover {
 
 
 
-        @media (prefers-reduced-motion: reduce) {
+        html.ui-movimento-reduzido { /* antes: @media (prefers-reduced-motion) — agora só a opção do painel desliga */
             .menu a, .menu i { transition: background-color 0.18s ease, color 0.18s ease; }
             .menu a:hover { transform: none; }
             .menu a:hover i { animation: none; }
@@ -2356,7 +2356,7 @@ body.high-contrast .tooltip-popover {
             <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="tituloModalFiltros">
                 <button class="close" id="closeFiltrosBtn" aria-label="Fechar"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
                 <div class="modal-top">
-                    <img src="{{ asset('logo.png') }}" alt="Logo">
+                    <img src="{{ asset('otimizado/marca/logo.webp') }}" alt="Logo">
                     <h2 id="tituloModalFiltros">Filtros Avançados</h2>
                     <p>Escolha o que exibir no painel do Plano Alimentar</p>
                 </div>
@@ -2725,7 +2725,7 @@ body.high-contrast .tooltip-popover {
         <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="tituloModalDetalhesLote">
             <button class="close" onclick="fecharModalDetalhesLote()" aria-label="Fechar"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
             <div class="modal-top">
-                <img src="{{ asset('logo.png') }}" alt="Logo">
+                <img src="{{ asset('otimizado/marca/logo.webp') }}" alt="Logo">
                 <h2 id="tituloModalDetalhesLote">Plano Alimentar do Lote</h2>
                 <p id="detalhesLoteSubtitulo"></p>
                 <p id="detalhesLoteInfoAnimal" class="detalhes-lote-info-animal"></p>
@@ -2773,8 +2773,10 @@ body.high-contrast .tooltip-popover {
 
             <div id="detalhesLoteSemCompativel" class="detalhes-lote-aviso detalhes-lote-aviso-warning" hidden>
                 <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
-                Nenhuma ração compatível (mesma fazenda, tipo e sexo) está cadastrada ainda.
-                <a href="{{ route('racao.cadastrar') }}">Cadastrar uma ração</a>
+                <span>
+                    Nenhuma ração compatível (mesma fazenda, tipo e sexo) está cadastrada ainda.
+                    <a href="{{ route('racao.cadastrar') }}">Cadastrar uma ração</a>
+                </span>
             </div>
 
             <form id="formVincularRacao" method="POST">
@@ -2813,7 +2815,7 @@ body.high-contrast .tooltip-popover {
         <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="tituloModalPesagem">
             <button class="close" onclick="fecharModalPesagem()" aria-label="Fechar"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
             <div class="modal-top">
-                <img src="{{ asset('logo.png') }}" alt="Logo">
+                <img src="{{ asset('otimizado/marca/logo.webp') }}" alt="Logo">
                 <h2 id="tituloModalPesagem">Registrar Pesagem</h2>
                 <p id="pesagemSubtitulo"></p>
             </div>
@@ -3508,7 +3510,7 @@ body.high-contrast .tooltip-popover {
 
             const textoOriginal = botao.textContent;
             botao.disabled = true;
-            botao.textContent = 'Carregando...';
+            AgriUI.indicarCarregando(botao, 'Carregando…');
 
             try {
                 const resposta = await fetch('{{ route('plano.lotesConsumoJson') }}' + window.location.search, {

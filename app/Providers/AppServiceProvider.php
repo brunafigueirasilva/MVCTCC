@@ -31,10 +31,25 @@ class AppServiceProvider extends ServiceProvider
 
         // Disponibiliza o administrador logado para qualquer view (usado
         // pelo modal "Editar Perfil" presente na navbar de todas as telas).
+        // O composer roda para CADA view e partial renderizado (layout +
+        // ~12 partials por tela): sem memorizar, eram 12-14 consultas
+        // idênticas ao mesmo usuário por página. Guarda o resultado nos
+        // atributos da requisição atual — nunca entre requisições/usuários.
         View::composer('*', function ($view) {
-            $view->with('cadastroLogado', session('usuario_id')
-                ? Cadastro::find(session('usuario_id'))
-                : null);
+            $usuarioId = session('usuario_id');
+            if (! $usuarioId) {
+                $view->with('cadastroLogado', null);
+
+                return;
+            }
+
+            $requisicao = request();
+            $chave = 'cadastroLogado:' . $usuarioId;
+            if (! $requisicao->attributes->has($chave)) {
+                $requisicao->attributes->set($chave, Cadastro::find($usuarioId));
+            }
+
+            $view->with('cadastroLogado', $requisicao->attributes->get($chave));
         });
     }
 }

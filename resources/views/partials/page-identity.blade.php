@@ -418,7 +418,7 @@
         .pg-top-actions { width: 100%; }
     }
 
-    @media (prefers-reduced-motion: reduce) {
+    html.ui-movimento-reduzido { /* antes: @media (prefers-reduced-motion) — agora só a opção do painel desliga */
         .pg-card, .pg-chip { transition: none; }
         .pg-card:hover, .pg-chip:hover { transform: none; }
     }

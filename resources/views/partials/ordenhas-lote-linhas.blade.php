@@ -39,7 +39,7 @@
                 <i class="fa-solid fa-pen" aria-hidden="true"></i>
             </button>
             <form action="{{ route('lote.ordenha.delete', [$lote->id, $ordenha->id]) }}" method="POST"
-                onsubmit="return confirm('Excluir este registro de ordenha?')" style="display:inline;">
+                data-confirmar="Excluir este registro de ordenha?" data-confirmar-titulo="Excluir ordenha" style="display:inline;">
                 @csrf
                 @method('DELETE')
                 <button type="submit" class="btn-acao-ordenha btn-acao-ordenha-excluir" title="Excluir" aria-label="Excluir ordenha de {{ $descricao }}">

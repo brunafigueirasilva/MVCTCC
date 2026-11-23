@@ -696,7 +696,7 @@
            REDUÇÃO DE MOVIMENTO
         ========================================= */
 
-        @media (prefers-reduced-motion: reduce) {
+        html.ui-movimento-reduzido { /* antes: @media (prefers-reduced-motion) — agora só a opção do painel desliga */
 
             *,
             *::before,

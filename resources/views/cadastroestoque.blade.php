@@ -120,7 +120,7 @@
 
 
 
-        @media (prefers-reduced-motion: reduce) {
+        html.ui-movimento-reduzido { /* antes: @media (prefers-reduced-motion) — agora só a opção do painel desliga */
             .menu a, .menu i { transition: background-color 0.18s ease, color 0.18s ease; }
             .menu a:hover { transform: none; }
             .menu a:hover i { animation: none; }
@@ -1604,7 +1604,7 @@ body.dark-theme .editar-estoque-erros {
             <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="tituloModalFiltros">
                 <button class="close" id="closeFiltrosBtn" aria-label="Fechar"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
                 <div class="modal-top">
-                    <img src="{{ asset('logo.png') }}" alt="Logo">
+                    <img src="{{ asset('otimizado/marca/logo.webp') }}" alt="Logo">
                     <h2 id="tituloModalFiltros">Filtros Avançados</h2>
                     <p>Escolha o que exibir no painel de Estoque</p>
                 </div>
@@ -1677,7 +1677,7 @@ body.dark-theme .editar-estoque-erros {
             <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="tituloModalEditarEstoque">
                 <button type="button" class="close" id="closeEditarEstoqueBtn" aria-label="Fechar"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
                 <div class="modal-top">
-                    <img src="{{ asset('logo.png') }}" alt="Logo">
+                    <img src="{{ asset('otimizado/marca/logo.webp') }}" alt="Logo">
                     <h2 id="tituloModalEditarEstoque">Editar Estoque</h2>
                     <p>Atualize o estoque, o consumo e o preço da ração</p>
                 </div>
@@ -1739,7 +1739,7 @@ body.dark-theme .editar-estoque-erros {
             <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="tituloModalMovimentacao">
                 <button type="button" class="close" id="closeMovimentacaoBtn" aria-label="Fechar"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
                 <div class="modal-top">
-                    <img src="{{ asset('logo.png') }}" alt="Logo">
+                    <img src="{{ asset('otimizado/marca/logo.webp') }}" alt="Logo">
                     <h2 id="tituloModalMovimentacao">Entrada / Saída de Ração</h2>
                     <p id="movimentacaoSaldo">Registre uma compra (entrada) ou uma retirada (saída) — fica no histórico do estoque.</p>
                 </div>

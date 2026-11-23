@@ -874,7 +874,7 @@
         <div class="left-side">
             <div class="logo">
                 <div class="logo-icon">
-                    <img src="{{ asset('logo.png') }}" alt="Logo Agrifarm">
+                    <img src="{{ asset('otimizado/marca/logo.webp') }}" alt="Logo Agrifarm">
                 </div>
             </div>
 
@@ -1036,10 +1036,8 @@
             <div class="vw-plugin-top-wrapper"></div>
         </div>
     </div>
-    <script src="https://vlibras.gov.br/app/vlibras-plugin.js"></script>
-    <script>
-        if (window.VLibras) new window.VLibras.Widget('https://vlibras.gov.br/app'); // CDN do governo fora do ar/bloqueado: segue sem o widget
-    </script>
+    {{-- Assíncrono: não segura o DOMContentLoaded da página esperando o CDN do governo (scripts async ainda terminam antes do "load", que o widget usa). Se o CDN falhar, segue sem o widget. --}}
+    <script src="https://vlibras.gov.br/app/vlibras-plugin.js" async onload="if (window.VLibras) new window.VLibras.Widget('https://vlibras.gov.br/app');"></script>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {

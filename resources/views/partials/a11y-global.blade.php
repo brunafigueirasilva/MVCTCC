@@ -16,6 +16,7 @@
       - prefers-reduced-motion e campos que não dão zoom no iPhone.
      Nada aqui muda cores/layout do AgriFarm além do anel de foco.
      ========================================================================== --}}
+@include('partials.ui-core')
 @once
 <style>
     /* Link de pular navegação: invisível até receber foco pelo Tab. */
@@ -112,7 +113,7 @@
     }
 
     /* Movimento reduzido: tira animações/transições não essenciais. */
-    @media (prefers-reduced-motion: reduce) {
+    html.ui-movimento-reduzido { /* antes: @media (prefers-reduced-motion) — agora só a opção do painel desliga */
         *,
         *::before,
         *::after {
@@ -137,6 +138,18 @@
             var tema = localStorage.getItem('theme');
             if (tema === 'dark') document.body.classList.add('dark-theme');
             if (tema === 'contrast') document.body.classList.add('high-contrast');
+
+            // Zoom salvo também antes do primeiro desenho — antes só era
+            // aplicado no DOMContentLoaded e a página "pulava" de tamanho a
+            // cada navegação. Guarda o zoom padrão da própria página (a
+            // landing usa 0.9) para o botão "Padrão" continuar voltando a ele.
+            var zoom = parseFloat(localStorage.getItem('zoomScale'));
+            if (zoom > 0) {
+                var raiz = document.documentElement;
+                if (!raiz.dataset.zoomPadrao) raiz.dataset.zoomPadrao = getComputedStyle(raiz).getPropertyValue('--zoom-scale').trim() || '1';
+                raiz.style.setProperty('--zoom-scale', zoom);
+                raiz.classList.toggle('zoom-sistema-ampliado', zoom > 1);
+            }
         } catch (e) { /* armazenamento bloqueado: segue o padrão */ }
     }
     if (document.body) aplicarTemaCedo();

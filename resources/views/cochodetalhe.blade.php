@@ -394,7 +394,7 @@
         <!-- Ração vinculada ao lote: o estoque que abastece este cocho. -->
         <section class="pg-box det-racao-lote" aria-labelledby="tituloRacaoLote">
             <h2 class="pg-box-title" id="tituloRacaoLote"><i class="fa-solid fa-wheat-awn" aria-hidden="true"></i> Ração do lote no armazém</h2>
-            <div id="detRacaoLote" class="pg-sub">Carregando…</div>
+            <div id="detRacaoLote" class="pg-sub" data-ui-skeleton="1">Carregando…</div>
         </section>
 
         <!-- Indicadores calculados no servidor -->
@@ -460,7 +460,7 @@
                         </tr>
                     </thead>
                     <tbody id="detHistorico">
-                        <tr><td colspan="7" class="det-tabela-vazia">Carregando…</td></tr>
+                        <tr><td colspan="7" class="det-tabela-vazia" data-ui-skeleton="3">Carregando…</td></tr>
                     </tbody>
                 </table>
             </div>

@@ -97,7 +97,7 @@
 
 
 
-        @media (prefers-reduced-motion: reduce) {
+        html.ui-movimento-reduzido { /* antes: @media (prefers-reduced-motion) — agora só a opção do painel desliga */
             .menu a, .menu i { transition: background-color 0.18s ease, color 0.18s ease; }
             .menu a:hover { transform: none; }
             .menu a:hover i { animation: none; }
@@ -766,7 +766,7 @@
                             Editar
                         </button>
 
-                        <form action="{{ route('fazenda.delete', $fazenda->id) }}" method="POST" style="flex:1;" onsubmit="return confirmarExclusao();">
+                        <form action="{{ route('fazenda.delete', $fazenda->id) }}" method="POST" style="flex:1;" data-confirmar="Deseja realmente excluir esta fazenda? Esta ação não pode ser desfeita." data-confirmar-titulo="Excluir fazenda">
                             @csrf
                             @method('DELETE')
                             <button type="submit" class="btn delete">
@@ -792,7 +792,7 @@
                 <button type="button" class="close" onclick="fecharModal()">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
-                <img src="{{ asset('logo.png') }}" alt="Logo">
+                <img src="{{ asset('otimizado/marca/logo.webp') }}" alt="Logo">
                 <h2>Adicionar Fazenda</h2>
                 <p>Cadastre uma nova fazenda e defina localização, área e proprietário.</p>
             </div>
@@ -875,7 +875,7 @@
             </button>
 
             <div class="modal-m-top">
-                <img src="{{ asset('logo.png') }}" alt="Logo">
+                <img src="{{ asset('otimizado/marca/logo.webp') }}" alt="Logo">
                 <p>Atualizar Fazenda</p>
             </div>
 
@@ -1069,7 +1069,7 @@
 
             botao.addEventListener('click', function() {
                 if (!navigator.geolocation) {
-                    alert('Seu navegador não suporta geolocalização.');
+                    AgriUI.toast('Seu navegador não suporta geolocalização. Marque o local no mapa manualmente.', { tipo: 'aviso' });
                     return;
                 }
 
@@ -1087,7 +1087,7 @@
                         botao.innerHTML = textoOriginal;
                     },
                     function() {
-                        alert('Não foi possível obter sua localização atual. Verifique a permissão de localização do navegador.');
+                        AgriUI.toast('Não foi possível obter sua localização atual. Verifique a permissão de localização do navegador.', { tipo: 'erro', titulo: 'Localização indisponível' });
                         botao.disabled = false;
                         botao.innerHTML = textoOriginal;
                     },
@@ -1144,11 +1144,6 @@
 
         function fecharModalM() {
             document.getElementById('modal-m').classList.remove('active');
-        }
-
-        /* Função de confirmação do botão Excluir */
-        function confirmarExclusao() {
-            return confirm("Deseja realmente excluir?");
         }
 
         window.addEventListener('click', function(event) {
@@ -1273,9 +1268,15 @@
 
             aplicarMascaraCep(cepInput);
 
+            // Mesmo CEP já consultado (ou em consulta): não repete a chamada —
+            // antes digitar o 8º dígito e depois sair do campo (blur) fazia
+            // duas requisições iguais ao ViaCEP.
+            let ultimoCepConsultado = null;
+
             async function buscar() {
                 const cep = cepInput.value.replace(/\D/g, '');
-                if (cep.length !== 8) return;
+                if (cep.length !== 8 || cep === ultimoCepConsultado) return;
+                ultimoCepConsultado = cep;
 
                 statusEl.textContent = 'Buscando endereço pelo CEP...';
                 statusEl.className = 'cep-status loading';
@@ -1297,6 +1298,7 @@
 
                     aproximarMapaDaCidade(dados.localidade, dados.uf, obterControleMapa());
                 } catch (erro) {
+                    ultimoCepConsultado = null; // falha de rede: permite tentar de novo
                     statusEl.textContent = 'Não foi possível consultar o CEP agora. Selecione manualmente.';
                     statusEl.className = 'cep-status erro';
                 }

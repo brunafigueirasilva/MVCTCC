@@ -114,7 +114,7 @@ body.acc-modal-open .main {
 
 
 
-@media (prefers-reduced-motion: reduce) {
+html.ui-movimento-reduzido { /* antes: @media (prefers-reduced-motion) — agora só a opção do painel desliga */
     .menu a, .menu i { transition: background-color 0.18s ease, color 0.18s ease; }
     .menu a:hover { transform: none; }
     .menu a:hover i { animation: none; }
@@ -1738,7 +1738,7 @@ body.high-contrast input:focus-visible {
         .tr-card { padding: 18px; }
     }
 
-    @media (prefers-reduced-motion: reduce) {
+    html.ui-movimento-reduzido { /* antes: @media (prefers-reduced-motion) — agora só a opção do painel desliga */
         .tr-card, .tr-icone, .tr-btn-adicionar, .tr-btn-adicionar i { transition: none; }
         .tr-card:hover, .tr-card:focus-within { transform: none; }
         .tr-card:hover .tr-icone, .tr-btn-adicionar:hover i { transform: none; }
@@ -1811,7 +1811,7 @@ body.high-contrast input:focus-visible {
             <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="tituloModalFiltros">
                 <button class="close" id="closeFiltrosBtn" aria-label="Fechar"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
                 <div class="modal-top">
-                    <img src="{{ asset('logo.png') }}" alt="Logo">
+                    <img src="{{ asset('otimizado/marca/logo.webp') }}" alt="Logo">
                     <h2 id="tituloModalFiltros">Filtros Avançados</h2>
                     <p>Escolha o que exibir no painel de Rações</p>
                 </div>
@@ -2158,7 +2158,7 @@ body.high-contrast input:focus-visible {
                                         )">
                                         <i class="fa-solid fa-pen"></i> Editar
                                     </button>
-                                    <form action="{{ route('racao.delete', $racao->id) }}" method="POST" onsubmit="return confirmarExclusao();">
+                                    <form action="{{ route('racao.delete', $racao->id) }}" method="POST" data-confirmar="Deseja realmente excluir esta ração? Esta ação não pode ser desfeita." data-confirmar-titulo="Excluir ração">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="excluir">
@@ -2247,7 +2247,7 @@ body.high-contrast input:focus-visible {
                 <button type="button" class="close" onclick="fecharModal()">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
-                <img src="{{ asset('logo.png') }}" alt="Logo">
+                <img src="{{ asset('otimizado/marca/logo.webp') }}" alt="Logo">
                 <h2>Adicionar Tipo de Ração</h2>
                 <p>Cadastre um novo tipo de ração para vincular aos lotes e cochos.</p>
             </div>
@@ -2352,7 +2352,7 @@ body.high-contrast input:focus-visible {
                 <button type="button" class="close" onclick="fecharModalCatalogo()" aria-label="Fechar">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
-                <img src="{{ asset('logo.png') }}" alt="Logo">
+                <img src="{{ asset('otimizado/marca/logo.webp') }}" alt="Logo">
                 <h2 id="catTitulo">Adicionar Ração</h2>
                 <p>Complete estoque e preço para cadastrar.</p>
             </div>
@@ -2444,7 +2444,7 @@ body.high-contrast input:focus-visible {
             </button>
 
             <div class="modal-m-top">
-                <img src="{{ asset('logo.png') }}" alt="Logo">
+                <img src="{{ asset('otimizado/marca/logo.webp') }}" alt="Logo">
                 <p>Atualizar Ração</p>
             </div>
 
@@ -2633,11 +2633,6 @@ body.high-contrast input:focus-visible {
 
         function fecharModalEditar() {
             document.getElementById('modalEditar').classList.remove('active');
-        }
-
-        // CONFIRMAR EXCLUSÃO
-        function confirmarExclusao() {
-            return confirm('Deseja realmente excluir esta ração?');
         }
 
         // Alerta "N rações precisam de reposição": clicar mostra/oculta a lista

@@ -259,15 +259,29 @@ class LoteController extends Controller
         // algum deles ainda tem ração dentro, ela sumiria sem registro (já
         // saiu do estoque quando o cocho foi abastecido) — recusa e explica.
         $quantidadeCochos = max(0, (int) ($dados['quantidade_cochos'] ?? 0));
-        $comRacao = $lote->cochos()->orderByDesc('numero')
+        $removidos = $lote->cochos()->orderByDesc('numero')
             ->take(max(0, $lote->cochos()->count() - $quantidadeCochos))
-            ->get()->filter(fn (Cocho $c) => $c->nivel_atual > 0);
+            ->withCount(['sensores' => fn ($q) => $q->where('ativo', true)])
+            ->get();
+        $comRacao = $removidos->filter(fn (Cocho $c) => $c->nivel_atual > 0);
 
         if ($comRacao->isNotEmpty()) {
             return back()->withErrors([
                 'quantidade_cochos' => 'Não dá para remover ' . $comRacao->pluck('nome_cocho')->implode(', ')
                     . ' porque ainda tem ração dentro (' . number_format($comRacao->sum('nivel_atual'), 1, ',', '.') . ' kg). '
                     . 'Espere o lote consumir ou zere o nível do cocho na Gestão de Cochos antes de diminuir a quantidade.',
+            ])->withInput();
+        }
+
+        // Cocho com sensor IoT ativo: removê-lo apagaria em cascata os
+        // sensores e todo o histórico de leituras, e o ESP32 passaria a ter
+        // as leituras recusadas — sem nenhum aviso.
+        $comSensor = $removidos->filter(fn (Cocho $c) => $c->sensores_count > 0);
+        if ($comSensor->isNotEmpty()) {
+            return back()->withErrors([
+                'quantidade_cochos' => 'Não dá para remover ' . $comSensor->pluck('nome_cocho')->implode(', ')
+                    . ' porque tem sensor IoT ligado (removê-lo apagaria o histórico de leituras). '
+                    . 'Retire os códigos dos sensores em "Editar" na Gestão de Cochos antes de diminuir a quantidade.',
             ])->withInput();
         }
 

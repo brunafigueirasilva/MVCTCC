@@ -96,7 +96,7 @@
 
 
 
-        @media (prefers-reduced-motion: reduce) {
+        html.ui-movimento-reduzido { /* antes: @media (prefers-reduced-motion) — agora só a opção do painel desliga */
             .menu a, .menu i { transition: background-color 0.18s ease, color 0.18s ease; }
             .menu a:hover { transform: none; }
             .menu a:hover i { animation: none; }
@@ -1545,7 +1545,7 @@
             <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="tituloModalFiltros">
                 <button class="close" id="closeFiltrosBtn" aria-label="Fechar"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
                 <div class="modal-top">
-                    <img src="{{ asset('logo.png') }}" alt="Logo">
+                    <img src="{{ asset('otimizado/marca/logo.webp') }}" alt="Logo">
                     <h2 id="tituloModalFiltros">Filtros Avançados</h2>
                     <p>Escolha o que exibir no painel de Cochos</p>
                 </div>
@@ -1875,7 +1875,7 @@
                 <button type="button" class="close" onclick="fecharModalEditar()">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
-                <img src="{{ asset('logo.png') }}" alt="Logo">
+                <img src="{{ asset('otimizado/marca/logo.webp') }}" alt="Logo">
                 <h2 id="edit_tituloCocho">Editar Cocho</h2>
                 <p>Identificação e lote são geridos automaticamente — ajuste só os dados deste cocho.</p>
             </div>
@@ -1963,7 +1963,7 @@
                 <button type="button" class="close" onclick="fecharModalConsumo()" aria-label="Fechar">
                     <i class="fa-solid fa-xmark" aria-hidden="true"></i>
                 </button>
-                <img src="{{ asset('logo.png') }}" alt="Logo">
+                <img src="{{ asset('otimizado/marca/logo.webp') }}" alt="Logo">
                 <h2 id="consumo_titulo">Registrar Consumo</h2>
                 <p>Quanto os animais comeram deste cocho. O nível do cocho diminui e o registro fica no histórico — o estoque do armazém não muda (essa ração já saiu dele no abastecimento).</p>
             </div>
@@ -2006,7 +2006,7 @@
                 <button type="button" class="close" onclick="fecharModalAbastecer()">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
-                <img src="{{ asset('logo.png') }}" alt="Logo">
+                <img src="{{ asset('otimizado/marca/logo.webp') }}" alt="Logo">
                 <h2 id="abastecer_titulo">Abastecer Cocho</h2>
                 <p>Escolha a ração e a quantidade — o valor é descontado automaticamente do Estoque de Rações.</p>
             </div>
@@ -2082,7 +2082,7 @@
                 <button type="button" class="close" onclick="fecharModalAbastecerLote()">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
-                <img src="{{ asset('logo.png') }}" alt="Logo">
+                <img src="{{ asset('otimizado/marca/logo.webp') }}" alt="Logo">
                 <h2 id="abastecerLote_titulo">Abastecer Cochos do Lote</h2>
                 <p>A quantidade é distribuída entre os cochos do lote que ainda têm espaço, e descontada do Estoque de Rações.</p>
             </div>
@@ -2571,7 +2571,7 @@
 
                     if (capacidade < nivelAtual) {
                         e.preventDefault();
-                        alert('Erro: A capacidade do cocho não pode ser menor do que o nível atual de ração!');
+                        AgriUI.toast('A capacidade do cocho não pode ser menor do que o nível atual de ração.', { tipo: 'erro', titulo: 'Capacidade inválida' });
                     }
                 });
             }
@@ -2584,7 +2584,7 @@
 
                     if (capacidade < nivelAtual) {
                         e.preventDefault();
-                        alert('Erro: A capacidade do cocho não pode ser menor do que o nível atual de ração!');
+                        AgriUI.toast('A capacidade do cocho não pode ser menor do que o nível atual de ração.', { tipo: 'erro', titulo: 'Capacidade inválida' });
                     }
                 });
             }

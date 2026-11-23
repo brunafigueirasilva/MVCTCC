@@ -152,7 +152,7 @@
 
 
 
-        @media (prefers-reduced-motion: reduce) {
+        html.ui-movimento-reduzido { /* antes: @media (prefers-reduced-motion) — agora só a opção do painel desliga */
             .menu a, .menu i { transition: background-color 0.18s ease, color 0.18s ease; }
             .menu a:hover { transform: none; }
             .menu a:hover i { animation: none; }
@@ -878,6 +878,27 @@
             .navbar-logout span { display: none; }
         }
 
+
+        /* Grade de indicadores equilibrada: 4, 2 ou 1 coluna conforme o
+           espaço REAL do conteúdo (menu aberto ou recolhido), nunca uma
+           última linha com cartão "sobrando" (antes: 8 cartões em 3
+           colunas deixavam um buraco na grade). */
+        .dashboard-layout-grid { container-type: inline-size; }
+        @container (min-width: 940px) {
+            .cards-row { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+        }
+        /* 4 colunas apertadas (notebook): selo em cima e valor embaixo, como
+           no celular — o valor usa a largura toda do cartão (antes "R$" e o
+           número quebravam em duas linhas) e rótulos/valores ficam alinhados
+           entre os cartões. */
+        @container (min-width: 940px) and (max-width: 1239.98px) {
+            .premium-card { flex-direction: column; align-items: flex-start; gap: 14px; padding: 20px; }
+            .premium-card-icon-zone { width: 48px; height: 48px; font-size: 1.125rem; }
+            .premium-card-value { font-size: 1.5rem; }
+        }
+        @container (min-width: 460px) and (max-width: 939.98px) {
+            .cards-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        }
     </style>
 @endpush
 
@@ -1126,7 +1147,7 @@
                 btnVerMaisHistorico.addEventListener('click', async function() {
                     const textoOriginal = btnVerMaisHistorico.textContent;
                     btnVerMaisHistorico.disabled = true;
-                    btnVerMaisHistorico.textContent = 'Carregando...';
+                    AgriUI.indicarCarregando(btnVerMaisHistorico, 'Carregando…');
 
                     try {
                         const resposta = await fetch('{{ route('ordenha.historicoJson') }}' + window.location.search, {

@@ -149,8 +149,12 @@ class CadastroController extends Controller
         $racoesFazenda = Racao::where('fazenda_id', $fazendaSelecionadaId)->get();
 
         $hoje = Carbon::today();
-        $snapshotsHoje = LoteConsumoSnapshot::whereIn('lote_id', $loteIds)->get()
-            ->filter(fn ($s) => $s->data->isSameDay($hoje));
+        // Filtra o dia no banco: antes trazia TODO o histórico de snapshots
+        // da fazenda e descartava em PHP — e esta consulta roda a cada
+        // página aberta (sino de notificações).
+        $snapshotsHoje = LoteConsumoSnapshot::whereIn('lote_id', $loteIds)
+            ->whereDate('data', $hoje)
+            ->get();
 
         $ordenhas7Dias = Ordenha::whereIn('lote_id', $loteIds)
             ->whereDate('data', '>=', Carbon::today()->subDays(6))

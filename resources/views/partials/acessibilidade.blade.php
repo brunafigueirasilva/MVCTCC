@@ -566,6 +566,27 @@
         </div>
 
         <div class="modal-section">
+            <h3 class="acc-secao-titulo"><i class="fa-solid fa-book-open-reader" aria-hidden="true"></i> Conforto de Leitura</h3>
+            <div class="control-grid">
+                <div class="control-item">
+                    <span class="control-label" id="lblModoLeitura"><i class="fa-solid fa-glasses" aria-hidden="true"></i> Modo de Leitura</span>
+                    <label class="switch-btn">
+                        <input type="checkbox" id="chkModoLeitura" role="switch" aria-labelledby="lblModoLeitura" aria-describedby="descModoLeitura">
+                        <span class="slider-switch" aria-hidden="true"></span>
+                    </label>
+                </div>
+                <div class="control-item">
+                    <span class="control-label" id="lblMovimento"><i class="fa-solid fa-person-walking" aria-hidden="true"></i> Reduzir Animações</span>
+                    <label class="switch-btn">
+                        <input type="checkbox" id="chkMovimentoReduzido" role="switch" aria-labelledby="lblMovimento" aria-describedby="descModoLeitura">
+                        <span class="slider-switch" aria-hidden="true"></span>
+                    </label>
+                </div>
+            </div>
+            <p class="voice-tip" id="descModoLeitura">O modo de leitura aumenta o espaçamento entre linhas e letras, limita a largura dos parágrafos e sublinha os links. "Reduzir animações" desliga transições e efeitos de movimento.</p>
+        </div>
+
+        <div class="modal-section">
             <h3 class="acc-secao-titulo"><i class="fa-solid fa-sliders" aria-hidden="true"></i> Dimensionamento</h3>
             <div class="control-grid">
                 <div class="control-item-vertical" role="group" aria-labelledby="lblFonte">
@@ -647,7 +668,9 @@
         // "Padrão" do botão e o valor mostrado antes de qualquer ajuste —
         // antes o painel dizia "100%" com a página em 90%, e "Padrão" não
         // voltava ao estado inicial.
-        const zoomPadrao = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--zoom-scale')) || 1;
+        // (a11y-global já pode ter aplicado o zoom salvo antes do primeiro
+        // desenho — nesse caso o padrão da página ficou em data-zoom-padrao.)
+        const zoomPadrao = parseFloat(document.documentElement.dataset.zoomPadrao || getComputedStyle(document.documentElement).getPropertyValue('--zoom-scale')) || 1;
         let currentZoomScale = zoomPadrao;
         let speechUtterance = null;
 
@@ -917,6 +940,27 @@
             }
             salvarPreferenciasNoServidor();
         });
+
+        // ==========================================
+        // CONFORTO DE LEITURA — classes no <html>, já aplicadas no <head>
+        // por partials/ui-core antes do primeiro desenho (sem "piscar").
+        // Ficam só neste aparelho (localStorage), como preferência visual.
+        // ==========================================
+        const chkModoLeitura = document.getElementById('chkModoLeitura');
+        const chkMovimentoReduzido = document.getElementById('chkMovimentoReduzido');
+        const ligarPreferenciaHtml = (chk, chave, classe, mensagens) => {
+            if (!chk) return;
+            chk.checked = document.documentElement.classList.contains(classe);
+            chk.addEventListener('change', () => {
+                document.documentElement.classList.toggle(classe, chk.checked);
+                try { localStorage.setItem(chave, chk.checked ? '1' : '0'); } catch (e) { /* bloqueado */ }
+                // Liga/desliga na hora toda a camada de animação (ui-motion).
+                if (window.AgriUI && AgriUI.sincronizarMovimento) AgriUI.sincronizarMovimento();
+                if (accAnuncio) accAnuncio.textContent = chk.checked ? mensagens[0] : mensagens[1];
+            });
+        };
+        ligarPreferenciaHtml(chkModoLeitura, 'modoLeitura', 'ui-modo-leitura', ['Modo de leitura ativado.', 'Modo de leitura desativado.']);
+        ligarPreferenciaHtml(chkMovimentoReduzido, 'movimentoReduzido', 'ui-movimento-reduzido', ['Animações reduzidas.', 'Animações restauradas.']);
 
         const updateFontScale = (newScale) => {
             currentFontScale = Math.max(80, Math.min(newScale, 150));

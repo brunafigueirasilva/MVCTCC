@@ -286,7 +286,7 @@
     $equipe = [
         [
             'nome' => 'Bruna Figueira Silva',
-            'foto' => 'Bruna.png',
+            'foto' => 'otimizado/equipe/Bruna.webp',
             'cargo' => 'Scrum Master / Back-End',
             'sobre' => 'Profissional que atua como Scrum Master e Desenvolvedora Back-End, unindo liderança, organização e desenvolvimento de soluções eficientes e escaláveis para garantir o bom andamento e a qualidade dos projetos.',
             'areas' => ['Scrum Master', 'Back-End', 'Gestão de Projetos'],
@@ -297,7 +297,7 @@
         ],
         [
             'nome' => 'João Emanoel Porfirio de Souza',
-            'foto' => 'Joao.png',
+            'foto' => 'otimizado/equipe/Joao.webp',
             'cargo' => 'Front-End / Banco de Dados',
             'sobre' => 'Profissional responsável pelo desenvolvimento Front-End e gerenciamento de Banco de Dados, criando interfaces modernas e funcionais e garantindo que as informações do sistema sejam organizadas, seguras e eficientes.',
             'areas' => ['Front-End', 'Banco de Dados', 'Interfaces'],
@@ -308,7 +308,7 @@
         ],
         [
             'nome' => 'Leonardo Henrique Boscolo da Cruz',
-            'foto' => 'Leo.png',
+            'foto' => 'otimizado/equipe/Leo.webp',
             'cargo' => 'Front-End / Banco de Dados',
             'sobre' => 'Profissional responsável pelo desenvolvimento Front-End e gerenciamento de Banco de Dados, criando interfaces modernas e funcionais e garantindo que as informações do sistema sejam organizadas, seguras e eficientes.',
             'areas' => ['Front-End', 'Banco de Dados', 'Interfaces'],
@@ -319,7 +319,7 @@
         ],
         [
             'nome' => 'Maria Eduarda Evangelista',
-            'foto' => 'MariaEduarda.png',
+            'foto' => 'otimizado/equipe/MariaEduarda.webp',
             'cargo' => 'Desenvolvedora Back-End',
             'sobre' => 'Profissional responsável pelo desenvolvimento Back-End, trabalhando na criação de funcionalidades, APIs e integrações, garantindo que o sistema funcione de forma segura, eficiente e confiável.',
             'areas' => ['Back-End', 'APIs', 'Integrações'],
@@ -330,7 +330,7 @@
         ],
         [
             'nome' => 'Matheus Emanuel Carvalho de Oliveira',
-            'foto' => 'Matheus.png',
+            'foto' => 'otimizado/equipe/Matheus.webp',
             'cargo' => 'Desenvolvedor Back-End',
             'sobre' => 'Profissional responsável pelo desenvolvimento Back-End, trabalhando na criação de funcionalidades, APIs e integrações, garantindo que o sistema funcione de forma segura, eficiente e confiável.',
             'areas' => ['Back-End', 'APIs', 'Integrações'],
@@ -341,7 +341,7 @@
         ],
         [
             'nome' => 'Yasmin Gabrielli Ruivo Zanotti',
-            'foto' => 'YasminZanotti.png',
+            'foto' => 'otimizado/equipe/YasminZanotti.webp',
             'cargo' => 'Desenvolvedora Back-End',
             'sobre' => 'Profissional responsável pelo desenvolvimento Back-End, trabalhando na criação de funcionalidades, APIs e integrações, garantindo que o sistema funcione de forma segura, eficiente e confiável.',
             'areas' => ['Back-End', 'APIs', 'Integrações'],
@@ -352,7 +352,7 @@
         ],
         [
             'nome' => 'Yasmin Gentina Karolaine',
-            'foto' => 'YasminKarolaine.png',
+            'foto' => 'otimizado/equipe/YasminKarolaine.webp',
             'cargo' => 'Full Stack / Product Owner',
             'sobre' => 'Profissional que atua como Desenvolvedora Full Stack e Product Owner (PO), unindo desenvolvimento de sistemas, gestão de funcionalidades e organização das necessidades do projeto para garantir soluções completas e alinhadas aos objetivos da equipe e dos usuários.',
             'areas' => ['Full Stack', 'Product Owner', 'Gestão de Produto'],

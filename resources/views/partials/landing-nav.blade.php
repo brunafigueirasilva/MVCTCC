@@ -49,7 +49,7 @@
 <nav>
     <div class="nav-inner">
         <a href="{{ route('projeto.index') }}" class="logo">
-            <img src="{{ asset('agrifarm_oficial.png') }}" alt="AgriFarm" />
+            <img src="{{ asset('otimizado/marca/agrifarm_oficial.webp') }}" alt="AgriFarm" />
         </a>
         <ul class="nav-links">
             <li><a href="{{ route('landing.problema') }}" class="{{ $paginaAtiva === 'problema' ? 'active' : '' }}">Problema</a></li>

@@ -344,7 +344,7 @@
 
 
 
-        @media (prefers-reduced-motion: reduce) {
+        html.ui-movimento-reduzido { /* antes: @media (prefers-reduced-motion) — agora só a opção do painel desliga */
             .menu a, .menu i { transition: background-color 0.18s ease, color 0.18s ease; }
             .menu a:hover { transform: none; }
             .menu a:hover i { animation: none; }
@@ -1299,7 +1299,7 @@
         <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="tituloModalFiltros">
             <button class="close" id="closeFiltrosBtn" aria-label="Fechar"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
             <div class="modal-top">
-                <img src="{{ asset('logo.png') }}" alt="Logo">
+                <img src="{{ asset('otimizado/marca/logo.webp') }}" alt="Logo">
                 <h2 id="tituloModalFiltros">Filtros Avançados</h2>
                 <p>Escolha o que exibir nos relatórios</p>
             </div>
@@ -1484,8 +1484,12 @@
              não o que foi medido no cocho. --}}
         <p class="relatorio-fonte-dados">
             <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
-            Consumo e custo deste relatório vêm do <strong>plano alimentar</strong>: a ração vinculada a cada lote, pelo preço cadastrado de cada ração.
-            O que foi realmente colocado ou consumido em cada cocho aparece em <a href="{{ route('cocho.listar') }}">Gestão de Cochos</a>.
+            {{-- Texto num único item do flex: sem o <span>, cada trecho,
+                 <strong> e <a> virava uma coluna estreita. --}}
+            <span>
+                Consumo e custo deste relatório vêm do <strong>plano alimentar</strong>: a ração vinculada a cada lote, pelo preço cadastrado de cada ração.
+                O que foi realmente colocado ou consumido em cada cocho aparece em <a href="{{ route('cocho.listar') }}">Gestão de Cochos</a>.
+            </span>
         </p>
 
         <div class="stat-cards-row">
@@ -2063,8 +2067,15 @@
             // Math.max(...[]) daria -Infinity sem lotes filtrados; o
             // gráfico fica coberto pelo overlay de "sem dados" de qualquer
             // forma, mas o eixo precisa de um teto numérico válido.
-            const maxKg = (Math.max(0, ...kgLoteDados) * 1.3) || 10;
-            const maxCusto = (Math.max(0, ...custoLoteDados) * 1.3) || 10;
+            // Teto "redondo" (1.000, 2.500, 4.000...) — antes o eixo terminava
+            // em valores quebrados como 1.889,6.
+            const tetoRedondo = (valor) => {
+                if (!(valor > 0)) return 10;
+                const passo = Math.pow(10, Math.floor(Math.log10(valor))) / 2;
+                return Math.ceil(valor / passo) * passo;
+            };
+            const maxKg = tetoRedondo(Math.max(0, ...kgLoteDados) * 1.3);
+            const maxCusto = tetoRedondo(Math.max(0, ...custoLoteDados) * 1.3);
 
             chartConsumoLote = new Chart(canvasConsumoLote, {
                 type: 'bar',
@@ -2348,7 +2359,7 @@
         const botao = document.getElementById('btnVerMaisRanking');
         const textoOriginal = botao.textContent;
         botao.disabled = true;
-        botao.textContent = 'Carregando...';
+        AgriUI.indicarCarregando(botao, 'Carregando…');
 
         try {
             const resposta = await fetch('{{ route('relatorio.rankingJson') }}' + window.location.search, {

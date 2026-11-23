@@ -9,7 +9,7 @@
     <div class="footer-grid">
         <div class="footer-col footer-col-brand">
             <div class="footer-logo">
-                <img src="{{ asset('agrifarm_oficial.png') }}" alt="AgriFarm" />
+                <img src="{{ asset('otimizado/marca/agrifarm_oficial.webp') }}" alt="AgriFarm" />
             </div>
             <p class="footer-tagline">Gestão inteligente de ração e nutrição animal para fazendas modernas.</p>
             <div class="footer-social" role="navigation" aria-label="Redes sociais (rodapé)">

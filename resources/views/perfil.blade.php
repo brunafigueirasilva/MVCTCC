@@ -106,7 +106,7 @@
 
 
 
-        @media (prefers-reduced-motion: reduce) {
+        html.ui-movimento-reduzido { /* antes: @media (prefers-reduced-motion) — agora só a opção do painel desliga */
             .menu a, .menu i { transition: background-color 0.18s ease, color 0.18s ease; }
             .menu a:hover { transform: none; }
             .menu a:hover i { animation: none; }
@@ -620,7 +620,7 @@
 
                     if (idade < 18) {
                         e.preventDefault();
-                        alert('Só é permitido cadastrar CPF para maiores de 18 anos.');
+                        AgriUI.toast('Só é permitido cadastrar CPF para maiores de 18 anos.', { tipo: 'erro', titulo: 'CPF não permitido' });
                     }
                 }
             });

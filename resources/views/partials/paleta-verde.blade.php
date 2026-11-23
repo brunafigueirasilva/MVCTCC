@@ -20,6 +20,7 @@
      Incluído pelo layouts/app e pelas telas de login/cadastro. As páginas
      usam var(--verde-..., #fallback), então funcionam mesmo sem ele.
      ========================================================================== --}}
+@include('partials.ui-core')
 <style>
     :root {
         --verde-principal: #0e4a27;

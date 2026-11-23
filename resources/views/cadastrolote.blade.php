@@ -96,7 +96,7 @@
 
 
 
-        @media (prefers-reduced-motion: reduce) {
+        html.ui-movimento-reduzido { /* antes: @media (prefers-reduced-motion) — agora só a opção do painel desliga */
             .menu a, .menu i { transition: background-color 0.18s ease, color 0.18s ease; }
             .menu a:hover { transform: none; }
             .menu a:hover i { animation: none; }
@@ -1746,7 +1746,7 @@
             <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="tituloModalFiltros">
                 <button class="close" id="closeFiltrosBtn" aria-label="Fechar"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
                 <div class="modal-top">
-                    <img src="{{ asset('logo.png') }}" alt="Logo">
+                    <img src="{{ asset('otimizado/marca/logo.webp') }}" alt="Logo">
                     <h2 id="tituloModalFiltros">Filtros Avançados</h2>
                     <p>Escolha o que exibir no painel de Lotes</p>
                 </div>
@@ -2075,7 +2075,7 @@
                                         {{ $motivoBloqueio ? 'disabled title="' . $motivoBloqueio . '"' : '' }}>
                                         <i class="fa-solid fa-heart-crack"></i> Registrar Óbito
                                     </button>
-                                    <form action="{{ route('lote.delete', $lote->id) }}" method="POST" onsubmit="return confirm('Deseja realmente excluir este lote?')">
+                                    <form action="{{ route('lote.delete', $lote->id) }}" method="POST" data-confirmar="Deseja realmente excluir este lote? Esta ação não pode ser desfeita." data-confirmar-titulo="Excluir lote">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="excluir">
@@ -2246,7 +2246,7 @@
                 <button type="button" class="close" onclick="fecharModal()">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
-                <img src="{{ asset('logo.png') }}" alt="Logo">
+                <img src="{{ asset('otimizado/marca/logo.webp') }}" alt="Logo">
                 <h2>Adicionar Lote</h2>
                 <p>Cadastre um novo lote e defina espécie, sexo e quantidade de animais.</p>
             </div>
@@ -2402,7 +2402,7 @@
                 <button type="button" class="close" onclick="fecharModalEditar()">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
-                <img src="{{ asset('logo.png') }}" alt="Logo">
+                <img src="{{ asset('otimizado/marca/logo.webp') }}" alt="Logo">
                 <p>Atualizar Lote</p>
             </div>
 
@@ -3357,7 +3357,7 @@
         function validarFormMorte() {
             const causa = document.getElementById('morte_causa').value;
             if (morteEhIsolamento && causa === CAUSA_MORTE_DOENCA && totalInformadoNaLista('morteDoencasLista') < 1) {
-                alert('Informe ao menos 1 óbito de alguma doença.');
+                AgriUI.toast('Informe ao menos 1 óbito de alguma doença.', { tipo: 'erro', titulo: 'Faltam dados' });
                 return false;
             }
             return true;
@@ -3706,7 +3706,7 @@
             const loteId = botao.dataset.loteId;
             const textoOriginal = botao.textContent;
             botao.disabled = true;
-            botao.textContent = 'Carregando...';
+            AgriUI.indicarCarregando(botao, 'Carregando…');
 
             fetch('/lote/' + loteId + '/ordenha/historico', {
                     headers: { 'Accept': 'application/json' },
@@ -3814,7 +3814,7 @@
 
         function validarFormRecuperacao() {
             if (totalInformadoNaLista('recuperacaoDoencasLista') < 1) {
-                alert('Informe ao menos 1 animal recuperado de alguma doença.');
+                AgriUI.toast('Informe ao menos 1 animal recuperado de alguma doença.', { tipo: 'erro', titulo: 'Faltam dados' });
                 return false;
             }
             return true;

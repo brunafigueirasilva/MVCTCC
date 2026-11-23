@@ -75,4 +75,23 @@ class IntegridadeDadosTest extends TestCase
         $this->assertSame($antes, $lote->cochos()->count());
         $this->assertSame($antes, $lote->fresh()->quantidade_cochos);
     }
+
+    public function test_nao_remove_cocho_com_sensor_iot_ao_diminuir_a_quantidade(): void
+    {
+        $lote = Lote::where('nome_lote', 'Engorda B')->firstOrFail();
+        $lote->cochos()->update(['nivel_atual' => 0]);   // sem ração: só o sensor impede
+        $ultimo = $lote->cochos()->orderByDesc('numero')->firstOrFail();
+        $ultimo->sensores()->create(['codigo' => 'DIST-TESTE', 'tipo' => \App\Models\Sensor::TIPO_DISTANCIA, 'ativo' => true]);
+        $antes = $lote->cochos()->count();
+
+        $this->web()->put("/lote/update/{$lote->id}", [
+            'nome_lote' => $lote->nome_lote, 'fazenda_id' => $lote->fazenda_id, 'tipo_animal' => $lote->tipo_animal,
+            'finalidade' => $lote->finalidade, 'sexo' => $lote->sexo, 'idade_media' => $lote->idade_media,
+            'quantidade_animais' => $lote->quantidade_animais, 'peso_medio' => $lote->peso_medio, 'status' => 'Ativo',
+            'raca' => $lote->raca, 'quantidade_cochos' => $antes - 1, 'cocho_capacidade' => 100,
+        ])->assertSessionHasErrors('quantidade_cochos');
+
+        $this->assertSame($antes, $lote->cochos()->count());
+        $this->assertNotNull($ultimo->fresh());
+    }
 }
